@@ -43,7 +43,7 @@
 // Secrets: none to set. (SUPABASE_URL and SUPABASE_ANON_KEY are injected
 // automatically, and SUPABASE_SERVICE_ROLE_KEY for the rate limit.)
 
-import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { createClient } from '../_shared/supabase.ts'
 import { withCors } from '../_shared/cors.ts'
 import { secondFactorMissing } from '../_shared/mfa.ts'
 import {

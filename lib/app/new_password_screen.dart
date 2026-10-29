@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart'
     show AuthRetryableFetchException;
 
 import 'package:checkpoint/l10n/l10n.dart';
+import 'package:checkpoint/models/limits.dart';
 import 'package:checkpoint/services/connection_failure.dart';
 import 'package:checkpoint/state/auth_store.dart';
 import 'package:checkpoint/state/store_scope.dart';
@@ -107,8 +108,14 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
     }
   }
 
-  String? _validatePassword(String? value) =>
-      (value ?? '').isEmpty ? context.l10n.signInChoosePassword : null;
+  String? _validatePassword(String? value) {
+    final password = value ?? '';
+    if (password.isEmpty) return context.l10n.signInChoosePassword;
+    if (password.length < minPasswordLength) {
+      return context.l10n.authWeakPasswordMinLength(minPasswordLength);
+    }
+    return null;
+  }
 
   String? _validateConfirm(String? value) =>
       value != _password.text ? context.l10n.passwordsDontMatch : null;

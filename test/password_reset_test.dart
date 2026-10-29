@@ -117,6 +117,23 @@ void main() {
     expect(stores.auth.isLoggedIn, isTrue);
   });
 
+  testWidgets('a password under 8 characters is refused before anything is sent', (
+    tester,
+  ) async {
+    await start(tester);
+    await openResetLink(tester);
+
+    await fill(tester, 'short');
+    await tap(tester, saveButton());
+
+    expect(find.text('Use at least 8 characters.'), findsOneWidget);
+    expect(authService.passwordUpdates, isEmpty);
+
+    await fill(tester, 'long enough');
+    await tester.pump();
+    expect(find.text('Use at least 8 characters.'), findsNothing);
+  });
+
   testWidgets('the password is checked before anything is sent', (
     tester,
   ) async {
@@ -147,7 +164,7 @@ void main() {
     await start(tester);
     await openResetLink(tester);
 
-    await fill(tester, '123');
+    await fill(tester, 'letmein1');
     await tap(tester, saveButton());
 
     expect(

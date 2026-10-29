@@ -4,12 +4,15 @@ import 'package:flutter/material.dart';
 
 import 'package:checkpoint/l10n/l10n.dart';
 import 'package:checkpoint/models/game.dart';
+import 'package:checkpoint/models/game_reviews.dart' show MemberReportSubject;
+import 'package:checkpoint/models/public_profile.dart';
 import 'package:checkpoint/models/share_link.dart';
 import 'package:checkpoint/models/social_user.dart';
 import 'package:checkpoint/screens/lists/lists_screen.dart';
 import 'package:checkpoint/screens/profile/milestones_section.dart';
 import 'package:checkpoint/widgets/share_link_button.dart';
 import 'package:checkpoint/screens/profile/profile_layout.dart';
+import 'package:checkpoint/sheets/member_actions.dart';
 import 'package:checkpoint/state/auth_store.dart';
 import 'package:checkpoint/state/library_state.dart';
 import 'package:checkpoint/state/milestones_store.dart';
@@ -86,7 +89,12 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(actions: [ShareLinkButton(target: MemberLink(widget.userId))]),
+      appBar: AppBar(
+        actions: [
+          ShareLinkButton(target: MemberLink(widget.userId)),
+          if (!isSelf && view.profile != null) _MemberMenu(profile: view.profile!),
+        ],
+      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -95,6 +103,76 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+enum _MemberAction { reportProfile, reportPhoto, block }
+
+/// Report this profile or its photo, or block the member (who is then gone from
+/// the whole app, and this screen closes).
+class _MemberMenu extends StatelessWidget {
+  const _MemberMenu({required this.profile});
+
+  final PublicProfile profile;
+
+  Future<void> _selected(BuildContext context, _MemberAction action) async {
+    final navigator = Navigator.of(context);
+    switch (action) {
+      case _MemberAction.reportProfile:
+        await reportMemberProfile(
+          context,
+          userId: profile.id,
+          name: profile.name,
+          subject: MemberReportSubject.profile,
+        );
+      case _MemberAction.reportPhoto:
+        await reportMemberProfile(
+          context,
+          userId: profile.id,
+          name: profile.name,
+          subject: MemberReportSubject.avatar,
+        );
+      case _MemberAction.block:
+        final blocked = await blockMemberAfterAsking(
+          context,
+          SocialUser(
+            id: profile.id,
+            name: profile.name,
+            handle: profile.handle,
+            gamesLogged: 0,
+            followers: 0,
+            avatarUrl: profile.avatarUrl,
+            flair: profile.flair,
+          ),
+        );
+        if (blocked) navigator.pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    PopupMenuItem<_MemberAction> item(_MemberAction value, IconData icon, String label) =>
+        PopupMenuItem(
+          value: value,
+          child: Row(
+            children: [
+              Icon(icon, size: 18),
+              const SizedBox(width: 10),
+              Flexible(child: Text(label)),
+            ],
+          ),
+        );
+    return PopupMenuButton<_MemberAction>(
+      tooltip: l10n.memberOptions,
+      onSelected: (action) => unawaited(_selected(context, action)),
+      itemBuilder: (_) => [
+        item(_MemberAction.reportProfile, Icons.flag_outlined, l10n.reportProfile),
+        if (profile.avatarUrl != null)
+          item(_MemberAction.reportPhoto, Icons.image_not_supported_outlined, l10n.reportPhoto),
+        item(_MemberAction.block, Icons.person_off_outlined, l10n.blockMember(profile.name)),
+      ],
     );
   }
 }

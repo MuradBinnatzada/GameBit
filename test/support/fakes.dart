@@ -245,6 +245,10 @@ class FakeRepository implements CheckpointRepository {
   /// Writes are refused (as by a constraint or policy) while reads still work.
   bool rejectWrites = false;
 
+  /// The SQLSTATE a refused write carries: `CP422` is the server refusing text
+  /// that breaks the chat rules.
+  String rejectCode = '23514';
+
   /// Writes can't reach the server while reads still work, like a connection
   /// that dropped between the two.
   bool writesDown = false;
@@ -335,7 +339,7 @@ class FakeRepository implements CheckpointRepository {
   void _checkWrite() {
     _checkOnline();
     if (writesDown) throw Exception('network down');
-    if (rejectWrites) throw const PostgrestException(message: 'refused', code: '23514');
+    if (rejectWrites) throw PostgrestException(message: 'refused', code: rejectCode);
   }
 
   @override
@@ -1127,7 +1131,7 @@ class FakeRepository implements CheckpointRepository {
   }
 
   @override
-  Future<void> blockDiscussionMember(String userId) async {
+  Future<void> blockMember(String userId) async {
     _discussionWrite();
     SocialUser? member;
     for (final t in discussionThreads) {
@@ -1142,15 +1146,30 @@ class FakeRepository implements CheckpointRepository {
   }
 
   @override
-  Future<void> unblockDiscussionMember(String userId) async {
+  Future<void> unblockMember(String userId) async {
     _discussionWrite();
     blockedMembers.remove(userId);
   }
 
   @override
-  Future<List<SocialUser>> fetchBlockedDiscussionMembers() async {
+  Future<List<SocialUser>> fetchBlockedMembers() async {
     await _discussionRead();
     return blockedMembers.values.toList();
+  }
+
+  /// The reports of profiles, photos and lists the member sent.
+  final List<({String userId, MemberReportSubject subject, ReportReason reason, String? listId})>
+  memberReports = [];
+
+  @override
+  Future<void> reportMember({
+    required String userId,
+    required MemberReportSubject subject,
+    required ReportReason reason,
+    String? listId,
+  }) async {
+    _discussionWrite();
+    memberReports.add((userId: userId, subject: subject, reason: reason, listId: listId));
   }
 
   /// What `completion_time_stats` answers for each game, by game id.

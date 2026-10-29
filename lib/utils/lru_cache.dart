@@ -13,6 +13,9 @@ class LruCache<K, V extends Object> {
   /// Every value, oldest first. Does not change the order.
   Iterable<V> get values => _entries.values;
 
+  /// Replaces every value with what [update] makes of it. Keeps the order.
+  void updateAll(V Function(K key, V value) update) => _entries.updateAll(update);
+
   /// The value for [key], marked as just used, or null.
   V? operator [](K key) {
     final value = _entries.remove(key);

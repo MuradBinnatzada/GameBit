@@ -12,7 +12,8 @@ Your game library and playtime tracker. Build a library, log your hours, rate ga
 - Custom lists of games, private or public; "What should I play next?"; wishlist release alerts
 - Export your library and sessions as CSV, and import a library from a CSV file
 - Share links to games, profiles and public lists
-- Follow other players and browse their libraries
+- Follow other players and browse their libraries; discussion boards
+- Report profiles, photos, lists, reviews and posts, and block members everywhere in the app (see *Moderation*)
 - Offline support: the library is cached locally and edits made offline sync when you reconnect
 - Sign in with Google, Apple (iOS) or an email and password, with optional two-factor authentication (an authenticator app)
 
@@ -30,12 +31,15 @@ lib/
   l10n/       the strings, one .arb file per language
   models/     data models
   screens/    home, search, library, game detail, profile
-  services/   Supabase repository, auth, IGDB, connectivity, local cache, offline edits
-  state/      domain stores (auth, library, profile, ...)
+  services/   Supabase repository (checkpoint_repository.dart, its queries one file per
+              topic in repository/), auth, IGDB, connectivity, local cache, offline
+              edits, crash reporting
+  state/      domain stores (auth, library, profile, ...); the library store's methods
+              are in library_store.dart and in library_store/, one file per concern
   widgets/    shared UI
-supabase/     config, migrations, edge functions
+supabase/     config, migrations, edge functions, MODERATION.md (the moderator's runbook)
 test/         unit and widget tests
-docs/         landing page and privacy policy
+docs/         landing page, privacy policy and terms of use
 ```
 
 ## Getting started
@@ -150,11 +154,11 @@ Profile > **Year in Review** works out a year on the device (`lib/models/year_re
 
 ### Reviews, lists and the picker
 
-**Reviews** (`20261022120000_game_reviews.sql`): a review (2 000 characters) under your rating on a game's screen, which every signed-in member can read. The game's **Reviews** panel shows the community rating (the average and how many gave each star, `game_review_stats`) and the first reviews, the members you follow first; **See all** opens every review (`game_reviews`, paged), ordered friends first, newest, highest or lowest rated, or only those of the members you follow. A review can be reported (spam, abuse or something else): the report is written to `review_reports`, which nothing in the app reads back (moderators read it in the Supabase dashboard), and the review no longer shows for the member who reported it. `user_games.reviewed_at` dates a review, kept by a trigger.
+**Reviews** (`20261022120000_game_reviews.sql`): a review (2 000 characters) under your rating on a game's screen, which every signed-in member can read. The game's **Reviews** panel shows the community rating (the average and how many gave each star, `game_review_stats`) and the first reviews, the members you follow first; **See all** opens every review (`game_reviews`, paged), ordered friends first, newest, highest or lowest rated, or only those of the members you follow. A review can be reported (spam, abuse or something else) or its author blocked: the report is written to `review_reports`, which nothing in the app reads back (moderators read it in `moderation.open_reports`, see *Moderation*), and the review no longer shows for the member who reported it. A review is refused when it has a word the chat rules refuse (SQLSTATE `CP422`). `user_games.reviewed_at` dates a review, kept by a trigger.
 
 **Game news** (`game-news`): Home's **Game news** button opens the News screen. **Latest** is the gaming press for everyone, not only the games in the library: the function merges the public RSS feeds of IGN, Eurogamer, Rock Paper Shotgun, GameSpot, Kotaku, GamesRadar+, Nintendo Life and Push Square (for a Russian app, StopGame, Igromania, Playground.ru and 3DNews; `NEWS_SOURCES` in `supabase/functions/_shared/news.ts`), newest first, with a chip per outlet to narrow it. **My games** is Steam's own news (`ISteamNews/GetNewsForApp`, no key needed) for up to ten library games that have a Steam app id, the ones being played first. The app shows an outlet's name, a headline, the start of the story and a picture, and opens the outlet's own page for the rest; nothing is republished or stored. Each feed is fetched at most every 10 minutes per warm instance (Steam's news every 15) whoever asks, a feed that fails is retried after a minute with the copy held meanwhile, and a language none of whose outlets answer falls back to English. Only signed-in members can call it. It needs no secrets; it is deployed with the other functions.
 
-**Discussions** (`20261022165000_discussions.sql`, the `discussions` function): the fifth tab, in the middle. Seven pre-made boards (General, Game talk, What should I play?, Help & tips, News talk, Off-topic, Checkpoint feedback; seeded in the migration, so the owner adds or renames one there, and the app shows its own translation of the ones it knows by id) hold threads that members start: a title and an opening text, optionally about a game (a game's screen has a **Game discussions** panel with a button to start one). Replies are flat, oldest first. A member reads through functions that leave out the threads and replies of members they blocked and what they reported (`discussion_threads_page`, `discussion_thread`, `discussion_posts_page`), reports a thread or a reply (spam, abuse, other: `discussion_reports`, write only, moderators read it in the dashboard), blocks a member (`discussion_blocks`, with a **Blocked members** screen) and deletes their own thread or reply. **Nobody writes a thread or a reply directly**: the tables have no privileges for members, and the `discussions` function does it with the service role after it has checked the member is signed in and past two-factor, **counted the rate limit** (5 threads an hour, 20 replies in 10 minutes; a refused post counts too), refused a post with **one of the worst words** (racial slurs and child-abuse phrases only, in Latin and Cyrillic letters and the usual ways around a filter; whole words, so "Pakistan" and "snigger" are fine; `_shared/discussion_filter.ts`, to extend it add a line there and an example to its test), more than 3 links, a wrong length or a repeat of the last post. The app shows the **chat rules** (five short lines, `ChatRulesSheet`) before a member's first post on a device, and from the tab's menu. A moderator removes a thread or reply by deleting its row in the dashboard, and sets `locked` or `pinned` on a thread there. Deleting an account removes the member's threads, replies, reports and blocks. Apply the migration and deploy `discussions` before shipping the app build.
+**Discussions** (`20261022165000_discussions.sql`, the `discussions` function): the fifth tab, in the middle. Seven pre-made boards (General, Game talk, What should I play?, Help & tips, News talk, Off-topic, Checkpoint feedback; seeded in the migration, so the owner adds or renames one there, and the app shows its own translation of the ones it knows by id) hold threads that members start: a title and an opening text, optionally about a game (a game's screen has a **Game discussions** panel with a button to start one). Replies are flat, oldest first. A member reads through functions that leave out the threads and replies of members they blocked and what they reported (`discussion_threads_page`, `discussion_thread`, `discussion_posts_page`), reports a thread or a reply (spam, abuse, other: `discussion_reports`, write only, moderators read it in the dashboard), blocks a member (`user_blocks`, app-wide since `20261028235500_moderation_and_blocking.sql`, see *Moderation*) and deletes their own thread or reply. **Nobody writes a thread or a reply directly**: the tables have no privileges for members, and the `discussions` function does it with the service role after it has checked the member is signed in and past two-factor, **counted the rate limit** (5 threads an hour, 20 replies in 10 minutes; a refused post counts too), refused a post with **one of the worst words** (racial slurs and child-abuse phrases only, in Latin and Cyrillic letters and the usual ways around a filter; whole words, so "Pakistan" and "snigger" are fine; `_shared/discussion_filter.ts`, to extend it add a line there and an example to its test), more than 3 links, a wrong length or a repeat of the last post. The app shows the **chat rules** (five short lines, `ChatRulesSheet`) before a member's first post on a device, and from the tab's menu. A moderator removes a thread or reply by deleting its row in the dashboard (`supabase/MODERATION.md`), and sets `locked` or `pinned` on a thread there. Deleting an account removes the member's threads, replies, reports and blocks. Apply the migration and deploy `discussions` before shipping the app build.
 
 **Lists** (`20261019115300_game_lists.sql`): Profile > **Lists**, and the list button on a game's screen. A list holds any catalog game, in the order you drag them into; a public list shows on your profile and opens from a link for any signed-in member, a private one is yours only. 100 lists per member and 500 games per list. Lists need a connection (they aren't kept offline); an edit the server refuses is put back with a message. `merge_game_into` moves list entries when it folds a duplicate game.
 
@@ -216,7 +220,17 @@ storeFile=upload-keystore.jks
 
 **Sign in with Apple** (required by the App Store next to Google sign-in) is offered on iOS. In Xcode, give the Runner target your team and the *Sign in with Apple* capability (the entitlement is in `ios/Runner/Runner.entitlements`). In Supabase > Authentication > Providers > Apple, enable it and add `com.checkpoint.mobileapp` to its client IDs. Apple shares the member's name only on their first sign-in; the app saves it as their profile name.
 
-### Security
+## Moderation
+
+`supabase/migrations/20261028235500_moderation_and_blocking.sql`, `supabase/functions/_shared/standing.ts`, `supabase/MODERATION.md` (the moderator's runbook, with the SQL to run), `docs/terms.html`. It answers App Store guideline 1.2: filter objectionable content, let members report it and block abusive members, and act on reports within 24 hours.
+
+- **Filtering.** The discussions function refuses the worst words (racial slurs, child-abuse phrases; `_shared/discussion_filter.ts`). The same filter runs in the database (`private.breaks_chat_rules`) on the other public text: display name, handle, bio, the connected-service names, a review, a list's title and description. A save that fails is refused with `content_not_allowed` (SQLSTATE `CP422`, the field in the error's detail) and the app says so (`lib/services/content_refusal.dart`); a brand-new profile is cleaned instead (a Google or Apple name must not stop a sign-up). Text saved before the migration is not touched: `select * from moderation.flagged_text()` lists it. `filter_sql_test.ts` fails when the SQL patterns drift from the TypeScript filter.
+- **Reporting.** Reviews (`review_reports`), discussion posts (`discussion_reports`) and now profiles, photos and public lists (`user_reports`, 20 an hour per member). Each report table has `status` (`open`, `actioned`, `dismissed`), `handled_at` and `outcome`; a member can insert but never set them. `moderation.open_reports` lists every open report, oldest first, with `hours_open` and `overdue` (past 24 hours).
+- **Blocking is app-wide.** `discussion_blocks` became `user_blocks`. A block hides the member's profile, library, activity, reviews, public lists and discussion posts from the blocker (`private.hidden_members()` is the one place that says whom, used by the `public_*` wrapper views, `game_reviews`, `following_*`, the discussion functions and the `game_lists` policy), ends any follow between the two and stops the blocked member following back (silently, so a block isn't announced). Blocking is from a profile's menu, a review's menu and a discussion post's menu; `BlocksStore` keeps the list (**Settings > Privacy > Blocked members**) and tells the stores that hold members' data to drop theirs.
+- **Suspending a member.** `moderation.suspend_member(id, reason, days)` records the suspension, bans the account in Supabase Auth (`banned_until`, so no sign-in and no token refresh), ends its sessions and hides it from everyone. A token issued before lasts up to an hour, so `public.mfa_satisfied()` (asked by every policy and member-facing function) is false for a suspended member, and the `discussions` function asks `public.is_member_suspended()`. A suspended member who tries to sign in is told so, with the contact address (`user_banned`). `moderation.reinstate_member(id)` undoes it. The `moderation` schema is out of reach of every client role and of the API.
+- **Terms.** Sign-in shows "By continuing you agree to the Terms of Use and the Privacy Policy" with links, and Settings > Privacy has them and a way to write to us. The pages are served from `docs/`; the app finds them at `CHECKPOINT_DOCS_URL`.
+
+## Security
 
 What the server enforces, whatever a client sends (the anon key in `lib/main.dart` is public by design; these rules are what protect the data):
 
@@ -235,13 +249,19 @@ On the device: Android and iOS keep the session's tokens encrypted (Android Keys
 **Settings to make in the Supabase dashboard** (`supabase/config.toml` only configures `supabase start`):
 
 - Authentication > Providers > Email: turn on **Confirm email** (otherwise anyone can open an account in someone else's address) and **Secure password change**.
-- Authentication > Policies (or Providers > Email): minimum password length **8** or more, require **letters and digits**, and turn on **leaked password protection** (Pro plan).
+- Authentication > Policies (or Providers > Email): minimum password length **8** or more, require **letters and digits**, and turn on **leaked password protection** (Pro plan). `supabase/config.toml` says 8 for `supabase start`, but the live project's value is only what the dashboard says: check it. The app asks for 8 characters whenever a password is chosen (sign-up, reset, change; `minPasswordLength`) whatever the project is set to; signing in accepts any, so an older account isn't locked out.
 - Authentication > Multi-Factor: **Authenticator app (TOTP)** must be enabled (it is by default) for Settings > Security > Authenticator app to work; turned off, the setup says two-factor isn't available.
 - Authentication > URL Configuration: list only the exact addresses the app returns to (the web app, `http://localhost:3000` for desktop sign-in). No wildcards.
 - Authentication > Rate Limits: keep sign-in/sign-up and email limits low; consider **CAPTCHA** (hCaptcha or Turnstile) if bots sign up (the app would need the widget).
 - Advisors > Security Advisor: the "security definer view" warnings for the `public_*` views are intentional (see *Public profiles and followers*); anything else is worth a look.
 
 **Release builds**: build with `--obfuscate --split-debug-info=build/symbols` (`flutter build appbundle --obfuscate --split-debug-info=build/symbols`, the same for `ipa`), and keep `build/symbols` of each release to read its crash reports. Android release builds are already shrunk by R8.
+
+**Crash reports** (`lib/services/crash_reporting.dart`): [Sentry](https://sentry.io), off unless the build is given a DSN, so debug runs and tests send nothing: `--dart-define=SENTRY_DSN=https://...@....ingest.sentry.io/...` (and `--dart-define=CHECKPOINT_ENV=production`, which tags the reports). A report is the error and its stack, the app version and the device model; no account, no breadcrumbs (screens, taps, requests), no screenshots, no performance traces, and emails, ids and tokens in an error message are replaced before it leaves the device (`CrashReporting.scrub`, tested). A failed connection is not reported. Settings > Privacy > **Send crash reports** turns it off per device. In the Sentry project turn on **Prevent Storing of IP Addresses** (Settings > Security & Privacy) so the privacy policy's "no IP address" holds, and upload `build/symbols` of each release (`sentry-cli debug-files upload`) to read obfuscated stacks. It is disclosed in `docs/privacy.html`: change them together.
+
+**Staging and other backends.** The Supabase project is chosen when the app is built, not in the code: `--dart-define=SUPABASE_URL=https://<ref>.supabase.co --dart-define=SUPABASE_PUBLISHABLE_KEY=<anon key> --dart-define=CHECKPOINT_ENV=staging` (`lib/app/app_config.dart`). Without them the build is production. A URL without its key (or the reverse) stops at start-up with a message. `web/steam-link.html` has the function's address in its `FUNCTION_URL`: change it with the web app's.
+
+**The contact address** is in `docs/privacy.html`, `docs/terms.html`, `docs/index.html` and `AppConfig.contactEmail` (`--dart-define=CHECKPOINT_CONTACT_EMAIL=...`): change them together.
 
 **Not done, on purpose**: certificate pinning (Supabase and Cloudflare rotate their certificates, and a pinned app stops working until it is updated; TLS with the system's trusted roots is what protects the traffic), Play Integrity / App Attest (needs a server check of every request and can't cover the web and desktop apps, while the rules above hold whatever client calls the API), and root or jailbreak detection (it protects nothing the server doesn't already enforce, and is easy to bypass). Supabase Auth hashes passwords with bcrypt; the app never sees or stores them.
 
@@ -251,13 +271,13 @@ The app ships pointing at the project's Supabase instance with a public anon key
 
 1. Create a Supabase project and apply the migrations (`supabase link`, then `supabase db push`). The background Steam sync needs its one-time setup (see above).
 2. Deploy the functions in `supabase/functions` (`supabase functions deploy`, which reads `supabase/config.toml` for `steam-link`'s JWT setting) and set their secrets (Twitch client ID/secret for IGDB, Steam API key, and `CRON_SECRET` if you want the background sync). `steam-link` works without secrets, but once the web app is public set `STEAM_LINK_CONFIRM_URL` to the address of its confirm page there (`supabase secrets set STEAM_LINK_CONFIRM_URL=https://<web app>/steam-link.html`; see *Security*). The page asks the `steam-link` named in its `FUNCTION_URL`, so point that at your project as well. Behind a custom domain, or under `supabase start`, set `STEAM_LINK_CALLBACK_URL` to the function's public address (`http://127.0.0.1:54321/functions/v1/steam-link` locally).
-3. Update the Supabase URL and key in `lib/main.dart`.
+3. Build the app with your Supabase URL and key (`--dart-define=SUPABASE_URL=...`, `--dart-define=SUPABASE_PUBLISHABLE_KEY=...`; see *Staging and other backends*).
 4. Create Google OAuth client IDs and update `lib/services/auth_service.dart`. For iOS, pass `--dart-define=GOOGLE_IOS_CLIENT_ID=...`.
 5. For email sign-in, enable Authentication > Providers > Email, and choose whether new accounts must confirm their address first (the app handles both). The links in the confirmation and password reset emails go to the Site URL, or on web to the address that served the app, which must be listed under Authentication > URL Configuration > Redirect URLs. Opening a reset link signs the user in and the app asks for a new password (email accounts can also change it under Settings > Security). Only the web app can receive the link for now: Android and iOS need a deep-link scheme and desktop a way to catch it, and the link must be opened in the same browser that asked for it (Supabase's PKCE flow keeps the verifier there).
 
-## Privacy
+## Privacy and terms
 
-See [docs/privacy.html](docs/privacy.html).
+See [docs/privacy.html](docs/privacy.html) and [docs/terms.html](docs/terms.html).
 
 ## License
 

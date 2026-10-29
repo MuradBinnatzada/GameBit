@@ -22,6 +22,9 @@ enum DiscussionFailureCode {
   notFound('NOT_FOUND'),
   unauthenticated('UNAUTHENTICATED'),
   mfaRequired('MFA_REQUIRED'),
+
+  /// A moderator suspended the account.
+  suspended('SUSPENDED'),
   offline('OFFLINE'),
   other('OTHER');
 
@@ -83,6 +86,7 @@ class DiscussionFailure implements Exception {
       DiscussionFailureCode.notFound => l10n.postNotFound,
       DiscussionFailureCode.unauthenticated => l10n.syncErrorUnauthenticated,
       DiscussionFailureCode.mfaRequired => l10n.syncErrorMfaRequired,
+      DiscussionFailureCode.suspended => l10n.postSuspended,
       DiscussionFailureCode.offline => l10n.serverUnreachable,
       DiscussionFailureCode.other => l10n.postFailed,
     };

@@ -89,6 +89,19 @@ class SocialGraphStore extends AccountScopedStore {
     _loading.clear();
   }
 
+  /// Takes the blocked member [memberId] off every list held.
+  void forgetMember(String memberId) {
+    _lists.updateAll(
+      (_, list) => list.copyWith(
+        users: [
+          for (final u in list.users)
+            if (u.id != memberId) u,
+        ],
+      ),
+    );
+    notifyIfAlive();
+  }
+
   /// What is known about [userId]'s list; empty and idle before [load].
   FollowListView listOf(String userId, FollowListKind kind) =>
       _lists.peek((userId, kind)) ?? const FollowListView();

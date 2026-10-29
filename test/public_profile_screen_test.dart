@@ -11,6 +11,7 @@ import 'package:checkpoint/models/achievement_summary.dart';
 import 'package:checkpoint/models/activity_entry.dart';
 import 'package:checkpoint/models/connected_service.dart';
 import 'package:checkpoint/models/game.dart';
+import 'package:checkpoint/models/game_reviews.dart' show MemberReportSubject, ReportReason;
 import 'package:checkpoint/models/public_profile.dart';
 import 'package:checkpoint/screens/game_detail/game_detail_screen.dart';
 import 'package:checkpoint/screens/profile/follows_screen.dart';
@@ -1071,6 +1072,82 @@ void main() {
       await openProfile(tester, 'u1');
       // Not connected on your own (live) profile, whatever the copy says.
       expect(find.text('Achievements'), findsNothing);
+    });
+  });
+
+  group('reporting and blocking a member', () {
+    Future<void> openMenu(WidgetTester tester) async {
+      await tester.tap(find.byTooltip('More options'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('another member\'s profile has a menu, your own has none', (tester) async {
+      await openProfile(tester);
+      await openMenu(tester);
+      expect(find.text('Report profile'), findsOneWidget);
+      expect(find.text('Block Member One'), findsOneWidget);
+    });
+
+    testWidgets('your own profile has no menu', (tester) async {
+      await openProfile(tester, 'u1');
+      expect(find.byTooltip('More options'), findsNothing);
+    });
+
+    testWidgets('the profile is reported with a reason', (tester) async {
+      await openProfile(tester);
+      await openMenu(tester);
+
+      await tester.tap(find.text('Report profile'));
+      await tester.pumpAndSettle();
+      expect(find.text('Spam or ads'), findsOneWidget);
+      await tester.tap(find.text('Abusive or hateful'));
+      await tester.pumpAndSettle();
+
+      expect(repo.memberReports.single.userId, 'm1');
+      expect(repo.memberReports.single.subject, MemberReportSubject.profile);
+      expect(repo.memberReports.single.reason, ReportReason.abuse);
+      expect(find.textContaining('we’ll take a look'), findsOneWidget);
+    });
+
+    testWidgets('the photo is reported only when they have one', (tester) async {
+      await openProfile(tester);
+      await openMenu(tester);
+      expect(find.text('Report photo'), findsNothing);
+    });
+
+    testWidgets('a report that could not be sent says so', (tester) async {
+      await openProfile(tester);
+      repo.failDiscussionWrites = true;
+      await openMenu(tester);
+
+      await tester.tap(find.text('Report profile'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Spam or ads'));
+      await tester.pumpAndSettle();
+
+      expect(repo.memberReports, isEmpty);
+      expect(find.text('Couldn’t send the report. Try again.'), findsOneWidget);
+    });
+
+    testWidgets('blocking asks first, and then they are blocked', (tester) async {
+      await openProfile(tester);
+      await openMenu(tester);
+
+      await tester.tap(find.text('Block Member One'));
+      await tester.pumpAndSettle();
+      expect(find.text('Block Member One?'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(repo.blockedMembers, isEmpty);
+
+      await openMenu(tester);
+      await tester.tap(find.text('Block Member One'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Block'));
+      await tester.pumpAndSettle();
+
+      expect(repo.blockedMembers.keys, ['m1']);
+      expect(stores.blocks.isBlocked('m1'), isTrue);
     });
   });
 }

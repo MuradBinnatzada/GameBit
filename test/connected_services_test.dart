@@ -192,6 +192,18 @@ void main() {
       expect((await prefs()).getBool('accounts_pending.u1'), isFalse);
     });
 
+    test('a name the server refuses for its words says so', () async {
+      await start();
+      repo
+        ..rejectWrites = true
+        ..rejectCode = 'CP422';
+
+      profile.toggleService(ConnectedService.nintendo);
+      await pumpEventQueue();
+
+      expect(profile.notice, startsWith('That text breaks the community rules'));
+    });
+
     test('a refused write is reported, keeps the change on the device and is tried again on the next load', () async {
       await start();
       repo.rejectWrites = true;

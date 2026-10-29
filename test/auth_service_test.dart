@@ -172,6 +172,13 @@ void main() {
           AuthApiException(text, statusCode: '400', code: code),
         );
 
+    test('says a suspended account was suspended, and where to write', () {
+      expect(
+        message('user_banned', 'User is banned'),
+        'This account has been suspended for breaking the community rules. If you think this is a mistake, write to muradbinnetzade14@gmail.com.',
+      );
+    });
+
     test('words the email sign-in failures for people', () {
       expect(
         message('invalid_credentials'),

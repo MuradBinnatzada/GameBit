@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:checkpoint/l10n/l10n.dart';
+import 'package:checkpoint/models/limits.dart';
 import 'package:checkpoint/state/auth_store.dart';
 import 'package:checkpoint/state/store_scope.dart';
 import 'package:checkpoint/theme/palette.dart';
+import 'package:checkpoint/widgets/legal_links.dart';
 
 enum _Mode { signIn, signUp }
 
@@ -167,6 +169,9 @@ class _SignInPanelState extends State<SignInPanel> {
       return _mode == _Mode.signIn
           ? context.l10n.signInPasswordRequired
           : context.l10n.signInChoosePassword;
+    }
+    if (_mode == _Mode.signUp && value!.length < minPasswordLength) {
+      return context.l10n.authWeakPasswordMinLength(minPasswordLength);
     }
     return null;
   }
@@ -362,6 +367,8 @@ class _SignInPanelState extends State<SignInPanel> {
                 const SizedBox(height: 16),
                 _Notice(notice),
               ],
+              const SizedBox(height: 20),
+              const SignInAgreement(),
             ],
           ),
         ),

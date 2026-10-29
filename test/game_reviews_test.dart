@@ -586,6 +586,28 @@ void main() {
       expect(find.textContaining('we’ll take a look'), findsOneWidget);
     });
 
+    testWidgets('a review author can be blocked from its menu, and their reviews go', (
+      tester,
+    ) async {
+      repo.gameReviews['g1'] = reviewsOf(5);
+      await openAllReviews(tester);
+      expect(find.text('Review number 0.'), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.more_horiz_rounded).first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.textContaining('Block '));
+      await tester.pumpAndSettle();
+      // Asks first, and says what a block does.
+      expect(find.textContaining('their profile, library, reviews'), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, 'Block'));
+      await settle(tester);
+
+      expect(repo.blockedMembers, hasLength(1));
+      expect(find.text('Review number 0.'), findsNothing);
+      expect(find.text('Review number 1.'), findsOneWidget);
+      expect(find.textContaining('is blocked.'), findsOneWidget);
+    });
+
     testWidgets('your own review has an Edit in its menu, not a Report', (
       tester,
     ) async {

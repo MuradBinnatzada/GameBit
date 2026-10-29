@@ -10,7 +10,9 @@
  * to run again):
  *   1. Avatars     remove the files under `avatars/<user id>/`
  *   2. Log         delete the user's `log_entries`, then their discussions: replies,
- *                  threads (with the replies of others to them), reports and blocks
+ *                  threads (with the replies of others to them), reports and blocks,
+ *                  and the reports about them. A moderation suspension of the account
+ *                  goes with the identity (its foreign key cascades)
  *   3. Library     delete the user's `user_games`
  *   4. Follows     delete the follows in both directions (`social_follows`)
  *   5. Catalog     games the user added to the shared catalog stay for other
@@ -29,8 +31,7 @@
  * Secrets: none to set. (SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are injected
  * automatically.)
  */
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.4"
+import { createClient, type SupabaseClient } from "../_shared/supabase.ts"
 import { withCors } from '../_shared/cors.ts'
 import { secondFactorMissing } from '../_shared/mfa.ts'
 import { RATE_LIMITS, rateLimitWait } from '../_shared/rate_limit.ts'
@@ -105,12 +106,15 @@ async function deleteAccount(admin: SupabaseClient, userId: string): Promise<voi
 
   await deleteRows(admin, 'log_entries', 'user_id', userId)
   // Their discussions: replies, then threads (which take other members' replies
-  // to them along), then what they reported and blocked, and who blocked them.
+  // to them along), then what they reported and blocked, who blocked them and the
+  // reports about them (20261028235500_moderation_and_blocking.sql).
   await deleteRows(admin, 'discussion_posts', 'author_id', userId)
   await deleteRows(admin, 'discussion_threads', 'author_id', userId)
   await deleteRows(admin, 'discussion_reports', 'reporter_id', userId)
-  await deleteRows(admin, 'discussion_blocks', 'blocker_id', userId)
-  await deleteRows(admin, 'discussion_blocks', 'blocked_id', userId)
+  await deleteRows(admin, 'user_blocks', 'blocker_id', userId)
+  await deleteRows(admin, 'user_blocks', 'blocked_id', userId)
+  await deleteRows(admin, 'user_reports', 'reporter_id', userId)
+  await deleteRows(admin, 'user_reports', 'reported_id', userId)
   await deleteRows(admin, 'review_reports', 'reporter_id', userId)
   await deleteRows(admin, 'user_games', 'user_id', userId)
   await deleteRows(admin, 'social_follows', 'follower_id', userId)
@@ -139,7 +143,7 @@ function errorResponse(error: unknown): Response {
   return json({ error: 'Something went wrong on our side. Try again later.', code: 'INTERNAL' }, 500)
 }
 
-serve(withCors(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')

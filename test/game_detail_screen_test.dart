@@ -10,6 +10,7 @@ import 'package:checkpoint/screens/profile/public_profile_screen.dart';
 import 'package:checkpoint/state/app_stores.dart';
 import 'package:checkpoint/screens/game_detail/game_detail_screen.dart';
 import 'package:checkpoint/screens/game_detail/igdb_sections.dart';
+import 'package:checkpoint/state/library_store.dart';
 import 'package:checkpoint/state/store_scope.dart';
 import 'package:checkpoint/theme/app_theme.dart';
 import 'package:checkpoint/utils/navigation.dart';

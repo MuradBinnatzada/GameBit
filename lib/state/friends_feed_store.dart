@@ -42,6 +42,15 @@ class FriendsFeedStore extends AccountScopedStore {
     _loading = null;
   }
 
+  /// Takes the blocked member [memberId]'s activity off the feed.
+  void forgetMember(String memberId) {
+    _items = [
+      for (final item in _items)
+        if (item.member.id != memberId) item,
+    ];
+    notifyIfAlive();
+  }
+
   /// A game of the feed, as the catalog knows it (none of the member's state is
   /// on it). This is how a cover tapped on Home is found by the game screen.
   Game? gameById(String id) {

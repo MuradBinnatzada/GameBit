@@ -44,7 +44,7 @@ jobs:
 
       - run: deno check supabase/functions/*/index.ts
 
-      - run: deno test supabase/functions/_shared/
+      - run: deno test --allow-read=supabase/migrations supabase/functions/_shared/
 
   deploy:
     name: Migrations and functions

@@ -2682,7 +2682,7 @@
       }
     }
   },
-  "blockMemberBody": "You won’t see their threads or replies in the discussions. You can unblock them in Blocked members.",
+  "blockMemberBody": "You won’t see their profile, library, reviews, lists or discussion posts, and neither of you can follow the other. You can unblock them in Settings > Privacy > Blocked members.",
   "block": "Block",
   "unblock": "Unblock",
   "memberBlocked": "{name} is blocked.",
@@ -2704,8 +2704,69 @@
   "blockFailed": "Couldn’t do that. Try again.",
   "blockedMembers": "Blocked members",
   "noBlockedMembers": "Nobody is blocked",
-  "noBlockedMembersMessage": "Members you block in the discussions are listed here.",
+  "noBlockedMembersMessage": "Members you block are listed here.",
   "blockedLoadFailed": "Couldn’t load the blocked members",
+  "contentRefused": "That text breaks the community rules, so it wasn’t saved. Please reword it.",
+  "reportProfile": "Report profile",
+  "reportPhoto": "Report photo",
+  "reportList": "Report list",
+  "reportProfileSubtitle": "What is wrong with {name}’s profile?",
+  "@reportProfileSubtitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reportPhotoSubtitle": "What is wrong with {name}’s photo?",
+  "@reportPhotoSubtitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reportListSubtitle": "What is wrong with “{title}”?",
+  "@reportListSubtitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "memberReported": "Thanks, we’ll take a look. You can also block this member.",
+  "memberReportFailed": "Couldn’t send the report. Try again.",
+  "memberReportRateLimited": "You’ve sent a lot of reports lately. Try again later.",
+  "memberOptions": "More options",
+  "blockedMembersSubtitle": "Members you blocked: you don’t see them anywhere in the app.",
+  "postSuspended": "Your account is suspended, so you can’t post.",
+  "accountSuspended": "This account has been suspended for breaking the community rules. If you think this is a mistake, write to {email}.",
+  "@accountSuspended": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "crashReportsTitle": "Send crash reports",
+  "crashReportsSubtitle": "If the app crashes, send the error and your device model so it can be fixed. Never your account, your library or anything you typed.",
+  "diagnosticsTitle": "Diagnostics",
+  "legalTitle": "Legal and contact",
+  "termsOfUse": "Terms of Use",
+  "privacyPolicy": "Privacy Policy",
+  "contactUs": "Contact us",
+  "contactUsSubtitle": "Questions, data requests and reports about a member.",
+  "signInAgreement": "By continuing you agree to the {terms} and the {privacy}.",
+  "@signInAgreement": {
+    "placeholders": {
+      "terms": {
+        "type": "String"
+      },
+      "privacy": {
+        "type": "String"
+      }
+    }
+  },
   "deletePost": "Delete",
   "deleteThreadTitle": "Delete this discussion?",
   "deleteThreadBody": "It and all its replies are removed for everyone.",

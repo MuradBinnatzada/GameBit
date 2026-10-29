@@ -79,6 +79,19 @@ function compile(terms: readonly string[], alphabet: string): RegExp {
 const LATIN = compile(LATIN_TERMS, 'a-z')
 const CYRILLIC = compile(CYRILLIC_TERMS, 'а-яё')
 
+/**
+ * The same two patterns for the database, which filters the other public text
+ * (reviews, bios, names, handles, list titles) with `private.breaks_chat_rules` in
+ * 20261028235500_moderation_and_blocking.sql. PostgreSQL's regular expressions
+ * have no `\p{L}`; everything else here is spelled the same in both. The migration
+ * holds these exact strings, and filter_sql_test.ts fails when it doesn't: after
+ * changing a term, paste the new strings in (the test prints them).
+ */
+export function sqlPatterns(): { latin: string; cyrillic: string } {
+  const gap = (source: string) => source.replaceAll(GAP, '[^[:alnum:]]{0,2}')
+  return { latin: gap(LATIN.source), cyrillic: gap(CYRILLIC.source) }
+}
+
 /** Cyrillic letters that look like Latin ones, so a Latin word typed with them is read as Latin. */
 const CYRILLIC_TO_LATIN: Record<string, string> = {
   а: 'a', в: 'b', е: 'e', к: 'k', м: 'm', н: 'h', о: 'o', р: 'p', с: 'c', т: 't', у: 'y', х: 'x', і: 'i',

@@ -216,7 +216,6 @@ void main() {
       await store.loadBoards();
       await store.loadThreads(DiscussionScope.all);
       await store.loadThread('t1');
-      await store.loadBlocked();
 
       expect(repo.threadReads, isEmpty);
       expect(repo.postReads, isEmpty);
@@ -621,15 +620,21 @@ void main() {
       });
     });
 
-    group('blocking', () {
+    group('a blocked member', () {
+      // Blocking is app-wide (BlocksStore); the discussions are told to forget them.
+      Future<void> block(String id) async {
+        await repo.blockMember(id);
+        store.forgetMember(id);
+      }
+
       test(
-        'takes the member\'s threads and replies off everything held',
+        'has their threads and replies taken off everything held',
         () async {
           await store.loadThreads(DiscussionScope.all);
           await store.loadThread('t1');
           await store.loadThread('t3');
 
-          await store.block(testMember('b', name: 'Bob'));
+          await block('b');
 
           expect(ids(store.listOf(DiscussionScope.all)), [
             't3',
@@ -640,41 +645,26 @@ void main() {
             [for (final p in store.viewOf('t1').posts) p.id],
             ['p2'],
           ); // and his reply
-          expect(
-            store.blocked.map((m) => m.id),
-            isEmpty,
-          ); // not loaded yet: nothing to add to
         },
       );
 
-      test('a thread by the blocked member, when open, is gone', () async {
+      test('has a thread they wrote, when open, gone', () async {
         await store.loadThread('t4');
 
-        await store.block(testMember('c', name: 'Cy'));
+        await block('c');
 
         expect(store.viewOf('t4').thread, isNull);
         expect(store.viewOf('t4').status, LoadStatus.ready);
       });
 
-      test('is listed, and unblocking brings back what was left out', () async {
-        await store.loadBlocked();
-        await store.block(testMember('b', name: 'Bob'));
-        expect(store.blocked.map((m) => m.id), ['b']);
+      test('comes back when unblocked', () async {
+        await block('b');
         await store.loadThreads(DiscussionScope.all);
         expect(ids(store.listOf(DiscussionScope.all)), isNot(contains('t2')));
 
-        await store.unblock('b');
-        expect(store.blocked, isEmpty);
+        await repo.unblockMember('b');
+        store.refreshAfterUnblock();
         await store.loadThreads(DiscussionScope.all);
-
-        expect(ids(store.listOf(DiscussionScope.all)), contains('t2'));
-      });
-
-      test('a failed block throws and keeps everything', () async {
-        await store.loadThreads(DiscussionScope.all);
-        repo.failDiscussionWrites = true;
-
-        await expectLater(store.block(testMember('b')), throwsException);
 
         expect(ids(store.listOf(DiscussionScope.all)), contains('t2'));
       });

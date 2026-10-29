@@ -54,6 +54,28 @@ class GameFriends {
 
   bool get isEmpty => FriendGroup.values.every((g) => countOf(g) == 0);
 
+  /// These friends without [memberId], and the totals one lower for their status:
+  /// the member was blocked.
+  GameFriends without(String memberId) {
+    final gone = [
+      for (final f in friends)
+        if (f.member.id == memberId) f,
+    ];
+    if (gone.isEmpty) return this;
+    final next = {...totals};
+    for (final f in gone) {
+      final left = (next[f.status] ?? 0) - 1;
+      next[f.status] = left < 0 ? 0 : left;
+    }
+    return GameFriends(
+      friends: [
+        for (final f in friends)
+          if (f.member.id != memberId) f,
+      ],
+      totals: next,
+    );
+  }
+
   int countOf(FriendGroup group) =>
       group.statuses.fold(0, (sum, s) => sum + (totals[s] ?? 0));
 

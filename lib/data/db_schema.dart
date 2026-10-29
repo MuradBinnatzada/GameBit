@@ -45,18 +45,28 @@ abstract final class Db {
   static const rpcDiscussionThreads = 'discussion_threads_page';
   static const rpcDiscussionThread = 'discussion_thread';
   static const rpcDiscussionPosts = 'discussion_posts_page';
-  static const rpcMyDiscussionBlocks = 'my_discussion_blocks';
   static const rpcDeleteDiscussionThread = 'delete_discussion_thread';
   static const rpcDeleteDiscussionPost = 'delete_discussion_post';
 
-  /// A member's report of a thread or a reply, and their blocking another member:
-  /// own rows only.
+  /// A member's report of a thread or a reply: own rows only.
   static const discussionReports = 'discussion_reports';
-  static const discussionBlocks = 'discussion_blocks';
   static const threadId = 'thread_id';
   static const postId = 'post_id';
+
+  /// A member blocking another one, for the whole app (20261028235500_moderation_and_blocking.sql):
+  /// own rows only. [rpcMyBlockedMembers] lists the blocked members with their
+  /// profile fields. The server leaves a blocked member's profile, library,
+  /// activity, reviews, public lists and discussion posts out of every read.
+  static const userBlocks = 'user_blocks';
+  static const rpcMyBlockedMembers = 'my_blocked_members';
   static const blockerId = 'blocker_id';
   static const blockedId = 'blocked_id';
+
+  /// A member's report of another's profile, photo or public list (`subject`:
+  /// `profile`, `avatar` or `list`): write only, like the other report tables.
+  static const userReports = 'user_reports';
+  static const reportedId = 'reported_id';
+  static const subject = 'subject';
 
   /// A member's report of another's review: write only
   /// (20261022120000_game_reviews.sql).

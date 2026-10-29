@@ -43,6 +43,17 @@ class GameFriendsStore extends AccountScopedStore {
     _loading.clear();
   }
 
+  /// Takes the blocked member [memberId] off every game held.
+  void forgetMember(String memberId) {
+    _views.updateAll(
+      (_, view) => GameFriendsView(
+        status: view.status,
+        friends: view.friends.without(memberId),
+      ),
+    );
+    notifyIfAlive();
+  }
+
   GameFriendsView viewOf(String gameId) =>
       _views.peek(gameId) ?? const GameFriendsView();
 

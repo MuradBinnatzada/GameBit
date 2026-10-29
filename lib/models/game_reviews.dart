@@ -85,8 +85,8 @@ class GameReview {
   final bool isFollowing;
 }
 
-/// Why a review or a discussion post is reported. [wireName] is the `reason` of
-/// `review_reports` and `discussion_reports`.
+/// Why a review, a discussion post, a profile or a list is reported. [wireName]
+/// is the `reason` of `review_reports`, `discussion_reports` and `user_reports`.
 enum ReportReason {
   spam('spam'),
   abuse('abuse'),
@@ -100,6 +100,16 @@ enum ReportReason {
     abuse => L10n.current.reportReasonAbuse,
     other => L10n.current.reportReasonOther,
   };
+}
+
+/// What of a member is reported (the `subject` of `user_reports`).
+enum MemberReportSubject {
+  profile('profile'),
+  avatar('avatar'),
+  list('list');
+
+  const MemberReportSubject(this.wireName);
+  final String wireName;
 }
 
 /// How the members rated a game: how many did, the average, how many wrote a

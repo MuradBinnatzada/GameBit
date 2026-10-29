@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:checkpoint/models/game_list.dart';
+import 'package:checkpoint/models/game_reviews.dart' show MemberReportSubject;
 import 'package:checkpoint/screens/game_detail/game_detail_screen.dart';
 import 'package:checkpoint/screens/lists/list_screen.dart';
 import 'package:checkpoint/screens/lists/lists_screen.dart';
@@ -80,6 +81,17 @@ void main() {
       expect(stores.lists.notice, 'Lists need a connection. Check it and try again.');
     });
 
+    test('a title that breaks the community rules is refused, with its own notice', () async {
+      repo
+        ..rejectWrites = true
+        ..rejectCode = 'CP422';
+
+      final list = await stores.lists.create(title: 'Anything');
+
+      expect(list, isNull);
+      expect(stores.lists.notice, startsWith('That text breaks the community rules'));
+    });
+
     test('another member\'s lists are only their public ones, and go on sign-out', () async {
       repo.lists['p1'] = const GameList(id: 'p1', ownerId: 'm1', title: 'Theirs', isPublic: true);
       repo.lists['p2'] = const GameList(id: 'p2', ownerId: 'm1', title: 'Hidden');
@@ -140,6 +152,34 @@ void main() {
       expect(find.byType(ListScreen), findsOneWidget);
       expect(find.text('Celeste'), findsOneWidget);
       expect(find.byTooltip('Delete list'), findsOneWidget);
+    });
+
+    testWidgets('a public list of someone else can be reported, not edited', (tester) async {
+      repo.lists['p1'] = const GameList(id: 'p1', ownerId: 'm1', title: 'Theirs', isPublic: true);
+      await pump(tester, const ListScreen(listId: 'p1'));
+      await settle(tester);
+      expect(find.byTooltip('Delete list'), findsNothing);
+
+      await tester.tap(find.byTooltip('Report list'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Theirs'), findsWidgets);
+      await tester.tap(find.text('Something else'));
+      await tester.pumpAndSettle();
+
+      expect(repo.memberReports.single.listId, 'p1');
+      expect(repo.memberReports.single.userId, 'm1');
+      expect(repo.memberReports.single.subject, MemberReportSubject.list);
+    });
+
+    testWidgets('your own list has no report button', (tester) async {
+      await pump(tester, const ListsScreen());
+      final list = await tester.runAsync(() => stores.lists.create(title: 'Mine', isPublic: true));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Mine'));
+      await tester.pumpAndSettle();
+      expect(list, isNotNull);
+
+      expect(find.byTooltip('Report list'), findsNothing);
     });
 
     testWidgets('a private list of someone else, opened from a link, is not shown', (tester) async {

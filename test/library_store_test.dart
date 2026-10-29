@@ -554,6 +554,22 @@ void main() {
       expect(library.pendingCount, 0);
     });
 
+    test('a review the server refuses for its words is put back, and says why', () async {
+      repo.library = [testGame('a')];
+      await library.initialize();
+      await pumpEventQueue();
+      repo
+        ..rejectWrites = true
+        ..rejectCode = 'CP422';
+
+      await library.setReview('a', 'some words');
+      await library.whenSaved();
+      await pumpEventQueue(); // the library is read again
+
+      expect(library.notice, startsWith('That text breaks the community rules'));
+      expect(repo.reviews, isEmpty); // nothing was saved
+    });
+
     test('leaves the library alone when the server refuses', () async {
       repo.library = [testGame('a')];
       await library.initialize();

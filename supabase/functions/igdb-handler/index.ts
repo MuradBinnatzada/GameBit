@@ -166,7 +166,7 @@
 // SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY are injected
 // automatically by Supabase.
 
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createClient } from "../_shared/supabase.ts";
 import { addQuery, newCatalogRow } from "../_shared/catalog_add.ts";
 import { withCors } from "../_shared/cors.ts";
 import { secondFactorMissing } from "../_shared/mfa.ts";

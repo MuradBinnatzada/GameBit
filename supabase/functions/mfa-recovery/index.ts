@@ -35,8 +35,7 @@
  * Secrets: none to set. (SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are injected
  * automatically.)
  */
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient, type SupabaseClient, type User } from "https://esm.sh/@supabase/supabase-js@2.45.4"
+import { createClient, type SupabaseClient, type User } from "../_shared/supabase.ts"
 import { withCors } from '../_shared/cors.ts'
 import { secondFactorMissing, twoFactorOn } from '../_shared/mfa.ts'
 import { RATE_LIMITS, rateLimitWait } from '../_shared/rate_limit.ts'
@@ -227,7 +226,7 @@ function errorResponse(error: unknown): Response {
   return json({ error: 'Something went wrong on our side. Try again later.', code: 'INTERNAL' }, 500)
 }
 
-serve(withCors(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')

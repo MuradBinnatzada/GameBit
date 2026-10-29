@@ -79,8 +79,7 @@
  * `supabase start`, whose SUPABASE_URL is internal (there it is
  * http://127.0.0.1:54321/functions/v1/steam-link).
  */
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.4"
+import { createClient, type SupabaseClient } from "../_shared/supabase.ts"
 import { parseAllowedOrigins, withCors } from '../_shared/cors.ts'
 import { secondFactorMissing } from '../_shared/mfa.ts'
 import { RATE_LIMITS, rateLimitWait } from '../_shared/rate_limit.ts'
@@ -443,7 +442,7 @@ function errorResponse(error: unknown, extra: Record<string, unknown> = {}): Res
   return json({ error: 'Something went wrong on our side. Try again later.', code: 'INTERNAL', ...extra }, 500)
 }
 
-serve(withCors(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     if (req.method === 'POST') return await post(req)
     if (req.method === 'GET') return await steamReturn(req)

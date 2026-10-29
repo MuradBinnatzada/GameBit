@@ -1227,7 +1227,7 @@
   "postReportFailed": "Не удалось отправить жалобу. Попробуйте ещё раз.",
   "blockMember": "Заблокировать: {name}",
   "blockMemberTitle": "Заблокировать {name}?",
-  "blockMemberBody": "Вы не будете видеть его темы и ответы в обсуждениях. Разблокировать можно в списке «Заблокированные».",
+  "blockMemberBody": "Вы не будете видеть его профиль, библиотеку, отзывы, списки и сообщения в обсуждениях, и подписаться друг на друга вы тоже не сможете. Разблокировать можно в Настройки > Конфиденциальность > Заблокированные.",
   "block": "Заблокировать",
   "unblock": "Разблокировать",
   "memberBlocked": "{name} заблокирован(а).",
@@ -1235,8 +1235,69 @@
   "blockFailed": "Не получилось. Попробуйте ещё раз.",
   "blockedMembers": "Заблокированные",
   "noBlockedMembers": "Никто не заблокирован",
-  "noBlockedMembersMessage": "Здесь будут участники, которых вы заблокируете в обсуждениях.",
+  "noBlockedMembersMessage": "Здесь будут участники, которых вы заблокируете.",
   "blockedLoadFailed": "Не удалось загрузить список заблокированных",
+  "contentRefused": "Этот текст нарушает правила сообщества, поэтому он не сохранён. Измените формулировку.",
+  "reportProfile": "Пожаловаться на профиль",
+  "reportPhoto": "Пожаловаться на фото",
+  "reportList": "Пожаловаться на список",
+  "reportProfileSubtitle": "Что не так с профилем {name}?",
+  "@reportProfileSubtitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reportPhotoSubtitle": "Что не так с фото {name}?",
+  "@reportPhotoSubtitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reportListSubtitle": "Что не так со списком «{title}»?",
+  "@reportListSubtitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "memberReported": "Спасибо, мы посмотрим. Этого участника можно ещё и заблокировать.",
+  "memberReportFailed": "Не удалось отправить жалобу. Попробуйте ещё раз.",
+  "memberReportRateLimited": "Вы отправили слишком много жалоб. Попробуйте позже.",
+  "memberOptions": "Ещё",
+  "blockedMembersSubtitle": "Заблокированные участники: вы их нигде в приложении не видите.",
+  "postSuspended": "Ваш аккаунт заблокирован, поэтому писать нельзя.",
+  "accountSuspended": "Этот аккаунт заблокирован за нарушение правил сообщества. Если это ошибка, напишите на {email}.",
+  "@accountSuspended": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "crashReportsTitle": "Отправлять отчёты о сбоях",
+  "crashReportsSubtitle": "Если приложение вылетит, отправим ошибку и модель устройства, чтобы это исправить. Без вашего аккаунта, библиотеки и того, что вы вводили.",
+  "diagnosticsTitle": "Диагностика",
+  "legalTitle": "Правовая информация и связь",
+  "termsOfUse": "Условия использования",
+  "privacyPolicy": "Политика конфиденциальности",
+  "contactUs": "Связаться с нами",
+  "contactUsSubtitle": "Вопросы, запросы о данных и жалобы на участников.",
+  "signInAgreement": "Продолжая, вы принимаете {terms} и {privacy}.",
+  "@signInAgreement": {
+    "placeholders": {
+      "terms": {
+        "type": "String"
+      },
+      "privacy": {
+        "type": "String"
+      }
+    }
+  },
   "deletePost": "Удалить",
   "deleteThreadTitle": "Удалить это обсуждение?",
   "deleteThreadBody": "Оно и все ответы в нём будут удалены для всех.",

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:checkpoint/l10n/l10n.dart';
 import 'package:checkpoint/models/social_user.dart';
+import 'package:checkpoint/sheets/member_actions.dart';
 import 'package:checkpoint/sheets/report_review_sheet.dart';
 import 'package:checkpoint/state/discussions_store.dart';
 import 'package:checkpoint/state/store_scope.dart';
@@ -43,41 +44,10 @@ Future<bool> reportDiscussionPost(
   }
 }
 
-/// Asks to block [author], and does. True when they were blocked.
-Future<bool> blockDiscussionAuthor(
-  BuildContext context,
-  SocialUser author,
-) async {
-  final l10n = context.l10n;
-  final sure = await showDialog<bool>(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: Text(l10n.blockMemberTitle(author.name)),
-      content: Text(l10n.blockMemberBody),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: Text(l10n.cancel),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(true),
-          child: Text(l10n.block),
-        ),
-      ],
-    ),
-  );
-  if (sure != true || !context.mounted) return false;
-  final store = context.read<DiscussionsStore>();
-  final messenger = ScaffoldMessenger.of(context);
-  try {
-    await store.block(author);
-    _say(messenger, l10n.memberBlocked(author.name));
-    return true;
-  } catch (_) {
-    _say(messenger, l10n.blockFailed);
-    return false;
-  }
-}
+/// Asks to block [author], and does (for the whole app, see
+/// [blockMemberAfterAsking]). True when they were blocked.
+Future<bool> blockDiscussionAuthor(BuildContext context, SocialUser author) =>
+    blockMemberAfterAsking(context, author);
 
 /// Asks to delete the member's own thread ([postId] null) or reply, and does.
 /// True when it was deleted.

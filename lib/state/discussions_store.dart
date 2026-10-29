@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:checkpoint/models/discussion.dart';
 import 'package:checkpoint/models/game_reviews.dart' show ReportReason;
-import 'package:checkpoint/models/social_user.dart';
 import 'package:checkpoint/services/checkpoint_repository.dart';
 import 'package:checkpoint/services/discussion_api_service.dart';
 import 'package:checkpoint/state/account_scoped_store.dart';
@@ -561,26 +560,16 @@ class DiscussionsStore extends AccountScopedStore {
     notifyIfAlive();
   }
 
-  /// Blocks [member]: their threads and replies go off everything held, and the
-  /// server leaves them out from now on. Throws when it could not be sent.
-  Future<void> block(SocialUser member) async {
-    await _repository.blockDiscussionMember(member.id);
-    _takeOut(author: member.id);
+  /// Takes the blocked member [memberId]'s threads and replies off everything
+  /// held; the server leaves them out from now on.
+  void forgetMember(String memberId) {
+    _takeOut(author: memberId);
     _boardsAt = null;
-    if (_blockedStatus == LoadStatus.ready) {
-      _blocked = [member, ..._blocked.where((m) => m.id != member.id)];
-    }
-    notifyIfAlive();
   }
 
-  /// Unblocks [memberId]: what the server left out comes back, so everything held
-  /// is asked for again when it is next opened. Throws when it could not be sent.
-  Future<void> unblock(String memberId) async {
-    await _repository.unblockDiscussionMember(memberId);
-    _blocked = [
-      for (final m in _blocked)
-        if (m.id != memberId) m,
-    ];
+  /// A member was unblocked: what the server left out comes back, so everything
+  /// held is asked for again when it is next opened.
+  void refreshAfterUnblock() {
     _boardsAt = null;
     for (final scope in _lists.keys.toList()) {
       _lists[scope] = _lists[scope]!._copy(loadedAt: () => null);
@@ -622,37 +611,6 @@ class DiscussionsStore extends AccountScopedStore {
     notifyIfAlive();
   }
 
-  // ---- Blocked members ----
-
-  LoadStatus _blockedStatus = LoadStatus.idle;
-  List<SocialUser> _blocked = const [];
-
-  LoadStatus get blockedStatus => _blockedStatus;
-  List<SocialUser> get blocked => _blocked;
-
-  /// Fetches the members the signed-in one blocked.
-  Future<void> loadBlocked() async {
-    if (accountId == null) return;
-    final epoch = this.epoch;
-    if (_blockedStatus != LoadStatus.ready) {
-      _blockedStatus = LoadStatus.loading;
-      notifyIfAlive();
-    }
-    try {
-      final members = await _repository.fetchBlockedDiscussionMembers();
-      if (isStale(epoch)) return;
-      _blocked = members;
-      _blockedStatus = LoadStatus.ready;
-    } catch (e, st) {
-      debugPrint('Loading the blocked members failed: $e\n$st');
-      if (isStale(epoch)) return;
-      if (_blockedStatus != LoadStatus.ready) {
-        _blockedStatus = LoadStatus.failed;
-      }
-    }
-    notifyIfAlive();
-  }
-
   // ---- The chat rules ----
 
   String get _rulesKey => 'chat_rules_accepted_${accountId ?? ''}';
@@ -681,7 +639,5 @@ class DiscussionsStore extends AccountScopedStore {
     _loadingLists.clear();
     _views.clear();
     _loadingViews.clear();
-    _blockedStatus = LoadStatus.idle;
-    _blocked = const [];
   }
 }

@@ -6,7 +6,7 @@ import 'package:checkpoint/app/nav_tab.dart';
 import 'package:checkpoint/app/sign_in_panel.dart';
 import 'package:checkpoint/l10n/l10n.dart';
 import 'package:checkpoint/models/discussion.dart';
-import 'package:checkpoint/screens/discussions/blocked_members_screen.dart';
+import 'package:checkpoint/screens/settings/blocked_members_screen.dart';
 import 'package:checkpoint/screens/discussions/board_screen.dart';
 import 'package:checkpoint/screens/discussions/new_thread_screen.dart';
 import 'package:checkpoint/sheets/chat_rules_sheet.dart';

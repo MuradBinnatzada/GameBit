@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:checkpoint/models/activity_entry.dart';
 import 'package:checkpoint/models/game.dart';
+import 'package:checkpoint/models/game_reviews.dart' show MemberReportSubject, ReportReason;
 import 'package:checkpoint/models/library_stats.dart';
 import 'package:checkpoint/models/milestone.dart';
 import 'package:checkpoint/models/public_profile.dart';
@@ -121,6 +122,22 @@ class PublicProfileStore extends AccountScopedStore {
   void resetForAccount() {
     _views.clear();
     _loading.clear();
+  }
+
+  /// Reports [userId]'s profile or photo as the signed-in member. Throws when the
+  /// report could not be sent.
+  Future<void> report(
+    String userId,
+    MemberReportSubject subject,
+    ReportReason reason,
+  ) => _repository.reportMember(userId: userId, subject: subject, reason: reason);
+
+  /// Forgets the blocked member [memberId]: their profile is not shown again
+  /// (the server leaves it out from now on).
+  void forgetMember(String memberId) {
+    _views.remove(memberId);
+    _loading.remove(memberId);
+    notifyIfAlive();
   }
 
   /// What is known about [userId]'s profile; "loading" until [load] has an answer.

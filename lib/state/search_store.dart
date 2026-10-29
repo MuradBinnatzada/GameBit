@@ -429,6 +429,15 @@ class SearchStore extends ChangeNotifier {
 
   List<SocialUser> get userResults => _userResults;
 
+  /// Takes the blocked member [memberId] off the member results.
+  void forgetMember(String memberId) {
+    _userResults = List.unmodifiable([
+      for (final u in _userResults)
+        if (u.id != memberId) u,
+    ]);
+    notifyListeners();
+  }
+
   /// The Users tab has not loaded anything for the signed-in account yet (first
   /// visit, or the account changed). The tab calls [findUsers] when it sees this.
   bool get userSearchStale => _userSearchStale;

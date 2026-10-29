@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:checkpoint/screens/game_detail/game_detail_screen.dart';
 import 'package:checkpoint/state/app_stores.dart';
+import 'package:checkpoint/state/library_store.dart';
 import 'package:checkpoint/state/store_scope.dart';
 import 'package:checkpoint/theme/app_theme.dart';
 

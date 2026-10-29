@@ -159,6 +159,40 @@ void main() {
     expect(stores.auth.isLoggedIn, isFalse);
   });
 
+  testWidgets('a new password must be at least 8 characters, a sign-in is not held to it', (
+    tester,
+  ) async {
+    await openGate(tester);
+
+    await tap(tester, find.text('Create account'));
+    await fill(tester, {
+      'Display name': 'Ada',
+      'Email': 'ada@example.com',
+      'Password': 'short',
+    });
+    await tap(tester, button('Create account'));
+    expect(find.text('Use at least 8 characters.'), findsOneWidget);
+    expect(authService.emailCalls, isEmpty);
+
+    // An older account may have a shorter password: signing in sends it.
+    await tap(tester, find.text('Sign in')); // the segment: this is the Create account form
+    await tap(tester, button('Sign in'));
+    await settle(tester);
+    expect(find.text('Use at least 8 characters.'), findsNothing);
+    expect(authService.emailCalls, ['signIn:ada@example.com:short']);
+  });
+
+  testWidgets('it says that continuing means agreeing to the terms and the privacy policy', (
+    tester,
+  ) async {
+    await openGate(tester);
+
+    final sentence = find.textContaining('you agree to the', findRichText: true);
+    expect(sentence, findsOneWidget);
+    expect(find.textContaining('Terms of Use', findRichText: true), findsOneWidget);
+    expect(find.textContaining('Privacy Policy', findRichText: true), findsOneWidget);
+  });
+
   testWidgets('a wrong password says so and keeps the overlay', (tester) async {
     authService.emailError = const AuthApiException(
       'Invalid login credentials',
@@ -279,7 +313,7 @@ void main() {
     await fill(tester, {
       'Display name': 'Ada',
       'Email': 'ada@example.com',
-      'Password': '123',
+      'Password': 'letmein1',
     });
     await tap(tester, button('Create account'));
 

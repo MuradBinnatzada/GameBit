@@ -3,8 +3,10 @@ import 'package:flutter/foundation.dart';
 import 'package:checkpoint/l10n/l10n.dart';
 import 'package:checkpoint/models/game.dart';
 import 'package:checkpoint/models/game_list.dart';
+import 'package:checkpoint/models/game_reviews.dart' show MemberReportSubject, ReportReason;
 import 'package:checkpoint/services/checkpoint_repository.dart';
 import 'package:checkpoint/services/connection_failure.dart';
+import 'package:checkpoint/services/content_refusal.dart';
 import 'package:checkpoint/state/account_scoped_store.dart';
 import 'package:checkpoint/state/auth_store.dart';
 import 'package:checkpoint/state/load_status.dart';
@@ -193,6 +195,16 @@ class ListsStore extends AccountScopedStore {
     );
   }
 
+  /// Reports the public list [listId] of [ownerId] as the signed-in member.
+  /// Throws when the report could not be sent.
+  Future<void> reportList(String ownerId, String listId, ReportReason reason) =>
+      _repository.reportMember(
+        userId: ownerId,
+        subject: MemberReportSubject.list,
+        reason: reason,
+        listId: listId,
+      );
+
   Future<void> delete(String listId) async {
     final before = _lists;
     if (_own(listId) == null) return;
@@ -268,6 +280,8 @@ class ListsStore extends AccountScopedStore {
   void _failed(Object e) => _setNotice(
     isConnectionFailure(e)
         ? L10n.current.listsNeedConnection
+        : isContentRefusal(e)
+        ? L10n.current.contentRefused
         : L10n.current.listSaveFailed,
   );
 

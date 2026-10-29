@@ -18,6 +18,8 @@
 //                          UNAUTHENTICATED     (401)  no valid user session
 //                          MFA_REQUIRED        (403)  two-factor is on and this session
 //                                                     has not entered its code
+//                          SUSPENDED           (403)  a moderator suspended the member
+//                                                     (_shared/standing.ts)
 //                          RATE_LIMITED        (429)  too many posts; `retry_after`.
 //                                                     5 threads an hour, 20 replies in
 //                                                     10 minutes (_shared/rate_limit.ts)
@@ -38,15 +40,17 @@
 // Secrets: none to set. (SUPABASE_URL, SUPABASE_ANON_KEY and
 // SUPABASE_SERVICE_ROLE_KEY are injected automatically.)
 
-import { createClient, type SupabaseClient } from 'jsr:@supabase/supabase-js@2'
+import { createClient, type SupabaseClient } from '../_shared/supabase.ts'
 import { withCors } from '../_shared/cors.ts'
 import { isRefusal, parseDiscussionRequest, refuseContent } from '../_shared/discussions.ts'
 import { secondFactorMissing } from '../_shared/mfa.ts'
 import { RATE_LIMITS, rateLimitWait } from '../_shared/rate_limit.ts'
+import { isSuspended } from '../_shared/standing.ts'
 
 type ErrorCode =
   | 'UNAUTHENTICATED'
   | 'MFA_REQUIRED'
+  | 'SUSPENDED'
   | 'RATE_LIMITED'
   | 'BAD_REQUEST'
   | 'CONTENT_NOT_ALLOWED'
@@ -212,6 +216,9 @@ Deno.serve(withCors(async (req: Request) => {
     if (isRefusal(request)) throw new HttpError(STATUS[request.code] ?? 400, request.code, request.message)
 
     const admin = serviceClient()
+    if (await isSuspended(admin, userId)) {
+      throw new HttpError(403, 'SUSPENDED', 'This account is suspended')
+    }
     const limit = request.mode === 'thread' ? RATE_LIMITS.discussionThread : RATE_LIMITS.discussionPost
     const wait = await rateLimitWait(admin, userId, limit)
     if (wait > 0) throw new HttpError(429, 'RATE_LIMITED', 'Too many posts, try again shortly', wait)

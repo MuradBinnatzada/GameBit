@@ -51,6 +51,13 @@ class PublicLibraryStore extends AccountScopedStore {
     _loading.clear();
   }
 
+  /// Forgets the blocked member [memberId]'s library.
+  void forgetMember(String memberId) {
+    _views.remove(memberId);
+    _loading.remove(memberId);
+    notifyIfAlive();
+  }
+
   PublicLibraryView viewOf(String userId) =>
       _views.peek(userId) ?? const PublicLibraryView();
 

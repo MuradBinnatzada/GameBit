@@ -11,6 +11,7 @@ import 'package:checkpoint/models/milestone.dart';
 import 'package:checkpoint/models/user_profile.dart';
 import 'package:checkpoint/services/checkpoint_repository.dart';
 import 'package:checkpoint/services/connection_failure.dart';
+import 'package:checkpoint/services/content_refusal.dart';
 import 'package:checkpoint/services/connectivity_service.dart';
 import 'package:checkpoint/services/delete_account_failure.dart';
 import 'package:checkpoint/services/local_cache.dart';
@@ -424,6 +425,15 @@ class ProfileStore extends ChangeNotifier {
   }
 
   // ---- Following ----
+
+  /// A follow between the signed-in member and the blocked member [memberId] is
+  /// gone: the server ends it when a block is made.
+  void forgetFollow(String memberId) {
+    if (!_followingIds.contains(memberId)) return;
+    _followingIds = {..._followingIds}..remove(memberId);
+    _pending.follows.remove(memberId);
+    notifyListeners();
+  }
 
   bool isFollowing(String userId) => _followingIds.contains(userId);
   int get followersCount => _followersCount;
@@ -864,6 +874,8 @@ class ProfileStore extends ChangeNotifier {
           _setNotice(
             isConnectionFailure(e)
                 ? queuedNotice
+                : isContentRefusal(e)
+                ? L10n.current.contentRefused
                 : L10n.current.connectedAccountsSaveFailed,
           );
         }
@@ -1117,6 +1129,7 @@ class ProfileStore extends ChangeNotifier {
     } on PostgrestException catch (e, st) {
       debugPrint('Profile update failed: $e\n$st');
       if (e.code == '23505') return L10n.current.usernameTaken;
+      if (isContentRefusal(e)) return L10n.current.contentRefused;
       return L10n.current.profileSaveFailed;
     } catch (e, st) {
       debugPrint('Profile update failed: $e\n$st');

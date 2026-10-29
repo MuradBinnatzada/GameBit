@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:checkpoint/app/app_config.dart';
 import 'package:checkpoint/l10n/l10n.dart';
 import 'package:checkpoint/services/mfa_recovery_failure.dart';
 import 'package:checkpoint/services/session_storage.dart';
@@ -512,6 +513,8 @@ class AuthService {
         // "Secure password change" is on and this session is over a day old.
         'reauthentication_needed' => l10n.authReauthenticationNeeded,
         'email_not_confirmed' => l10n.authEmailNotConfirmed,
+        // A moderator suspended the account (moderation.suspend_member).
+        'user_banned' => l10n.accountSuspended(AppConfig.contactEmail),
         'email_address_invalid' => l10n.authEmailInvalid,
         'over_email_send_rate_limit' => l10n.authTooManyEmails,
         'over_request_rate_limit' => l10n.authTooManyAttempts,

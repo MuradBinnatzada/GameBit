@@ -5,8 +5,8 @@
     "display": "standalone",
     "background_color": "#121212",
     "theme_color": "#121212",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "description": "Track the games you play: build a library, log your hours, rate games and follow other players.",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

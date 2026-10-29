@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:checkpoint/l10n/l10n.dart';
 import 'package:checkpoint/models/game_reviews.dart';
+import 'package:checkpoint/sheets/member_actions.dart';
 import 'package:checkpoint/sheets/report_review_sheet.dart';
 import 'package:checkpoint/sheets/review_sheet.dart';
 import 'package:checkpoint/state/auth_store.dart';
@@ -14,7 +15,7 @@ import 'package:checkpoint/widgets/milestone_badge.dart';
 import 'package:checkpoint/widgets/profile_avatar.dart';
 import 'package:checkpoint/widgets/star_rating.dart';
 
-enum _ReviewAction { edit, report }
+enum _ReviewAction { edit, report, block }
 
 /// One member's review of the game [gameId]: their photo (in their frame, opening
 /// their profile), their name, how they rated it and how far they got, when they
@@ -124,6 +125,8 @@ class ReviewCard extends StatelessWidget {
             isOwn: isOwn,
             onEdit: () => showReviewSheet(context, gameId),
             onReport: () => reportReview(context, gameId, review),
+            blockLabel: l10n.blockMember(member.name),
+            onBlock: () => blockMemberAfterAsking(context, member),
           ),
         ),
       ],
@@ -168,11 +171,15 @@ class _Menu extends StatelessWidget {
     required this.isOwn,
     required this.onEdit,
     required this.onReport,
+    required this.blockLabel,
+    required this.onBlock,
   });
 
   final bool isOwn;
   final VoidCallback onEdit;
   final VoidCallback onReport;
+  final String blockLabel;
+  final VoidCallback onBlock;
 
   @override
   Widget build(BuildContext context) {
@@ -187,6 +194,7 @@ class _Menu extends StatelessWidget {
         onSelected: (action) => switch (action) {
           _ReviewAction.edit => onEdit(),
           _ReviewAction.report => onReport(),
+          _ReviewAction.block => onBlock(),
         },
         itemBuilder: (_) => [
           if (isOwn)
@@ -200,7 +208,7 @@ class _Menu extends StatelessWidget {
                 ],
               ),
             )
-          else
+          else ...[
             PopupMenuItem(
               value: _ReviewAction.report,
               child: Row(
@@ -211,6 +219,17 @@ class _Menu extends StatelessWidget {
                 ],
               ),
             ),
+            PopupMenuItem(
+              value: _ReviewAction.block,
+              child: Row(
+                children: [
+                  const Icon(Icons.person_off_outlined, size: 18),
+                  const SizedBox(width: 10),
+                  Flexible(child: Text(blockLabel)),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );

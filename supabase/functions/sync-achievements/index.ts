@@ -59,8 +59,7 @@
  * the `achievements` column if it is missing) and
  * 20261016120000_unify_game_ids_on_igdb_id.sql (`games.steam_app_id`).
  */
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.4"
+import { createClient, type SupabaseClient } from "../_shared/supabase.ts"
 import { type BackoffOptions, fetchWithBackoff, parseRetryAfter } from '../_shared/backoff.ts'
 import { withCors } from '../_shared/cors.ts'
 import { secondFactorMissing } from '../_shared/mfa.ts'
@@ -548,7 +547,7 @@ function errorResponse(error: unknown): Response {
   return json({ error: 'Something went wrong on our side. Try again later.', code: 'INTERNAL' }, 500)
 }
 
-serve(withCors(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')

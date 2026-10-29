@@ -95,8 +95,7 @@
  * cover colours and icon are computed in the app, not stored, so nothing is
  * written for them.
  */
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.4"
+import { createClient, type SupabaseClient } from "../_shared/supabase.ts"
 import { type BackoffOptions, fetchWithBackoff, parseRetryAfter } from '../_shared/backoff.ts'
 import { steamGamePlatformsToDb } from '../_shared/platforms.ts'
 import {
@@ -1922,7 +1921,7 @@ function errorResponse(error: unknown): Response {
   return json({ error: 'Something went wrong on our side. Try again later.', code: 'INTERNAL' }, 500)
 }
 
-serve(withCors(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')

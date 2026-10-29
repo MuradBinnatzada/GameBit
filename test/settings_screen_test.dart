@@ -13,6 +13,7 @@ import 'package:checkpoint/screens/profile/edit_profile_screen.dart';
 import 'package:checkpoint/screens/settings/privacy_section.dart';
 import 'package:checkpoint/screens/settings/settings_screen.dart';
 import 'package:checkpoint/state/app_stores.dart';
+import 'package:checkpoint/state/library_store.dart';
 import 'package:checkpoint/state/load_status.dart';
 import 'package:checkpoint/state/store_scope.dart';
 import 'package:checkpoint/theme/app_theme.dart';
@@ -686,6 +687,24 @@ void main() {
 
       expect(achievementsSwitch(tester).value, isTrue);
       expect(repo.showSteamAchievements, isTrue);
+    });
+
+    testWidgets('lists the blocked members, and opens the policy, the terms and a way to write to us', (
+      tester,
+    ) async {
+      repo.blockedMembers['b'] = testMember('b', name: 'Bob');
+      await open(tester, size: const Size(400, 2600), section: SettingsSection.privacy);
+
+      expect(find.text('Terms of Use'), findsOneWidget);
+      expect(find.text('Privacy Policy'), findsOneWidget);
+      expect(find.text('Contact us'), findsOneWidget);
+      // There is nowhere to send crash reports in a build without a DSN, so no switch.
+      expect(find.text('Send crash reports'), findsNothing);
+
+      await tester.tap(find.byIcon(Icons.person_off_outlined).first);
+      await tester.pumpAndSettle();
+      expect(find.text('Bob'), findsOneWidget);
+      expect(find.text('Unblock'), findsOneWidget);
     });
 
     testWidgets('shows the saved choice', (tester) async {

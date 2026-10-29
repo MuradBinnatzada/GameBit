@@ -2,10 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'package:checkpoint/app/app_config.dart';
 import 'package:checkpoint/l10n/l10n.dart';
+import 'package:checkpoint/screens/settings/blocked_members_screen.dart';
+import 'package:checkpoint/services/crash_reporting.dart';
 import 'package:checkpoint/state/profile_store.dart';
 import 'package:checkpoint/state/store_scope.dart';
 import 'package:checkpoint/theme/palette.dart';
+import 'package:checkpoint/widgets/legal_links.dart';
 import 'package:checkpoint/widgets/panel.dart';
 
 /// What other members can see of the account, and what never leaves it, under
@@ -24,6 +28,16 @@ class PrivacySection extends StatelessWidget {
         Panel(
           title: l10n.yourProfile,
           child: _ShowAchievementsSwitch(),
+        ),
+        SizedBox(height: 14),
+        Panel(
+          title: l10n.blockedMembers,
+          child: _LinkRow(
+            icon: Icons.person_off_outlined,
+            title: l10n.blockedMembers,
+            subtitle: l10n.blockedMembersSubtitle,
+            onTap: () => openBlockedMembers(context),
+          ),
         ),
         SizedBox(height: 14),
         Panel(
@@ -86,6 +100,34 @@ class PrivacySection extends StatelessWidget {
             ],
           ),
         ),
+        if (CrashReporting.configured) ...[
+          SizedBox(height: 14),
+          Panel(title: l10n.diagnosticsTitle, child: _CrashReportsSwitch()),
+        ],
+        SizedBox(height: 14),
+        Panel(
+          title: l10n.legalTitle,
+          child: Column(
+            children: [
+              _LinkRow(
+                icon: Icons.description_outlined,
+                title: l10n.termsOfUse,
+                onTap: () => openLegalLink(AppConfig.termsUri),
+              ),
+              _LinkRow(
+                icon: Icons.privacy_tip_outlined,
+                title: l10n.privacyPolicy,
+                onTap: () => openLegalLink(AppConfig.privacyUri),
+              ),
+              _LinkRow(
+                icon: Icons.mail_outline_rounded,
+                title: l10n.contactUs,
+                subtitle: l10n.contactUsSubtitle,
+                onTap: () => openLegalLink(AppConfig.contactUri),
+              ),
+            ],
+          ),
+        ),
         Padding(
           padding: EdgeInsets.fromLTRB(4, 12, 4, 0),
           child: Text(
@@ -141,6 +183,67 @@ class _ShowAchievementsSwitch extends StatelessWidget {
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(error)));
+  }
+}
+
+/// "Send crash reports": whether this device reports a crash. Shown only in
+/// builds that have somewhere to send them.
+class _CrashReportsSwitch extends StatelessWidget {
+  const _CrashReportsSwitch();
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      type: MaterialType.transparency,
+      child: ValueListenableBuilder<bool>(
+        valueListenable: CrashReporting.enabledListenable,
+        builder: (context, enabled, _) => SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          secondary: Icon(Icons.bug_report_outlined, color: context.palette.accent),
+          title: Text(
+            context.l10n.crashReportsTitle,
+            style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700),
+          ),
+          subtitle: Text(
+            context.l10n.crashReportsSubtitle,
+            style: TextStyle(color: context.palette.muted, fontSize: 12.5, height: 1.35),
+          ),
+          value: enabled,
+          onChanged: (value) => unawaited(CrashReporting.setEnabled(value)),
+        ),
+      ),
+    );
+  }
+}
+
+/// A row that opens something: a screen, a page of the site, a mail.
+class _LinkRow extends StatelessWidget {
+  const _LinkRow({required this.icon, required this.title, this.subtitle, required this.onTap});
+
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    return Material(
+      type: MaterialType.transparency,
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: Icon(icon, color: palette.accent),
+        title: Text(
+          title,
+          style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700),
+        ),
+        subtitle: subtitle == null
+            ? null
+            : Text(subtitle!, style: TextStyle(color: palette.muted, fontSize: 12.5, height: 1.35)),
+        trailing: Icon(Icons.chevron_right_rounded, color: palette.muted),
+        onTap: onTap,
+      ),
+    );
   }
 }
 

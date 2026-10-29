@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:checkpoint/l10n/l10n.dart';
 import 'package:checkpoint/models/social_user.dart';
-import 'package:checkpoint/state/discussions_store.dart';
+import 'package:checkpoint/state/blocks_store.dart';
 import 'package:checkpoint/state/load_status.dart';
 import 'package:checkpoint/state/store_scope.dart';
 import 'package:checkpoint/theme/palette.dart';
@@ -12,14 +12,14 @@ import 'package:checkpoint/widgets/empty_state.dart';
 import 'package:checkpoint/widgets/milestone_badge.dart';
 import 'package:checkpoint/widgets/profile_avatar.dart';
 
-/// Opens the members the signed-in one blocked in the discussions.
+/// Opens the members the signed-in one blocked.
 void openBlockedMembers(BuildContext context) => unawaited(
   Navigator.of(
     context,
   ).push(MaterialPageRoute<void>(builder: (_) => const BlockedMembersScreen())),
 );
 
-/// The members blocked in the discussions, each with a button to unblock them.
+/// The members the signed-in one blocked, each with a button to unblock them.
 class BlockedMembersScreen extends StatefulWidget {
   const BlockedMembersScreen({super.key});
 
@@ -32,12 +32,12 @@ class _BlockedMembersScreenState extends State<BlockedMembersScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(context.read<DiscussionsStore>().loadBlocked());
+      if (mounted) unawaited(context.read<BlocksStore>().load());
     });
   }
 
   Future<void> _unblock(SocialUser member) async {
-    final store = context.read<DiscussionsStore>();
+    final store = context.read<BlocksStore>();
     final messenger = ScaffoldMessenger.of(context);
     final l10n = context.l10n;
     try {
@@ -57,19 +57,19 @@ class _BlockedMembersScreenState extends State<BlockedMembersScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final store = context.watch<DiscussionsStore>();
+    final store = context.watch<BlocksStore>();
     final members = store.blocked;
 
     Widget body;
-    if (store.blockedStatus == LoadStatus.failed) {
+    if (store.status == LoadStatus.failed) {
       body = EmptyState(
         icon: Icons.cloud_off_rounded,
         title: l10n.blockedLoadFailed,
         message: l10n.checkConnection,
         actionLabel: l10n.tryAgain,
-        onAction: () => unawaited(store.loadBlocked()),
+        onAction: () => unawaited(store.load()),
       );
-    } else if (store.blockedStatus != LoadStatus.ready) {
+    } else if (store.status != LoadStatus.ready) {
       body = const Center(child: CircularProgressIndicator());
     } else if (members.isEmpty) {
       body = EmptyState(

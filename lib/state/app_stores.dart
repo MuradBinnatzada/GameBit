@@ -13,6 +13,7 @@ import 'package:checkpoint/services/news_api_service.dart';
 import 'package:checkpoint/services/local_cache.dart';
 import 'package:checkpoint/services/steam_link_service.dart';
 import 'package:checkpoint/state/auth_store.dart';
+import 'package:checkpoint/state/blocks_store.dart';
 import 'package:checkpoint/state/browse_store.dart';
 import 'package:checkpoint/state/community_times_store.dart';
 import 'package:checkpoint/state/discussions_store.dart';
@@ -91,6 +92,11 @@ import 'package:checkpoint/state/social_graph_store.dart';
 ///  * [DiscussionsStore] holds the boards, threads and replies the Discussions tab
 ///    shows, and posts through the `discussions` Edge Function. It follows
 ///    [AuthStore] only; nothing depends on it;
+///  * [BlocksStore] holds the members the signed-in one blocked. It follows
+///    [AuthStore] only; when a member is blocked it tells (a callback set here)
+///    the stores that hold what was fetched about members, so they drop that
+///    member ([ProfileStore] forgets the follow), and unblocking makes
+///    [DiscussionsStore] ask again;
 ///  * [NewsStore] holds the News screen's articles (the outlets' latest, and
 ///    Steam's news for the member's games). It follows [AuthStore] only; the
 ///    screen reads [LibraryStore] to say which games to ask about;
@@ -135,6 +141,11 @@ class AppStores {
     news = NewsStore(auth: auth, api: newsApi);
     discussions = DiscussionsStore(repository: repository, auth: auth, api: discussionApi);
     companies = CompanyStore(apiService: apiService);
+    blocks = BlocksStore(
+      repository: repository,
+      auth: auth,
+      onChanged: _blockChanged,
+    );
     // Hands what it loads to the library (exact platforms and genres), which is
     // built below: the callback only runs later, by when `library` exists.
     gameDetails = GameDetailsStore(
@@ -217,6 +228,7 @@ class AppStores {
   late final BrowseStore browse;
   late final NewsStore news;
   late final DiscussionsStore discussions;
+  late final BlocksStore blocks;
   late final CompanyStore companies;
   late final GameDetailsStore gameDetails;
   late final PublicProfileStore publicProfiles;
@@ -235,6 +247,24 @@ class AppStores {
   late final ReleaseAlertsStore releaseAlerts;
   late final MilestonesStore milestones;
 
+  /// A member was blocked or unblocked: what the stores hold about members is
+  /// brought in line with what the server now leaves out.
+  void _blockChanged(String memberId, {required bool blocked}) {
+    if (!blocked) {
+      discussions.refreshAfterUnblock();
+      return;
+    }
+    discussions.forgetMember(memberId);
+    gameReviews.forgetMember(memberId);
+    gameFriends.forgetMember(memberId);
+    friendsFeed.forgetMember(memberId);
+    socialGraph.forgetMember(memberId);
+    search.forgetMember(memberId);
+    publicProfiles.forgetMember(memberId);
+    publicLibraries.forgetMember(memberId);
+    profile.forgetFollow(memberId);
+  }
+
   /// Starts following the session and loads each store. [AuthStore] goes first:
   /// the others read the signed-in user from it.
   Future<void> initialize() async {
@@ -246,6 +276,7 @@ class AppStores {
     gameReviews.initialize();
     news.initialize();
     discussions.initialize();
+    blocks.initialize();
     friendsFeed.initialize();
     communityTimes.initialize();
     publicAchievements.initialize();
@@ -271,6 +302,7 @@ class AppStores {
     friendsFeed.dispose();
     communityTimes.dispose();
     gameReviews.dispose();
+    blocks.dispose();
     discussions.dispose();
     news.dispose();
     gameFriends.dispose();

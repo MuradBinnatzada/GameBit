@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:checkpoint/state/app_stores.dart';
 import 'package:checkpoint/state/auth_store.dart';
+import 'package:checkpoint/state/blocks_store.dart';
 import 'package:checkpoint/state/browse_store.dart';
 import 'package:checkpoint/state/community_times_store.dart';
 import 'package:checkpoint/state/discussions_store.dart';
@@ -111,7 +112,10 @@ class AppStoresScope extends StatelessWidget {
                                                     store: stores.news,
                                                     child: StoreScope<DiscussionsStore>(
                                                       store: stores.discussions,
-                                                      child: child,
+                                                      child: StoreScope<BlocksStore>(
+                                                        store: stores.blocks,
+                                                        child: child,
+                                                      ),
                                                     ),
                                                   ),
                                                 ),

@@ -107,6 +107,21 @@ class GameReviewsStore extends AccountScopedStore {
     _stale.clear();
   }
 
+  /// Takes the blocked member [memberId]'s reviews off every game held.
+  void forgetMember(String memberId) {
+    List<GameReview> without(List<GameReview> reviews) => [
+      for (final r in reviews)
+        if (r.member.id != memberId) r,
+    ];
+    _views.updateAll(
+      (_, view) => view._copy(
+        preview: without(view.preview),
+        reviews: without(view.reviews),
+      ),
+    );
+    notifyIfAlive();
+  }
+
   GameReviewsView viewOf(String gameId) =>
       _views.peek(gameId) ?? const GameReviewsView();
 

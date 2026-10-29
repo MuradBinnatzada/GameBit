@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:checkpoint/l10n/l10n.dart';
@@ -5,6 +7,7 @@ import 'package:checkpoint/models/game.dart';
 import 'package:checkpoint/models/game_list.dart';
 import 'package:checkpoint/models/share_link.dart';
 import 'package:checkpoint/sheets/list_sheets.dart';
+import 'package:checkpoint/sheets/member_actions.dart';
 import 'package:checkpoint/state/lists_store.dart';
 import 'package:checkpoint/state/store_scope.dart';
 import 'package:checkpoint/theme/palette.dart';
@@ -70,6 +73,19 @@ class _ListScreenState extends State<ListScreen> {
         actions: [
           // A private list's link would open for its owner only.
           if (list.isPublic) ShareLinkButton(target: ListLink(list.id)),
+          if (!own && list.isPublic)
+            IconButton(
+              tooltip: context.l10n.reportList,
+              onPressed: () => unawaited(
+                reportMemberList(
+                  context,
+                  ownerId: list.ownerId,
+                  listId: list.id,
+                  title: list.title,
+                ),
+              ),
+              icon: const Icon(Icons.flag_outlined),
+            ),
           if (own) ...[
             IconButton(
               tooltip: context.l10n.editList,

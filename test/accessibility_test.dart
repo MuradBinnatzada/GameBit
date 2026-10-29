@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:checkpoint/models/discussion.dart';
-import 'package:checkpoint/screens/discussions/blocked_members_screen.dart';
+import 'package:checkpoint/screens/settings/blocked_members_screen.dart';
 import 'package:checkpoint/screens/discussions/board_screen.dart';
 import 'package:checkpoint/screens/discussions/new_thread_screen.dart';
 import 'package:checkpoint/screens/discussions/thread_screen.dart';
