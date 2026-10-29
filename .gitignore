@@ -70,3 +70,6 @@ GoogleService-Info.plist
 
 # Netlify CLI
 .netlify/
+
+# Sentry native crash cache, created when a desktop build runs
+.sentry-native/
