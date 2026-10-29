@@ -32,6 +32,15 @@ abstract final class CrashReporting {
   /// Settings switch has anything to switch.
   static bool get configured => AppConfig.sentryDsn.isNotEmpty;
 
+  /// Whether Settings > Privacy offers "Send a test crash": only in a build that
+  /// reports to Sentry and is marked `--dart-define=CHECKPOINT_ENV=staging`, so
+  /// no member of a store build ever sees it.
+  static bool get testCrashAvailable => canTestCrash(AppConfig.sentryDsn, AppConfig.environment);
+
+  @visibleForTesting
+  static bool canTestCrash(String dsn, String environment) =>
+      dsn.isNotEmpty && environment == 'staging';
+
   /// Reads the device's choice. Never throws: a choice that can't be read is
   /// the default, on.
   static Future<void> load() async {

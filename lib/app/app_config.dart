@@ -46,7 +46,7 @@ abstract final class AppConfig {
   /// Settings open pages below it.
   static const docsUrl = String.fromEnvironment(
     'CHECKPOINT_DOCS_URL',
-    defaultValue: 'https://muradbinnatzada.github.io/Gamebit',
+    defaultValue: 'https://muradbinnatzada.github.io/Checkpoint',
   );
 
   /// Where questions, data requests and reports about members go. Also in

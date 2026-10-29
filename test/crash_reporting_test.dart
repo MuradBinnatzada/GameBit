@@ -16,6 +16,14 @@ void main() {
     await CrashReporting.setEnabled(true);
   });
 
+  group('canTestCrash', () {
+    test('only a staging build that reports to Sentry has it', () {
+      expect(CrashReporting.canTestCrash('https://k@o1.ingest.sentry.io/1', 'staging'), isTrue);
+      expect(CrashReporting.canTestCrash('https://k@o1.ingest.sentry.io/1', 'production'), isFalse);
+      expect(CrashReporting.canTestCrash('', 'staging'), isFalse);
+    });
+  });
+
   group('redact', () {
     test('leaves out email addresses, tokens and ids', () {
       const token =

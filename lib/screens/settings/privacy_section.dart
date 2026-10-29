@@ -102,7 +102,15 @@ class PrivacySection extends StatelessWidget {
         ),
         if (CrashReporting.configured) ...[
           SizedBox(height: 14),
-          Panel(title: l10n.diagnosticsTitle, child: _CrashReportsSwitch()),
+          Panel(
+            title: l10n.diagnosticsTitle,
+            child: Column(
+              children: [
+                _CrashReportsSwitch(),
+                if (CrashReporting.testCrashAvailable) _TestCrashRow(),
+              ],
+            ),
+          ),
         ],
         SizedBox(height: 14),
         Panel(
@@ -212,6 +220,22 @@ class _CrashReportsSwitch extends StatelessWidget {
           onChanged: (value) => unawaited(CrashReporting.setEnabled(value)),
         ),
       ),
+    );
+  }
+}
+
+/// Staging builds only ([CrashReporting.testCrashAvailable]): throws from a tap,
+/// the way a real bug in a button would, to check that Sentry receives it.
+class _TestCrashRow extends StatelessWidget {
+  const _TestCrashRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return _LinkRow(
+      icon: Icons.warning_amber_rounded,
+      title: 'Send a test crash',
+      subtitle: 'Staging builds only. Look for it in Sentry under Issues.',
+      onTap: () => throw StateError('Test crash from Settings > Privacy'),
     );
   }
 }
