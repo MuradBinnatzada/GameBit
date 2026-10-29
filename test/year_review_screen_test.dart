@@ -8,6 +8,7 @@ import 'package:checkpoint/screens/stats/year_review_screen.dart';
 import 'package:checkpoint/state/app_stores.dart';
 import 'package:checkpoint/state/store_scope.dart';
 import 'package:checkpoint/theme/app_theme.dart';
+import 'package:checkpoint/widgets/year_review_card.dart';
 
 import 'support/fakes.dart';
 
@@ -92,11 +93,23 @@ void main() {
     expect(find.text('Chart'), findsOneWidget);
   });
 
+  testWidgets('Share opens the cards of the year', (tester) async {
+    await open(tester);
+
+    await tester.tap(find.byTooltip('Share your year'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Share your year'), findsOneWidget);
+    expect(find.text('Share'), findsOneWidget);
+    expect(find.byType(YearOverviewCard), findsOneWidget);
+  });
+
   testWidgets('a year with nothing logged says so', (tester) async {
     repo.logs = [];
     repo.library = [testGame('g1', cover: false, status: null)];
     await open(tester);
 
     expect(find.text('Nothing logged in $year'), findsOneWidget);
+    expect(find.byTooltip('Share your year'), findsNothing);
   });
 }

@@ -1402,6 +1402,17 @@
   "nothingToShow": "Nothing to show",
   "igdbNoGamesForList": "IGDB returned no games for this list.",
   "yearInReview": "Year in Review",
+  "shareYear": "Share your year",
+  "share": "Share",
+  "yearShareText": "My {year} in games, on Gamebit",
+  "@yearShareText": {
+    "description": "Goes with the picture of the Year in Review when it is shared.",
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
   "yearNothingLogged": "Nothing logged in {year}",
   "@yearNothingLogged": {
     "placeholders": {

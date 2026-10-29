@@ -54,6 +54,9 @@ String fmtMonthDay(DateTime d) => DateFormat.MMMd().format(d);
 /// "Oct": the month of [d], short.
 String fmtMonthShort(DateTime d) => DateFormat.MMM().format(d);
 
+/// "J" (0) to "D" (11): the month's initial, in the app's language.
+String fmtMonthLetter(int month) => DateFormat.LLL().format(DateTime(2000, month + 1)).substring(0, 1).toUpperCase();
+
 String initials(String name) => name
     .trim()
     .split(RegExp(r'\s+'))

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:checkpoint/l10n/l10n.dart';
 import 'package:checkpoint/models/filter_options.dart';
 import 'package:checkpoint/models/year_review.dart';
+import 'package:checkpoint/sheets/year_review_share_sheet.dart';
 import 'package:checkpoint/state/library_store.dart';
 import 'package:checkpoint/state/store_scope.dart';
 import 'package:checkpoint/theme/palette.dart';
@@ -19,9 +20,6 @@ import 'package:checkpoint/widgets/stat_tile.dart';
 /// "January" (0) to "December" (11), in the app's language, as a heading.
 String _monthName(int month) =>
     toBeginningOfSentenceCase(DateFormat.LLLL().format(DateTime(2000, month + 1)));
-
-/// "J" (0) to "D" (11): the month's initial, in the app's language.
-String _monthLetter(int month) => DateFormat.LLL().format(DateTime(2000, month + 1)).substring(0, 1).toUpperCase();
 
 /// The member's year of play, worked out on the device from their sessions and
 /// library ([YearReview]): totals, hours by month, the most played games,
@@ -55,7 +53,17 @@ class _YearReviewScreenState extends State<YearReviewScreen> {
     );
 
     return Scaffold(
-      appBar: AppBar(title: Text(context.l10n.yearInReview)),
+      appBar: AppBar(
+        title: Text(context.l10n.yearInReview),
+        actions: [
+          if (!review.isEmpty)
+            IconButton(
+              tooltip: context.l10n.shareYear,
+              icon: const Icon(Icons.ios_share_rounded),
+              onPressed: () => showYearReviewShareSheet(context, review),
+            ),
+        ],
+      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 640),
@@ -255,7 +263,7 @@ class _MonthsPanelState extends State<_MonthsPanel> {
               Row(children: [
                 for (var m = 0; m < 12; m++)
                   Expanded(
-                    child: Text(_monthLetter(m), textAlign: TextAlign.center, style: TextStyle(color: context.palette.muted, fontSize: 11)),
+                    child: Text(fmtMonthLetter(m), textAlign: TextAlign.center, style: TextStyle(color: context.palette.muted, fontSize: 11)),
                   ),
               ]),
             ]),
