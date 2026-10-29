@@ -16,7 +16,7 @@ import 'package:checkpoint/widgets/panel.dart';
 import 'package:checkpoint/widgets/profile_link_rows.dart';
 
 /// Your library and play sessions as CSV files (spreadsheets open them), and a
-/// library file read back in: Checkpoint's own export, or another tracker's.
+/// library file read back in: Gamebit's own export, or another tracker's.
 class DataSection extends StatelessWidget {
   const DataSection({super.key, this.saveFile = _saveCsv, this.pickFile = _pickCsv});
 
@@ -121,13 +121,13 @@ class DataSection extends StatelessWidget {
               icon: Icons.collections_bookmark_rounded,
               label: context.l10n.exportLibrary,
               count: games,
-              onTap: () => _export(context, 'checkpoint-library-${_stamp()}.csv', libraryCsv(library.libraryGames)),
+              onTap: () => _export(context, 'gamebit-library-${_stamp()}.csv', libraryCsv(library.libraryGames)),
             ),
             ProfileLink(
               icon: Icons.timer_rounded,
               label: context.l10n.exportSessions,
               count: sessions,
-              onTap: () => _export(context, 'checkpoint-sessions-${_stamp()}.csv', sessionsCsv(library.sessions, library.maybeGame)),
+              onTap: () => _export(context, 'gamebit-sessions-${_stamp()}.csv', sessionsCsv(library.sessions, library.maybeGame)),
             ),
           ],
         ),

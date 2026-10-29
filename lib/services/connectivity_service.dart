@@ -1,7 +1,7 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 /// Whether the device has a network connection. It reports the interface, not
-/// that Checkpoint's server is reachable, so a "connected" answer is a reason to
+/// that Gamebit's server is reachable, so a "connected" answer is a reason to
 /// try again, not proof the next request will work.
 class ConnectivityService {
   ConnectivityService([Connectivity? connectivity])

@@ -245,7 +245,7 @@ void main() {
         AuthService.messageFor(
           AuthRetryableFetchException(message: 'Failed host lookup'),
         ),
-        "Can't reach Checkpoint. Check your connection and try again.",
+        "Can't reach Gamebit. Check your connection and try again.",
       );
     });
 

@@ -8,7 +8,7 @@
 PRODUCT_NAME = checkpoint
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.checkpoint.mobileapp
+PRODUCT_BUNDLE_IDENTIFIER = com.gamebit.mobileapp
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2026 Murad Binnatzada. All rights reserved.

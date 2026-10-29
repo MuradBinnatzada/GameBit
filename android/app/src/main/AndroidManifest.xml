@@ -6,7 +6,7 @@
          signing in. (Android 12+ reads dataExtractionRules, older versions
          allowBackup / fullBackupContent.) -->
     <application
-        android:label="Checkpoint"
+        android:label="Gamebit"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="false"

@@ -165,7 +165,7 @@ class _CompanyChip extends StatelessWidget {
 }
 
 /// The time to beat and similar games, under About on a game's screen. Asks
-/// IGDB for the game's details (see [GameDetailsStore]) and Checkpoint for its
+/// IGDB for the game's details (see [GameDetailsStore]) and Gamebit for its
 /// members' times (see [CommunityTimesStore]) when the screen opens. The time to
 /// beat is the members' times and a link to HowLongToBeat, so it is there at
 /// once; the similar games join it when IGDB answers, and are left out when it
@@ -258,15 +258,15 @@ String fmtDuration(Duration d) => d.inMinutes < 60
 Uri howLongToBeatSearch(String title) =>
     Uri.parse('https://howlongtobeat.com/?q=${Uri.encodeComponent(title)}');
 
-/// The time to beat in each [CompletionCategory]: Checkpoint's median where
+/// The time to beat in each [CompletionCategory]: Gamebit's median where
 /// enough members reported a time ([CommunityTimes.shown]), labelled with how
-/// many did ("37 Checkpoint players"), and a link to HowLongToBeat for the rest.
+/// many did ("37 Gamebit players"), and a link to HowLongToBeat for the rest.
 class _TimeToBeatPanel extends StatelessWidget {
   const _TimeToBeatPanel({required this.title, required this.community});
 
   final String title;
 
-  /// What Checkpoint's members reported.
+  /// What Gamebit's members reported.
   final CommunityTimes community;
 
   @override

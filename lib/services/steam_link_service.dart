@@ -49,7 +49,7 @@ class SteamLinkException implements Exception {
 /// Opens "Sign in through Steam" (the `steam-link` Edge Function) the way each
 /// platform can come back from it. Where the server has a confirm page
 /// (web/steam-link.html, its STEAM_LINK_CONFIRM_URL), every platform passes
-/// through it after Steam: the member checks which Checkpoint account the
+/// through it after Steam: the member checks which Gamebit account the
 /// Steam account is linked to, and the result comes back once they confirm or
 /// cancel there:
 ///  * web: the page itself goes to Steam, and Steam's return sends it back to
@@ -191,7 +191,7 @@ class SteamLinkFlow {
     final l10n = L10n.current;
     final title = ok ? l10n.steamLinkPageConnected : l10n.steamLinkPageNotConnected;
     final body = ok ? l10n.authCallbackSignedInBody : l10n.steamLinkPageNotConnectedBody;
-    return '<!doctype html><html lang="${L10n.languageCode}"><head><meta charset="utf-8"><title>Checkpoint</title>'
+    return '<!doctype html><html lang="${L10n.languageCode}"><head><meta charset="utf-8"><title>Gamebit</title>'
         '<style>body{font-family:sans-serif;background:#0b0d12;color:#eee;display:grid;'
         'place-items:center;height:100vh;margin:0;text-align:center}</style></head>'
         '<body><div><h2>$title</h2><p>$body</p></div></body></html>';

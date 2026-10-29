@@ -82,7 +82,7 @@ void main() {
 
     testWidgets('a game the catalog does not have says so', (tester) async {
       await start(tester, const GameLink(5));
-      expect(find.text("That game isn't in Checkpoint yet."), findsOneWidget);
+      expect(find.text("That game isn't in Gamebit yet."), findsOneWidget);
     });
 
     testWidgets('a profile link asks to sign in first, then opens the profile', (tester) async {

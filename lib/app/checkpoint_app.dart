@@ -104,7 +104,7 @@ class _AppearanceAppState extends State<AppearanceApp> with WidgetsBindingObserv
           final highContrast = appearance.highContrast;
           return MaterialApp(
             navigatorKey: widget.navigatorKey,
-            title: 'Checkpoint',
+            title: 'Gamebit',
             debugShowCheckedModeBanner: false,
             locale: appearance.locale,
             supportedLocales: L10n.supportedLocales,

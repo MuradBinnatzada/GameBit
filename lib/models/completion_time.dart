@@ -72,10 +72,10 @@ class CompletionTime {
 }
 
 /// Fewer times than this in a category and a game's screen shows IGDB's figure
-/// for it instead of Checkpoint's.
+/// for it instead of Gamebit's.
 const minCommunityTimes = 5;
 
-/// What Checkpoint's members reported for one category of a game: the median
+/// What Gamebit's members reported for one category of a game: the median
 /// and how many times it is the median of (`completion_time_stats`, which
 /// leaves out times under 10 minutes and over 1 000 hours).
 @immutable

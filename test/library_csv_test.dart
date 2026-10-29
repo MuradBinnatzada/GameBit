@@ -38,7 +38,7 @@ Game catalogGame(String title, int igdbId, {int year = 2020}) =>
 
 void main() {
   group('export', () {
-    test('the library is one game per line, A to Z, with what Checkpoint keeps of it', () {
+    test('the library is one game per line, A to Z, with what Gamebit keeps of it', () {
       final rows = parseCsv(libraryCsv([
         testGame('b', title: 'zelda', cover: false, igdbId: 2).copyWith(review: 'Great, "really"'),
         testGame('a', title: 'Celeste', cover: false, igdbId: 1, status: GameStatus.completed).withCompletedAt(DateTime(2026, 3, 2)),
@@ -189,7 +189,7 @@ void main() {
     await tester.tap(find.text('Export library'));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
     await tester.pumpAndSettle();
-    expect(savedName, startsWith('checkpoint-library-'));
+    expect(savedName, startsWith('gamebit-library-'));
     expect(String.fromCharCodes(savedBytes!.skip(3)), startsWith('title,igdb_id,status'));
     expect(find.text('Exported $savedName'), findsOneWidget);
 

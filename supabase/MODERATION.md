@@ -1,4 +1,4 @@
-# Moderating Checkpoint
+# Moderating Gamebit
 
 Members see each other's profiles, libraries, reviews, lists and discussion posts, so someone has to deal
 with what they report. The App Store (guideline 1.2) expects four things, and this is where each lives:

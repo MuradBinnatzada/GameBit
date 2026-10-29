@@ -3,7 +3,7 @@
   Confirm page of "Connect Steam" (supabase/functions/steam-link). After someone
   signs in through Steam, steam-link sends the browser here with a token after
   `#`: the sign-in's state and the Steam ID Steam confirmed, signed. Nothing is
-  saved yet. The page shows which Checkpoint member the link was started from,
+  saved yet. The page shows which Gamebit member the link was started from,
   and saves only when the person who signed in to Steam presses Link Steam.
   That stops someone from starting a link and getting another person to finish
   it, which would put that person's Steam account on their profile.
@@ -20,7 +20,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex">
-  <title>Connect Steam - Checkpoint</title>
+  <title>Connect Steam - Gamebit</title>
   <style>
     :root {
       color-scheme: dark;
@@ -79,7 +79,7 @@
 </head>
 <body>
   <main>
-    <p class="brand">Checkpoint</p>
+    <p class="brand">Gamebit</p>
     <h1 id="title">Connect Steam</h1>
     <p id="message" role="status">Checking your Steam sign-in…</p>
     <div id="ask" hidden>
@@ -88,7 +88,7 @@
         <span id="name" class="muted"></span>
       </div>
       <p class="warning">
-        Only continue if this is your own Checkpoint account. If someone sent you a
+        Only continue if this is your own Gamebit account. If someone sent you a
         link to sign in through Steam, cancel: linking gives that account your
         Steam library, playtime and achievements.
       </p>
@@ -107,12 +107,12 @@
       const FUNCTION_URL = 'https://nmbarqhvcjgyuwreebda.supabase.co/functions/v1/steam-link';
 
       const MESSAGES = {
-        STEAM_LINK_EXPIRED: 'This Steam sign-in took too long. Go back to Checkpoint and connect Steam again.',
-        BAD_REQUEST: 'This Steam sign-in link is not valid. Go back to Checkpoint and connect Steam again.',
+        STEAM_LINK_EXPIRED: 'This Steam sign-in took too long. Go back to Gamebit and connect Steam again.',
+        BAD_REQUEST: 'This Steam sign-in link is not valid. Go back to Gamebit and connect Steam again.',
         NOT_CONFIGURED: 'Connecting Steam is not available right now.',
-        INTERNAL: 'Something went wrong on our side. Go back to Checkpoint and try again later.',
+        INTERNAL: 'Something went wrong on our side. Go back to Gamebit and try again later.',
       };
-      const OFFLINE = "Couldn't reach Checkpoint. Check your connection and try again.";
+      const OFFLINE = "Couldn't reach Gamebit. Check your connection and try again.";
 
       const $ = (id) => document.getElementById(id);
       const fragment = new URLSearchParams(location.hash.slice(1));
@@ -196,11 +196,11 @@
 
         const { handle, name } = answer.data;
         cancelTo = answer.data.cancel_to || null;
-        $('handle').textContent = handle ? `@${handle}` : name || 'A Checkpoint account with no name';
+        $('handle').textContent = handle ? `@${handle}` : name || 'A Gamebit account with no name';
         $('name').textContent = handle && name ? name : '';
         show({
-          title: 'Link Steam to this Checkpoint account?',
-          message: 'You signed in to Steam. Checkpoint will save that Steam account on this profile:',
+          title: 'Link Steam to this Gamebit account?',
+          message: 'You signed in to Steam. Gamebit will save that Steam account on this profile:',
           ask: true,
           buttons: ['link', 'cancel'],
         });
@@ -213,7 +213,7 @@
         const answer = await ask({ confirm: true });
         if (answer === null) {
           show({
-            title: 'Link Steam to this Checkpoint account?',
+            title: 'Link Steam to this Gamebit account?',
             message: OFFLINE,
             ask: true,
             buttons: ['link', 'cancel'],
@@ -223,7 +223,7 @@
         if (!answer.ok) return failed(answer.data);
         show({
           title: 'Steam connected',
-          message: 'You can close this page and go back to Checkpoint.',
+          message: 'You can close this page and go back to Gamebit.',
         });
         goBack(answer.data.return_to);
       }
@@ -231,7 +231,7 @@
       function cancel() {
         show({
           title: 'Steam was not connected',
-          message: 'You can close this page and go back to Checkpoint.',
+          message: 'You can close this page and go back to Gamebit.',
         });
         goBack(cancelTo);
       }

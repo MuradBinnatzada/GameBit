@@ -65,7 +65,7 @@ void main() {
 
     expect(find.text('SAVED ALPHA'), findsWidgets);
     expect(find.text('SAVED BRAVO'), findsWidgets);
-    expect(find.textContaining('Can\'t reach Checkpoint'), findsOneWidget);
+    expect(find.textContaining('Can\'t reach Gamebit'), findsOneWidget);
     expect(find.text('Could not load library'), findsNothing);
   });
 
@@ -78,7 +78,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('Could not load library'), findsWidgets);
-    expect(find.textContaining('Can\'t reach Checkpoint'), findsNothing);
+    expect(find.textContaining('Can\'t reach Gamebit'), findsNothing);
   });
 
   testWidgets('the banner goes away once Retry reaches the server', (tester) async {
@@ -90,7 +90,7 @@ void main() {
     await start(tester);
     stores.nav.select(NavTab.library);
     await tester.pump(const Duration(milliseconds: 400));
-    expect(find.textContaining('Can\'t reach Checkpoint'), findsOneWidget);
+    expect(find.textContaining('Can\'t reach Gamebit'), findsOneWidget);
 
     repo.offline = false;
     repo.library = [testGame('a', title: 'Fresh Alpha', cover: false)];
@@ -98,7 +98,7 @@ void main() {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.textContaining('Can\'t reach Checkpoint'), findsNothing);
+    expect(find.textContaining('Can\'t reach Gamebit'), findsNothing);
     expect(find.text('FRESH ALPHA'), findsWidgets);
   });
 
@@ -126,14 +126,14 @@ void main() {
     await start(tester);
     stores.nav.select(NavTab.library);
     await tester.pump(const Duration(milliseconds: 400));
-    expect(find.textContaining('Can\'t reach Checkpoint'), findsNothing);
+    expect(find.textContaining('Can\'t reach Gamebit'), findsNothing);
 
     repo.writesDown = true;
     await tester.runAsync(() => stores.profile.toggleFollow('x'));
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.textContaining('1 change is waiting to sync'), findsOneWidget);
-    expect(find.textContaining('Can\'t reach Checkpoint'), findsNothing);
+    expect(find.textContaining('Can\'t reach Gamebit'), findsNothing);
   });
 
   testWidgets('Settings shows "Sync Delayed" when Steam is rate limiting, and the next sync clears it', (tester) async {

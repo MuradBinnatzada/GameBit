@@ -625,7 +625,7 @@ void main() {
     });
 
     testWidgets(
-      'the time to beat is Checkpoint\'s where $minCommunityTimes members reported one, and IGDB\'s are not shown',
+      'the time to beat is Gamebit\'s where $minCommunityTimes members reported one, and IGDB\'s are not shown',
       (tester) async {
         repo.communityTimes['g1'] = CommunityTimes({
           CompletionCategory.mainStory: _times(24, 37),
@@ -635,7 +635,7 @@ void main() {
 
         expect(find.text('Time to beat'), findsOneWidget);
         expect(find.text('24 h'), findsOneWidget);
-        expect(find.text('37 Checkpoint players'), findsOneWidget);
+        expect(find.text('37 Gamebit players'), findsOneWidget);
         expect(find.text('40 h'), findsNothing); // too few of ours
         // None of IGDB's: the main story, main + extras and completionist runs.
         for (final igdb in ['25 h', '50 h', '150 h']) {
@@ -646,7 +646,7 @@ void main() {
         expect(find.textContaining('on IGDB'), findsNothing);
         expect(
           find.text(
-            'Checkpoint players: the median of the times reported here.',
+            'Gamebit players: the median of the times reported here.',
           ),
           findsOneWidget,
         );
@@ -654,7 +654,7 @@ void main() {
       },
     );
 
-    testWidgets('Checkpoint\'s times show without IGDB\'s', (tester) async {
+    testWidgets('Gamebit\'s times show without IGDB\'s', (tester) async {
       repo.communityTimes['g1'] = CommunityTimes({
         for (final c in CompletionCategory.values)
           c: _times(10, minCommunityTimes),
@@ -664,7 +664,7 @@ void main() {
       expect(find.text('Time to beat'), findsOneWidget);
       expect(find.text('10 h'), findsNWidgets(3));
       expect(
-        find.text('$minCommunityTimes Checkpoint players'),
+        find.text('$minCommunityTimes Gamebit players'),
         findsNWidgets(3),
       );
       expect(find.text('IGDB'), findsNothing);

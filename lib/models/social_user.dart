@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:checkpoint/models/milestone.dart';
 
-/// Another Checkpoint member, as listed in search and in follower lists.
+/// Another Gamebit member, as listed in search and in follower lists.
 /// [gamesLogged], [followers] and [startsFollowed] are read for the Users tab
 /// only; the other lists leave them at 0 / false.
 @immutable

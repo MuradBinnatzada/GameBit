@@ -21,7 +21,7 @@ class CommunityTimesView {
   final CommunityTimes times;
 }
 
-/// How long Checkpoint's members took to finish a game, for the time to beat on
+/// How long Gamebit's members took to finish a game, for the time to beat on
 /// the game's screen. Asked for each time that screen opens, and again when the
 /// member's own time for the game reached the server (`LibraryStore` says so),
 /// showing the copy held meanwhile. Kept in memory only (the 30 games opened

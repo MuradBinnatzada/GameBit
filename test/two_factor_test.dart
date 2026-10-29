@@ -462,7 +462,7 @@ void main() {
 
         expect(find.byType(SecondFactorScreen), findsOneWidget);
         expect(
-          find.textContaining('for Checkpoint (ada@example.com)'),
+          find.textContaining('for Gamebit (ada@example.com)'),
           findsOneWidget,
         );
         // The shell is still there underneath, hidden.

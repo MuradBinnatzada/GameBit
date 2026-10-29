@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "Murad Binnatzada" "\0"
-            VALUE "FileDescription", "Checkpoint" "\0"
+            VALUE "FileDescription", "Gamebit" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "checkpoint" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 Murad Binnatzada. All rights reserved." "\0"
             VALUE "OriginalFilename", "checkpoint.exe" "\0"
-            VALUE "ProductName", "Checkpoint" "\0"
+            VALUE "ProductName", "Gamebit" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

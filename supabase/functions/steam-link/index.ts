@@ -133,17 +133,17 @@ class HttpError extends Error {
 
 /** What the plain-text page says for each outcome (no `return_to`). */
 const PAGE_TEXT: Record<ErrorCode | 'ok', string> = {
-  ok: 'Steam is connected to Checkpoint. You can close this page and go back to the app.',
-  STEAM_LINK_CANCELLED: 'Steam sign-in was cancelled, so Steam is not connected. Go back to Checkpoint to try again.',
-  STEAM_LINK_EXPIRED: 'This Steam sign-in took too long. Go back to Checkpoint and connect Steam again.',
-  STEAM_LINK_INVALID: 'Steam could not confirm this sign-in. Go back to Checkpoint and connect Steam again.',
-  STEAM_UNAVAILABLE: 'Steam is not responding right now. Go back to Checkpoint and try again later.',
+  ok: 'Steam is connected to Gamebit. You can close this page and go back to the app.',
+  STEAM_LINK_CANCELLED: 'Steam sign-in was cancelled, so Steam is not connected. Go back to Gamebit to try again.',
+  STEAM_LINK_EXPIRED: 'This Steam sign-in took too long. Go back to Gamebit and connect Steam again.',
+  STEAM_LINK_INVALID: 'Steam could not confirm this sign-in. Go back to Gamebit and connect Steam again.',
+  STEAM_UNAVAILABLE: 'Steam is not responding right now. Go back to Gamebit and try again later.',
   RATE_LIMITED: 'Too many Steam sign-ins from your account. Try again later.',
-  UNAUTHENTICATED: 'Sign in to Checkpoint, then connect Steam again.',
-  MFA_REQUIRED: 'Enter your two-factor code in Checkpoint, then connect Steam again.',
-  BAD_REQUEST: 'This Steam sign-in link is not valid. Go back to Checkpoint and connect Steam again.',
+  UNAUTHENTICATED: 'Sign in to Gamebit, then connect Steam again.',
+  MFA_REQUIRED: 'Enter your two-factor code in Gamebit, then connect Steam again.',
+  BAD_REQUEST: 'This Steam sign-in link is not valid. Go back to Gamebit and connect Steam again.',
   NOT_CONFIGURED: 'Connecting Steam is not available right now.',
-  INTERNAL: 'Something went wrong on our side. Go back to Checkpoint and try again later.',
+  INTERNAL: 'Something went wrong on our side. Go back to Gamebit and try again later.',
 }
 
 type Config = {
@@ -416,7 +416,7 @@ const json = (body: unknown, status = 200, headers: Record<string, string> = {})
   })
 
 const page = (outcome: ErrorCode | 'ok', status: number) =>
-  new Response(`Checkpoint\n\n${PAGE_TEXT[outcome]}\n`, {
+  new Response(`Gamebit\n\n${PAGE_TEXT[outcome]}\n`, {
     status,
     headers: { 'Content-Type': 'text/plain; charset=utf-8', ...NO_TRACE },
   })

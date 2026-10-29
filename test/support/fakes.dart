@@ -1372,7 +1372,7 @@ class FakeAuthService implements AuthService {
   static const setup = TotpSetup(
     factorId: 'factor-1',
     secret: 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP',
-    uri: 'otpauth://totp/Checkpoint:u1%40example.com?secret=JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP&issuer=Checkpoint',
+    uri: 'otpauth://totp/Gamebit:u1%40example.com?secret=JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP&issuer=Gamebit',
   );
 
   static const _wrongCode = AuthException('Invalid TOTP code entered', code: 'mfa_verification_failed');

@@ -66,7 +66,7 @@ const FETCH_TIMEOUT_MS = 8_000
 /** A feed bigger than this is not read (the biggest of the outlets is under 1 MB). */
 const MAX_FEED_BYTES = 3_000_000
 const STEAM_NEWS_URL = 'https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/'
-const USER_AGENT = 'Mozilla/5.0 (compatible; CheckpointNews/1.0; +https://github.com/)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; GamebitNews/1.0; +https://github.com/)'
 
 type ErrorCode =
   | 'UNAUTHENTICATED'

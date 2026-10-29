@@ -85,7 +85,7 @@ class ImportRow {
   /// The most rows one import takes.
   static const maxRows = 500;
 
-  /// Reads a library file: Checkpoint's own export, or a spreadsheet with a
+  /// Reads a library file: Gamebit's own export, or a spreadsheet with a
   /// header row naming at least the title. The rows that can't be used are
   /// listed in [ImportFile.skipped] with why.
   static ImportFile parse(String text) {
@@ -160,7 +160,7 @@ class ImportRow {
 
   static String _key(String header) => header.toLowerCase().replaceAll(RegExp('[^a-z0-9]'), '');
 
-  /// Checkpoint's own statuses, and the words other trackers use.
+  /// Gamebit's own statuses, and the words other trackers use.
   static GameStatus? _status(String text) => switch (_key(text)) {
     'playing' || 'inprogress' || 'currentlyplaying' || 'started' => GameStatus.playing,
     'toplay' || 'backlog' || 'backlogged' || 'owned' || 'unplayed' || 'shelved' => GameStatus.toPlay,

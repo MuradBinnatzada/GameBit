@@ -270,7 +270,7 @@ class AuthService {
     final l10n = L10n.current;
     final title = ok ? l10n.authCallbackSignedIn : l10n.authCallbackFailed;
     final body = ok ? l10n.authCallbackSignedInBody : l10n.authCallbackFailedBody;
-    return '<!doctype html><html lang="${L10n.languageCode}"><head><meta charset="utf-8"><title>Checkpoint</title>'
+    return '<!doctype html><html lang="${L10n.languageCode}"><head><meta charset="utf-8"><title>Gamebit</title>'
         '<style>body{font-family:sans-serif;background:#0b0d12;color:#eee;display:grid;'
         'place-items:center;height:100vh;margin:0;text-align:center}</style></head>'
         '<body><div><h2>$title</h2><p>$body</p></div></body></html>';
@@ -400,7 +400,7 @@ class AuthService {
   /// that is not verified yet, and returns what to show to set it up. Nothing
   /// changes for the account until [confirmTwoFactor] checks its first code.
   Future<TotpSetup> enrollTwoFactor() async {
-    final res = await _auth.mfa.enroll(factorType: FactorType.totp, issuer: 'Checkpoint');
+    final res = await _auth.mfa.enroll(factorType: FactorType.totp, issuer: 'Gamebit');
     final totp = res.totp;
     if (totp == null) throw const AuthException('Two-factor setup did not return a key.');
     return TotpSetup(factorId: res.id, secret: totp.secret, uri: totp.uri);
