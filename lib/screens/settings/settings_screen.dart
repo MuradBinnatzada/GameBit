@@ -4,6 +4,7 @@ import 'package:checkpoint/l10n/l10n.dart';
 import 'package:checkpoint/screens/settings/account_section.dart';
 import 'package:checkpoint/screens/settings/appearance_section.dart';
 import 'package:checkpoint/screens/settings/data_section.dart';
+import 'package:checkpoint/screens/settings/notifications_section.dart';
 import 'package:checkpoint/screens/settings/privacy_section.dart';
 import 'package:checkpoint/screens/settings/security_section.dart';
 import 'package:checkpoint/theme/palette.dart';
@@ -14,6 +15,7 @@ enum SettingsSection {
   account(Icons.person_rounded),
   security(Icons.shield_rounded),
   privacy(Icons.lock_rounded),
+  notifications(Icons.notifications_rounded),
   appearance(Icons.palette_rounded),
   data(Icons.import_export_rounded);
 
@@ -24,6 +26,7 @@ enum SettingsSection {
     account => L10n.current.settingsAccount,
     security => L10n.current.settingsSecurity,
     privacy => L10n.current.settingsPrivacy,
+    notifications => L10n.current.settingsNotifications,
     appearance => L10n.current.settingsAppearance,
     data => L10n.current.settingsData,
   };
@@ -65,6 +68,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       SettingsSection.security => const SecuritySection(),
       SettingsSection.privacy => const PrivacySection(),
+      SettingsSection.notifications => const NotificationsSection(),
       SettingsSection.appearance => const AppearanceSection(),
       SettingsSection.data => const DataSection(),
     };

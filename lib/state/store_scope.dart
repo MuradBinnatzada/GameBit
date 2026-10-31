@@ -25,6 +25,7 @@ import 'package:checkpoint/state/public_achievements_store.dart';
 import 'package:checkpoint/state/public_library_store.dart';
 import 'package:checkpoint/state/public_profile_store.dart';
 import 'package:checkpoint/state/release_alerts_store.dart';
+import 'package:checkpoint/state/release_reminders_store.dart';
 import 'package:checkpoint/state/search_store.dart';
 import 'package:checkpoint/state/shared_link_store.dart';
 import 'package:checkpoint/state/social_graph_store.dart';
@@ -117,7 +118,10 @@ class AppStoresScope extends StatelessWidget {
                                                         store: stores.blocks,
                                                         child: StoreScope<OnboardingStore>(
                                                           store: stores.onboarding,
-                                                          child: child,
+                                                          child: StoreScope<ReleaseRemindersStore>(
+                                                            store: stores.releaseReminders,
+                                                            child: child,
+                                                          ),
                                                         ),
                                                       ),
                                                     ),

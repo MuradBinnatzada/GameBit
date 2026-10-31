@@ -17,6 +17,13 @@ class SharedLinkStore extends ChangeNotifier {
   /// What is still to be opened.
   LinkTarget? get pending => _pending;
 
+  /// Something to open that didn't come with the app's address: a tapped
+  /// notification. The app shell opens it like a link.
+  void open(LinkTarget target) {
+    _pending = target;
+    notifyListeners();
+  }
+
   /// Done with [pending] (opened, or found to point at nothing).
   void clear() {
     if (_pending == null) return;

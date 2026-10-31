@@ -79,6 +79,7 @@ class _AppShellState extends State<AppShell> {
     _releases.addListener(_announceReleases);
     _links = context.read<SharedLinkStore>();
     _auth.addListener(_openLinkAfterFrame);
+    _links.addListener(_openLinkAfterFrame);
     _milestones = context.read<MilestonesStore>();
     _milestones.addListener(_announceMilestones);
     _onboarding = context.read<OnboardingStore>();
@@ -102,6 +103,7 @@ class _AppShellState extends State<AppShell> {
     _lists.removeListener(_showNotices);
     _releases.removeListener(_announceReleases);
     _auth.removeListener(_openLinkAfterFrame);
+    _links.removeListener(_openLinkAfterFrame);
     _milestones.removeListener(_announceMilestones);
     _onboarding.removeListener(_offerOnboardingAfterFrame);
     super.dispose();

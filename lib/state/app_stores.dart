@@ -11,6 +11,7 @@ import 'package:checkpoint/services/discussion_api_service.dart';
 import 'package:checkpoint/services/game_api_service.dart';
 import 'package:checkpoint/services/news_api_service.dart';
 import 'package:checkpoint/services/local_cache.dart';
+import 'package:checkpoint/services/release_notifier.dart';
 import 'package:checkpoint/services/steam_link_service.dart';
 import 'package:checkpoint/state/auth_store.dart';
 import 'package:checkpoint/state/blocks_store.dart';
@@ -36,6 +37,7 @@ import 'package:checkpoint/state/public_achievements_store.dart';
 import 'package:checkpoint/state/public_library_store.dart';
 import 'package:checkpoint/state/public_profile_store.dart';
 import 'package:checkpoint/state/release_alerts_store.dart';
+import 'package:checkpoint/state/release_reminders_store.dart';
 import 'package:checkpoint/state/search_store.dart';
 import 'package:checkpoint/state/shared_link_store.dart';
 import 'package:checkpoint/state/social_graph_store.dart';
@@ -82,6 +84,10 @@ import 'package:checkpoint/state/social_graph_store.dart';
 ///    lists through it (a game tapped on a list);
 ///  * [ReleaseAlertsStore] reads [LibraryStore]'s wishlist and follows
 ///    [AuthStore] for whose releases were announced;
+///  * [ReleaseRemindersStore] reads [LibraryStore]'s wishlist and follows
+///    [AuthStore] for whose reminders are on; it schedules them on the device
+///    through a [ReleaseNotifier], and a reminder tapped is opened through
+///    [SharedLinkStore] like a link;
 ///  * [OnboardingStore] reads [LibraryStore] (an empty library the server
 ///    answered) and follows [AuthStore] for whose first run was shown; the app
 ///    shell asks it whether to open the walk-through;
@@ -121,6 +127,7 @@ class AppStores {
     LinkTarget? initialLink,
     SteamLinkFlow? steamLink,
     String? steamLinkResult,
+    ReleaseNotifier? releaseNotifier,
   }) {
     final localCache = cache ?? LocalCache();
     links = SharedLinkStore(repository: repository, initial: initialLink);
@@ -205,6 +212,12 @@ class AppStores {
       ensureInCatalog: library.ensureInCatalog,
     );
     releaseAlerts = ReleaseAlertsStore(auth: auth, library: library);
+    releaseReminders = ReleaseRemindersStore(
+      auth: auth,
+      library: library,
+      notifier: releaseNotifier ?? LocalReleaseNotifier(),
+      onOpenGame: (igdbId) => links.open(GameLink(igdbId)),
+    );
     onboarding = OnboardingStore(auth: auth, library: library);
     milestones = MilestonesStore(
       repository: repository,
@@ -250,6 +263,7 @@ class AppStores {
   late final PlayTimerStore playTimer;
   late final ListsStore lists;
   late final ReleaseAlertsStore releaseAlerts;
+  late final ReleaseRemindersStore releaseReminders;
   late final OnboardingStore onboarding;
   late final MilestonesStore milestones;
 
@@ -296,12 +310,14 @@ class AppStores {
       playTimer.initialize(),
       releaseAlerts.initialize(),
       onboarding.initialize(),
+      releaseReminders.initialize(),
     ]);
   }
 
   void dispose() {
     milestones.dispose();
     links.dispose();
+    releaseReminders.dispose();
     onboarding.dispose();
     releaseAlerts.dispose();
     lists.dispose();

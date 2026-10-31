@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:checkpoint/app/nav_tab.dart';
@@ -18,6 +20,7 @@ import 'package:checkpoint/state/library_view_store.dart';
 import 'package:checkpoint/state/nav_store.dart';
 import 'package:checkpoint/state/profile_store.dart';
 import 'package:checkpoint/state/release_alerts_store.dart';
+import 'package:checkpoint/state/release_reminders_store.dart';
 import 'package:checkpoint/state/store_scope.dart';
 import 'package:checkpoint/theme/app_theme.dart';
 import 'package:checkpoint/theme/palette.dart';
@@ -291,17 +294,21 @@ class _CarouselSection extends StatelessWidget {
     required this.games,
     required this.caption,
     required this.icon,
+    this.actionLabel,
+    this.onAction,
   });
   final String title;
   final List<Game> games;
   final String? Function(Game) caption;
   final IconData icon;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      SectionHeader(title),
+      SectionHeader(title, actionLabel: actionLabel, onAction: onAction),
       _GameCarousel(games: games, caption: caption, icon: icon),
     ],
   );
@@ -317,17 +324,40 @@ class _ReleasesRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final alerts = context.watch<ReleaseAlertsStore>().alerts;
     if (alerts.isEmpty) return const SizedBox.shrink();
+    final reminders = context.watch<ReleaseRemindersStore>();
     final byId = {for (final a in alerts) a.game.id: a};
     return _CarouselSection(
       title: context.l10n.wishlistReleases,
       games: [for (final a in alerts) a.game],
       icon: Icons.notifications_active_rounded,
+      // Offered while there is a release to remind of and reminders are off.
+      actionLabel: reminders.isSupported && reminders.isSignedIn && !reminders.isEnabled && reminders.count > 0
+          ? context.l10n.remindMe
+          : null,
+      onAction: () => unawaited(_remind(context)),
       caption: (g) {
         final alert = byId[g.id]!;
         return '${releaseLabel(alert.daysAway)} · ${fmtMonthDay(g.releaseDate!)}';
       },
     );
   }
+}
+
+/// "Remind me": turns the release day reminders on, and says if the system
+/// refused.
+Future<void> _remind(BuildContext context) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final l10n = context.l10n;
+  final result = await context.read<ReleaseRemindersStore>().setEnabled(true);
+  final message = switch (result) {
+    RemindersResult.on => l10n.releaseRemindersOn,
+    RemindersResult.denied => l10n.releaseRemindersDenied,
+    _ => null,
+  };
+  if (message == null) return;
+  messenger
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(message)));
 }
 
 class _GameCarousel extends StatelessWidget {

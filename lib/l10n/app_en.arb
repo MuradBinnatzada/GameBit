@@ -1946,6 +1946,34 @@
   "settingsPrivacy": "Privacy",
   "settingsAppearance": "Appearance",
   "settingsData": "Your data",
+  "settingsNotifications": "Notifications",
+  "releaseRemindersTitle": "Release day reminders",
+  "releaseRemindersBody": "Get a notification on the day a game on your wishlist comes out. The reminders are set on this device from your wishlist, and nothing is sent to a server.",
+  "releaseRemindersCount": "{count, plural, =0{No upcoming releases on your wishlist yet} =1{1 reminder set} other{{count} reminders set}}",
+  "@releaseRemindersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "releaseRemindersDenied": "Notifications are turned off for Gamebit in your device settings. Turn them on there to get reminders.",
+  "openDeviceSettings": "Open device settings",
+  "releaseRemindersUnsupported": "Reminders are available in the Android and iOS apps.",
+  "releaseRemindersSignedOut": "Log in to set reminders for the games on your wishlist.",
+  "releaseRemindersOn": "Reminders are on",
+  "remindMe": "Remind me",
+  "releaseChannelName": "Release day",
+  "releaseChannelDescription": "A reminder on the day a game on your wishlist comes out.",
+  "releaseNotificationTitle": "{game} is out today",
+  "@releaseNotificationTitle": {
+    "placeholders": {
+      "game": {
+        "type": "String"
+      }
+    }
+  },
+  "releaseNotificationBody": "It's on your wishlist.",
   "settings": "Settings",
   "displayNameRequired": "Enter a display name",
   "usernameRequired": "Enter a username",

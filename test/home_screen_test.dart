@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
 import 'package:checkpoint/models/browse.dart';
 import 'package:checkpoint/models/friend_activity.dart';
+import 'package:checkpoint/models/game.dart';
 import 'package:checkpoint/models/results_page.dart';
 import 'package:checkpoint/screens/game_detail/game_detail_screen.dart';
 import 'package:checkpoint/screens/home/home_screen.dart';
@@ -41,7 +42,7 @@ void main() {
       ], hasMore: false);
   });
 
-  Future<void> start(WidgetTester tester, {User? user}) async {
+  Future<void> start(WidgetTester tester, {User? user, FakeReleaseNotifier? device}) async {
     // Tall enough to have the whole page built.
     tester.view.physicalSize = const Size(800, 3000);
     tester.view.devicePixelRatio = 1;
@@ -52,6 +53,7 @@ void main() {
       authService: authService,
       connectivity: FakeConnectivity(),
       apiService: browseApi,
+      releaseNotifier: device,
     );
     await tester.runAsync(stores.initialize);
     await tester.pumpWidget(
@@ -90,6 +92,53 @@ void main() {
       expectNoMadeUpFigures();
     },
   );
+
+  group('release day reminders', () {
+    FakeReleaseNotifier device = FakeReleaseNotifier();
+
+    setUp(() {
+      device = FakeReleaseNotifier();
+      repo.library = [
+        testGame('w', title: 'Soon Game', cover: false, status: GameStatus.wishlist)
+            .copyWith(releaseDate: DateTime.now().add(const Duration(days: 10))),
+      ];
+    });
+
+    testWidgets('Remind me on the releases row turns them on, and goes away', (tester) async {
+      await start(tester, user: testUser('u1'), device: device);
+      expect(find.text('Wishlist Releases'), findsOneWidget);
+
+      await tester.tap(find.text('Remind me'));
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Reminders are on'), findsOneWidget);
+      expect(find.text('Remind me'), findsNothing);
+      expect(device.scheduled, [
+        ['w'],
+      ]);
+    });
+
+    testWidgets('a refusal is said, and Remind me stays', (tester) async {
+      device.allow = false;
+      await start(tester, user: testUser('u1'), device: device);
+
+      await tester.tap(find.text('Remind me'));
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('turned off for Gamebit'), findsOneWidget);
+      expect(find.text('Remind me'), findsOneWidget);
+    });
+
+    testWidgets('is not offered where they cannot be shown', (tester) async {
+      device.isSupported = false;
+      await start(tester, user: testUser('u1'), device: device);
+
+      expect(find.text('Wishlist Releases'), findsOneWidget);
+      expect(find.text('Remind me'), findsNothing);
+    });
+  });
 
   testWidgets('a visitor sees the newest catalog games, as what they are', (
     tester,

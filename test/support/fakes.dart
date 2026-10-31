@@ -23,6 +23,7 @@ import 'package:checkpoint/models/library_stats.dart';
 import 'package:checkpoint/models/log_entry.dart';
 import 'package:checkpoint/models/milestone.dart';
 import 'package:checkpoint/models/public_profile.dart';
+import 'package:checkpoint/models/release_reminders.dart';
 import 'package:checkpoint/models/results_page.dart';
 import 'package:checkpoint/models/studio_filters.dart';
 import 'package:checkpoint/models/social_user.dart';
@@ -33,6 +34,7 @@ import 'package:checkpoint/services/discussion_failure.dart';
 import 'package:checkpoint/services/checkpoint_repository.dart';
 import 'package:checkpoint/services/connectivity_service.dart';
 import 'package:checkpoint/services/game_api_service.dart';
+import 'package:checkpoint/services/release_notifier.dart';
 import 'package:checkpoint/services/steam_link_service.dart';
 import 'package:checkpoint/state/company_store.dart';
 import 'package:checkpoint/state/onboarding_store.dart';
@@ -1859,3 +1861,49 @@ class FakeDiscussionApi extends DiscussionApiService {
   }
 }
 
+
+
+/// A device for the release day reminders: what it was asked to schedule, and
+/// whether it can show them and the member lets it.
+class FakeReleaseNotifier implements ReleaseNotifier {
+  @override
+  bool isSupported = true;
+
+  /// What the system's permission prompt is answered.
+  bool allow = true;
+
+  /// What it was asked, in order: `initialize`, `permission`, `cancelAll`, `settings`.
+  final calls = <String>[];
+
+  /// Every schedule it was given, the reminders' games' ids in each.
+  final scheduled = <List<String>>[];
+
+  /// The reminders as last scheduled.
+  List<ReleaseReminder> lastReminders = const [];
+
+  void Function(int igdbId)? open;
+
+  @override
+  Future<void> initialize({required void Function(int igdbId) onOpenGame}) async {
+    calls.add('initialize');
+    open = onOpenGame;
+  }
+
+  @override
+  Future<bool> requestPermission() async {
+    calls.add('permission');
+    return allow;
+  }
+
+  @override
+  Future<void> schedule(List<ReleaseReminder> reminders) async {
+    lastReminders = reminders;
+    scheduled.add([for (final r in reminders) r.game.id]);
+  }
+
+  @override
+  Future<void> cancelAll() async => calls.add('cancelAll');
+
+  @override
+  Future<void> openSystemSettings() async => calls.add('settings');
+}
