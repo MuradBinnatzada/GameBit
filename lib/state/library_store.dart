@@ -64,6 +64,9 @@ enum SyncStatus {
 /// Steam sync, edits kept for later): they share this class's state, so they are
 /// extensions of it in the same library. Import this file to call them.
 class LibraryStore extends ChangeNotifier {
+  /// How many games can be favorites: the Top 4 of a profile.
+  static const maxFavorites = 4;
+
   LibraryStore({
     required this._repository,
     required this._auth,
@@ -181,6 +184,11 @@ class LibraryStore extends ChangeNotifier {
 
   /// A refresh is running behind a library that is already on screen.
   bool get isRefreshing => _loading && _loaded;
+
+  /// The library on screen is what the server answered last: nothing is loading
+  /// and the last attempt didn't fail, so an empty library is really empty and
+  /// not a copy saved on this device that the server has moved on from.
+  bool get isSettled => _loaded && !_loading && !_offline;
 
   /// The last attempt to reach the server failed, so the library on screen is the
   /// copy saved on this device (or the last one fetched). Clears on the next

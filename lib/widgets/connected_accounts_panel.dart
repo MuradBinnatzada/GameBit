@@ -35,6 +35,7 @@ class ConnectedAccountsPanel extends StatelessWidget {
     required this.names,
     required this.editor,
     this.gameFooter,
+    this.groups = ServiceGroup.values,
   });
 
   /// Every connected service, Steam included.
@@ -47,11 +48,15 @@ class ConnectedAccountsPanel extends StatelessWidget {
   final AccountEditor editor;
   final Widget? gameFooter;
 
+  /// Which of the lists the box shows: both in Settings, only the game profiles
+  /// in the first-run walk-through.
+  final List<ServiceGroup> groups;
+
   @override
   Widget build(BuildContext context) {
-    final groups = <Widget>[];
-    for (final group in ServiceGroup.values) {
-      groups.add(
+    final lists = <Widget>[];
+    for (final group in groups) {
+      lists.add(
         _Group(
           label: group.label,
           footer: group == ServiceGroup.game ? gameFooter : null,
@@ -73,9 +78,9 @@ class ConnectedAccountsPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (var i = 0; i < groups.length; i++) ...[
+          for (var i = 0; i < lists.length; i++) ...[
             if (i > 0) const SizedBox(height: 18),
-            groups[i],
+            lists[i],
           ],
         ],
       ),

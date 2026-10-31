@@ -29,6 +29,7 @@ import 'package:checkpoint/state/lists_store.dart';
 import 'package:checkpoint/state/milestones_store.dart';
 import 'package:checkpoint/state/nav_store.dart';
 import 'package:checkpoint/state/news_store.dart';
+import 'package:checkpoint/state/onboarding_store.dart';
 import 'package:checkpoint/state/play_timer_store.dart';
 import 'package:checkpoint/state/profile_store.dart';
 import 'package:checkpoint/state/public_achievements_store.dart';
@@ -81,6 +82,9 @@ import 'package:checkpoint/state/social_graph_store.dart';
 ///    lists through it (a game tapped on a list);
 ///  * [ReleaseAlertsStore] reads [LibraryStore]'s wishlist and follows
 ///    [AuthStore] for whose releases were announced;
+///  * [OnboardingStore] reads [LibraryStore] (an empty library the server
+///    answered) and follows [AuthStore] for whose first run was shown; the app
+///    shell asks it whether to open the walk-through;
 ///  * [CommunityTimesStore] holds how long the members took to finish a game
 ///    (the medians, never one member's time). It follows [AuthStore] only;
 ///    [LibraryStore] tells it (a callback set here) when the member's own time
@@ -201,6 +205,7 @@ class AppStores {
       ensureInCatalog: library.ensureInCatalog,
     );
     releaseAlerts = ReleaseAlertsStore(auth: auth, library: library);
+    onboarding = OnboardingStore(auth: auth, library: library);
     milestones = MilestonesStore(
       repository: repository,
       auth: auth,
@@ -245,6 +250,7 @@ class AppStores {
   late final PlayTimerStore playTimer;
   late final ListsStore lists;
   late final ReleaseAlertsStore releaseAlerts;
+  late final OnboardingStore onboarding;
   late final MilestonesStore milestones;
 
   /// A member was blocked or unblocked: what the stores hold about members is
@@ -289,12 +295,14 @@ class AppStores {
       search.initialize(),
       playTimer.initialize(),
       releaseAlerts.initialize(),
+      onboarding.initialize(),
     ]);
   }
 
   void dispose() {
     milestones.dispose();
     links.dispose();
+    onboarding.dispose();
     releaseAlerts.dispose();
     lists.dispose();
     playTimer.dispose();

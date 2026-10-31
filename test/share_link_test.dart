@@ -43,7 +43,7 @@ void main() {
     late FakeAuthService authService;
 
     Future<AppStores> start(WidgetTester tester, LinkTarget link) async {
-      SharedPreferences.setMockInitialValues({});
+      SharedPreferences.setMockInitialValues(onboardingSeenPrefs);
       final stores = AppStores(
         repository: repo,
         authService: authService,

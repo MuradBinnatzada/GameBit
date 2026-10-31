@@ -1704,6 +1704,7 @@
     }
   },
   "importLookupNote": "Each game is looked up on IGDB by its title, a few a second.",
+  "importGrouveeNote": "Grouvee export recognized: shelves became statuses, and playtime and platforms were taken from it.",
   "importGamesButton": "{count, plural, =1{Import 1 game} other{Import {count} games}}",
   "@importGamesButton": {
     "placeholders": {
@@ -1747,6 +1748,48 @@
   },
   "stop": "Stop",
   "done": "Done",
+  "skip": "Skip",
+  "next": "Next",
+  "back": "Back",
+  "onboardingWelcome": "Welcome to Gamebit",
+  "onboardingStepOf": "Step {step} of {total}",
+  "@onboardingStepOf": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "onboardingConnectTitle": "Where do you play?",
+  "onboardingConnectBody": "Connect your game accounts and they show on your profile. Steam can also bring in your whole library.",
+  "onboardingImportTitle": "Bring your games in",
+  "onboardingImportBody": "Sync your Steam library, or import a CSV file exported from another tracker. You can do both, and more later in Settings.",
+  "onboardingLibraryCount": "{count, plural, =0{No games in your library yet} =1{1 game in your library} other{{count} games in your library}}",
+  "@onboardingLibraryCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "onboardingFavoritesTitle": "Pick your top 4",
+  "onboardingFavoritesBody": "Your favorites come first on your profile. Tap up to four of your most played games.",
+  "onboardingFavoritesEmpty": "There are no games to pick from yet. Search for a game, add it, and mark your favorites on its page.",
+  "onboardingPicked": "{count} of {max} picked",
+  "@onboardingPicked": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "onboardingFindGames": "Find games",
   "importIgdbUnreachable": "IGDB couldn't be reached for some games. Import the file again later to add them.",
   "importNotFound": "Not found ({count})",
   "@importNotFound": {

@@ -23,7 +23,7 @@ void main() {
   const bethesda = 1;
 
   setUp(() {
-    SharedPreferences.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues(onboardingSeenPrefs);
     repo = FakeRepository();
     api = FakeCompanyApi()
       ..answer = ((id) =>

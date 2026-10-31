@@ -35,6 +35,12 @@ import 'package:checkpoint/services/connectivity_service.dart';
 import 'package:checkpoint/services/game_api_service.dart';
 import 'package:checkpoint/services/steam_link_service.dart';
 import 'package:checkpoint/state/company_store.dart';
+import 'package:checkpoint/state/onboarding_store.dart';
+
+/// Saved preferences of a device where `u1` has been through the first-run
+/// walk-through: a test of another screen with `u1` signed in and no games isn't
+/// opened over by it.
+final onboardingSeenPrefs = <String, Object>{OnboardingStore.prefsKey('u1'): true};
 
 User testUser(String id) => User(
   id: id,

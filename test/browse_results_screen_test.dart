@@ -24,7 +24,7 @@ void main() {
   late AppStores stores;
 
   setUp(() {
-    SharedPreferences.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues(onboardingSeenPrefs);
     repo = FakeRepository();
     authService = FakeAuthService(testUser('u1'));
     api = FakeBrowseApi();

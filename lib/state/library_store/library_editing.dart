@@ -112,10 +112,9 @@ extension LibraryEditing on LibraryStore {
     final game = gameById(id);
     final isCurrentlyFavorite = game.isFavorite;
 
-    // Enforce Top 4 Limit
     final currentFavorites = _libraryGames.where((g) => g.isFavorite).length;
-    if (!isCurrentlyFavorite && currentFavorites >= 4) {
-      _setNotice(L10n.current.libraryFavoritesLimit(4));
+    if (!isCurrentlyFavorite && currentFavorites >= LibraryStore.maxFavorites) {
+      _setNotice(L10n.current.libraryFavoritesLimit(LibraryStore.maxFavorites));
       return;
     }
 

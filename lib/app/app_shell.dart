@@ -10,6 +10,7 @@ import 'package:checkpoint/models/game.dart';
 import 'package:checkpoint/models/share_link.dart';
 import 'package:checkpoint/screens/discussions/discussions_screen.dart';
 import 'package:checkpoint/screens/lists/lists_screen.dart';
+import 'package:checkpoint/screens/onboarding/onboarding_screen.dart';
 import 'package:checkpoint/screens/home/home_screen.dart';
 import 'package:checkpoint/screens/library/library_screen.dart';
 import 'package:checkpoint/screens/profile/profile_screen.dart';
@@ -22,6 +23,7 @@ import 'package:checkpoint/state/milestones_store.dart';
 import 'package:checkpoint/state/release_alerts_store.dart';
 import 'package:checkpoint/state/shared_link_store.dart';
 import 'package:checkpoint/state/nav_store.dart';
+import 'package:checkpoint/state/onboarding_store.dart';
 import 'package:checkpoint/state/profile_store.dart';
 import 'package:checkpoint/state/store_scope.dart';
 import 'package:checkpoint/utils/navigation.dart';
@@ -50,6 +52,7 @@ class _AppShellState extends State<AppShell> {
   late final ReleaseAlertsStore _releases;
   late final SharedLinkStore _links;
   late final MilestonesStore _milestones;
+  late final OnboardingStore _onboarding;
 
   /// A shared link is being opened, or sign-in was asked for to open it.
   bool _openingLink = false;
@@ -57,6 +60,9 @@ class _AppShellState extends State<AppShell> {
 
   /// The new password screen a reset link opened is showing.
   bool _askingForPassword = false;
+
+  /// The first-run walk-through is showing.
+  bool _walkingThrough = false;
 
   @override
   void initState() {
@@ -75,6 +81,8 @@ class _AppShellState extends State<AppShell> {
     _auth.addListener(_openLinkAfterFrame);
     _milestones = context.read<MilestonesStore>();
     _milestones.addListener(_announceMilestones);
+    _onboarding = context.read<OnboardingStore>();
+    _onboarding.addListener(_offerOnboardingAfterFrame);
     // The link may have been handled before the shell was built, and the
     // library loaded.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -82,6 +90,7 @@ class _AppShellState extends State<AppShell> {
       _announceReleases();
       _announceMilestones();
       _openLink();
+      _offerOnboarding();
     });
   }
 
@@ -94,6 +103,7 @@ class _AppShellState extends State<AppShell> {
     _releases.removeListener(_announceReleases);
     _auth.removeListener(_openLinkAfterFrame);
     _milestones.removeListener(_announceMilestones);
+    _onboarding.removeListener(_offerOnboardingAfterFrame);
     super.dispose();
   }
 
@@ -110,6 +120,30 @@ class _AppShellState extends State<AppShell> {
     );
     _askingForPassword = false;
     _auth.dismissPasswordRecovery();
+    _offerOnboardingAfterFrame();
+  }
+
+  /// After the frame: a sign-in screen that was open closes itself on the change
+  /// that made the walk-through due, and must be gone before it opens.
+  void _offerOnboardingAfterFrame() {
+    if (!_onboarding.isDue) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _offerOnboarding());
+  }
+
+  /// Opens the first-run walk-through for a member whose library came back
+  /// empty, once. Not over a password reset or a link the app was opened with:
+  /// that is what the member came for. They are offered it at their next
+  /// chance. Recorded as seen when it closes, finished or skipped.
+  Future<void> _offerOnboarding() async {
+    if (!mounted || _walkingThrough || _askingForPassword || _openingLink || _links.pending != null) return;
+    final userId = _onboarding.takeOffer();
+    if (userId == null) return;
+    _walkingThrough = true;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(fullscreenDialog: true, builder: (_) => const OnboardingScreen()),
+    );
+    _walkingThrough = false;
+    unawaited(_onboarding.finish(userId));
   }
 
   /// Tells the user when an edit could not be saved (or was kept for later), from

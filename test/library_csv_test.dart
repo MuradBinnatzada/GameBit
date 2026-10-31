@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -101,6 +103,82 @@ void main() {
       expect(matchImportRow(row(year: 2016), hits)?.igdbId, 2);
       expect(matchImportRow(row(year: 2005), hits), isNull);
       expect(matchImportRow(ImportRow(line: 2, title: 'Doom Eternal'), hits)?.igdbId, 3);
+    });
+  });
+
+  group('reading a Grouvee export', () {
+    /// The columns the tools that read Grouvee's file name; the JSON ones are
+    /// written as Grouvee's tools read them (only the keys of shelves and
+    /// platforms, and the seconds of each playthrough, are used).
+    String grouvee(List<List<Object?>> rows) => toCsv([
+      ['id', 'name', 'giantbomb_id', 'release_date', 'shelves', 'statuses', 'dates', 'rating', 'platforms'],
+      ...rows,
+    ]);
+    String shelves(List<String> names) => jsonEncode({for (final n in names) n: {'date_added': '2021-01-02'}});
+    String playthroughs(List<double> seconds) => jsonEncode([
+      for (final s in seconds)
+        {'date_started': 'None', 'date_finished': 'None', 'seconds_played': s, 'level_of_completion': 'None'},
+    ]);
+    String platforms(List<String> names) => jsonEncode({for (final n in names) n: {}});
+
+    test('shelves become statuses, playthroughs hours, and the platform and year come along', () {
+      final file = ImportRow.parse(grouvee([
+        [1, 'Hades', 111, '2020-09-17', shelves(['Played']), '{}', playthroughs([36000, 7200]), 5, platforms(['PC', 'Nintendo Switch'])],
+        [2, 'Celeste', 222, '2018', shelves(['Played', 'Playing']), '{}', '[]', 4, platforms(['Nintendo Switch'])],
+        [3, 'Outer Wilds', 333, '', shelves(['Wish List']), '{}', playthroughs([0]), '', '{}'],
+        [4, 'Cuphead', 444, '2017-09-29', shelves(['Abandoned']), '{}', '[]', 3, '{}'],
+        [5, 'Tunic', 555, '2022-03', shelves(['Backlog']), '{}', '[]', '', '{}'],
+        [6, 'Odd', 666, '', shelves(['Favorites']), '{}', '[]', '', '{}'],
+      ]));
+
+      expect(file.source, ImportSource.grouvee);
+      expect(file.skipped, isEmpty);
+      expect([for (final r in file.rows) (r.title, r.releaseYear, r.status, r.rating, r.hours, r.playedOn)], [
+        ('Hades', 2020, GameStatus.completed, 5.0, 12.0, GamePlatform.pc),
+        ('Celeste', 2018, GameStatus.playing, 4.0, null, GamePlatform.nswitch),
+        ('Outer Wilds', null, GameStatus.wishlist, null, null, null),
+        ('Cuphead', 2017, GameStatus.dropped, 3.0, null, null),
+        ('Tunic', 2022, GameStatus.toPlay, null, null, null),
+        // A shelf of the member's own is no reason to leave a game out.
+        ('Odd', null, GameStatus.toPlay, null, null, null),
+      ]);
+      // Grouvee's ids are not IGDB's: games are looked up by title.
+      expect(file.rows.every((r) => r.igdbId == null), isTrue);
+    });
+
+    test('shelves that are not JSON are read as a list of names', () {
+      final file = ImportRow.parse(grouvee([
+        [1, 'Hades', '', '', 'Played, Backlog', '', '', '', ''],
+      ]));
+      expect(file.rows.single.status, GameStatus.completed);
+    });
+
+    test('a cell that is not the JSON it should be costs the game nothing but that detail', () {
+      final file = ImportRow.parse(grouvee([
+        [1, 'Hades', '', '', shelves(['Playing']), '', 'not json', 5, '[1,2'],
+      ]));
+      expect((file.rows.single.status, file.rows.single.hours, file.rows.single.playedOn), (GameStatus.playing, null, null));
+    });
+
+    test('any other file is read as before, and a release date gives its year', () {
+      final file = ImportRow.parse('Name,Release Date\nHades,2020-09-17\n');
+      expect(file.source, ImportSource.generic);
+      expect(file.rows.single.releaseYear, 2020);
+    });
+
+    testWidgets('the import screen says the file was recognized', (tester) async {
+      Future<void> show(String text) async {
+        await tester.pumpWidget(MaterialApp(theme: buildTheme(), home: ImportScreen(file: ImportRow.parse(text))));
+      }
+
+      await show(grouvee([
+        [1, 'Hades', '', '', shelves(['Played']), '', '', '', ''],
+      ]));
+      expect(find.text('1 game to import'), findsOneWidget);
+      expect(find.textContaining('Grouvee export recognized'), findsOneWidget);
+
+      await show('title\nHades\n');
+      expect(find.textContaining('Grouvee export recognized'), findsNothing);
     });
   });
 

@@ -82,23 +82,6 @@ class DataSection extends StatelessWidget {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _import(BuildContext context) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final readFailed = context.l10n.fileReadFailed;
-    String? text;
-    try {
-      text = await pickFile();
-    } catch (e) {
-      debugPrint('Reading the import failed: $e');
-      messenger.showSnackBar(SnackBar(content: Text(readFailed)));
-      return;
-    }
-    if (text == null || !context.mounted) return;
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => ImportScreen(file: ImportRow.parse(text!))),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final library = context.watch<LibraryStore>();
@@ -145,13 +128,36 @@ class DataSection extends StatelessWidget {
             ProfileLink(
               icon: Icons.upload_file_rounded,
               label: context.l10n.importFromCsv,
-              onTap: () => _import(context),
+              onTap: () => importLibraryFile(context, pick: pickFile),
             ),
           ],
         ),
       ],
     );
   }
+}
+
+/// Asks for a library file ([pick]: the file dialog, replaced in tests) and
+/// opens the import of what it holds. Settings and the first-run walk-through
+/// both start an import here.
+Future<void> importLibraryFile(
+  BuildContext context, {
+  Future<String?> Function() pick = DataSection._pickCsv,
+}) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final readFailed = context.l10n.fileReadFailed;
+  String? text;
+  try {
+    text = await pick();
+  } catch (e) {
+    debugPrint('Reading the import failed: $e');
+    messenger.showSnackBar(SnackBar(content: Text(readFailed)));
+    return;
+  }
+  if (text == null || !context.mounted) return;
+  await Navigator.of(context).push(
+    MaterialPageRoute<void>(builder: (_) => ImportScreen(file: ImportRow.parse(text!))),
+  );
 }
 
 /// What a picked file holds, "Import N games", then the import as it goes and
@@ -208,6 +214,13 @@ class _ImportScreenState extends State<ImportScreen> {
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 6),
+              if (file.source == ImportSource.grouvee) ...[
+                Text(
+                  context.l10n.importGrouveeNote,
+                  style: TextStyle(color: context.palette.accent, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 6),
+              ],
               Text(
                 context.l10n.importLookupNote,
                 style: TextStyle(color: context.palette.muted),

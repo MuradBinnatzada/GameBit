@@ -128,7 +128,7 @@ void main() {
     late AppStores stores;
 
     setUp(() {
-      SharedPreferences.setMockInitialValues({});
+      SharedPreferences.setMockInitialValues(onboardingSeenPrefs);
       api = _StudioApi();
       stores = AppStores(
         repository: FakeRepository(),

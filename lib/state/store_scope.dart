@@ -18,6 +18,7 @@ import 'package:checkpoint/state/lists_store.dart';
 import 'package:checkpoint/state/milestones_store.dart';
 import 'package:checkpoint/state/nav_store.dart';
 import 'package:checkpoint/state/news_store.dart';
+import 'package:checkpoint/state/onboarding_store.dart';
 import 'package:checkpoint/state/play_timer_store.dart';
 import 'package:checkpoint/state/profile_store.dart';
 import 'package:checkpoint/state/public_achievements_store.dart';
@@ -114,7 +115,10 @@ class AppStoresScope extends StatelessWidget {
                                                       store: stores.discussions,
                                                       child: StoreScope<BlocksStore>(
                                                         store: stores.blocks,
-                                                        child: child,
+                                                        child: StoreScope<OnboardingStore>(
+                                                          store: stores.onboarding,
+                                                          child: child,
+                                                        ),
                                                       ),
                                                     ),
                                                   ),
