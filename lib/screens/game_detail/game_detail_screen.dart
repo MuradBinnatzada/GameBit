@@ -141,6 +141,18 @@ class GameDetailScreen extends StatelessWidget {
                   padding: const EdgeInsetsDirectional.only(end: 2),
                   child: Center(child: _WishlistButton(game: game)),
                 ),
+                // Hiding keeps a game of the library out of every other member's sight.
+                if (game.inLibrary)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(end: 2),
+                    child: Center(
+                      child: _RoundIconButton(
+                        icon: game.isHidden ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                        tooltip: game.isHidden ? context.l10n.showGameToOthers : context.l10n.hideGameFromOthers,
+                        onTap: () => _toggleHidden(context, game),
+                      ),
+                    ),
+                  ),
                 Padding(
                   padding: const EdgeInsetsDirectional.only(end: 12),
                   child: Center(
@@ -903,4 +915,16 @@ class _AchievementsPanelState extends State<_AchievementsPanel> {
       ),
     );
   }
+}
+
+/// Hides [game] from every other member, or shows it to them again, and says where
+/// a hidden game went.
+Future<void> _toggleHidden(BuildContext context, Game game) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final l10n = context.l10n;
+  final hiding = !game.isHidden;
+  await context.read<LibraryStore>().toggleHidden(game.id);
+  messenger
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(hiding ? l10n.gameNowHidden : l10n.gameNowShown)));
 }

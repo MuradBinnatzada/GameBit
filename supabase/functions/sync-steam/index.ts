@@ -193,7 +193,9 @@ const BACKGROUND_LIMITS: SyncLimits = {
  * it, because another feature owns them. `achievements` is a (potentially large)
  * JSONB blob written by sync-achievements: re-sending a stale copy could wipe a
  * concurrent load, and would ship the blob for nothing. The counts are written by
- * step 7 and by the trigger that keeps them in step with that blob.
+ * step 7 and by the trigger that keeps them in step with that blob. `is_hidden`
+ * is the member's own choice, made in the app at any moment: a sync that read the
+ * row a few seconds ago must not put a game they just hid back in view.
  */
 const NOT_RESENT_COLUMNS = [
   'achievements',
@@ -201,6 +203,7 @@ const NOT_RESENT_COLUMNS = [
   'achievements_total',
   'achievements_playtime',
   'achievements_synced_at',
+  'is_hidden',
 ]
 
 /**

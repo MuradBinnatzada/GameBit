@@ -58,7 +58,8 @@ class ProfileScreen extends StatelessWidget {
     if (userId == null) return const SizedBox.shrink();
 
     final p = profileStore.profile;
-    final games = library.libraryGames;
+    // Your page as others see it: without the games you hid from them.
+    final games = library.listedGames;
     final stats = LibraryStats.of(games);
     final viewStore = context.read<LibraryViewStore>();
 

@@ -43,6 +43,7 @@ mixin _LibraryQueries on _RepositoryBase {
           ${Db.purchasePrice},
           ${Db.dateAdded},
           ${Db.isFavorite},
+          ${Db.isHidden},
           ${Db.customBackdropUrl},
           ${Db.completedAt},
           ${Db.review},
@@ -245,6 +246,7 @@ mixin _LibraryQueries on _RepositoryBase {
     required GamePlatform? playedOn,
     required double purchasePrice,
     required bool isFavorite,
+    bool isHidden = false,
     String? customBackdropUrl,
     DateTime? dateAdded,
     String review = '',
@@ -261,6 +263,7 @@ mixin _LibraryQueries on _RepositoryBase {
       Db.purchasePrice: purchasePrice,
       Db.dateAdded: (dateAdded ?? DateTime.now()).toUtc().toIso8601String(),
       Db.isFavorite: isFavorite,
+      Db.isHidden: isHidden,
       Db.customBackdropUrl: customBackdropUrl,
       Db.review: review.trim(),
       // The trigger clears it for any status but completed.

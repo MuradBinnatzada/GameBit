@@ -39,17 +39,19 @@ class _YearReviewScreenState extends State<YearReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // The games you hid are left out of its lists (and so of the cards you
+    // share): their sessions still count in the totals.
     final library = context.watch<LibraryStore>();
     final years = YearReview.yearsOf(
       sessions: library.sessions,
-      games: library.libraryGames,
+      games: library.listedGames,
       currentYear: DateTime.now().year,
     );
     if (!years.contains(_year)) years.add(_year);
     final review = YearReview.of(
       year: _year,
       sessions: library.sessions,
-      games: library.libraryGames,
+      games: library.listedGames,
     );
 
     return Scaffold(

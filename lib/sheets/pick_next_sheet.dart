@@ -36,7 +36,7 @@ class _PickNextSheetState extends State<PickNextSheet> {
   late Game? _pick = _picker.next();
 
   NextGamePicker _newPicker() => NextGamePicker(
-    library: context.read<LibraryStore>().libraryGames,
+    library: context.read<LibraryStore>().listedGames,
     statuses: _statuses,
     platform: _platform,
   );
@@ -53,7 +53,7 @@ class _PickNextSheetState extends State<PickNextSheet> {
     if (!next.remove(status)) next.add(status);
     if (next.isNotEmpty) _statuses = next;
     if (_platform != null &&
-        !NextGamePicker.platformsOf(context.read<LibraryStore>().libraryGames, _statuses).contains(_platform)) {
+        !NextGamePicker.platformsOf(context.read<LibraryStore>().listedGames, _statuses).contains(_platform)) {
       _platform = null;
     }
   });
@@ -71,7 +71,7 @@ class _PickNextSheetState extends State<PickNextSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final library = context.watch<LibraryStore>().libraryGames;
+    final library = context.watch<LibraryStore>().listedGames;
     final platforms = NextGamePicker.platformsOf(library, _statuses);
     final pick = _pick;
     return SheetFrame(

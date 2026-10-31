@@ -200,6 +200,11 @@ abstract final class Db {
   static const source = 'source';
   static const isFavorite = 'is_favorite';
 
+  /// `user_games`: the member hid the game from every other member
+  /// (20261031230000_hidden_games.sql). The server leaves it out of everything it
+  /// shows of their library; they always see it. Not in `public_user_games`.
+  static const isHidden = 'is_hidden';
+
   /// `user_games` (and `public_user_games`): the member's own backdrop for the
   /// game, an IGDB image URL; NULL: the blurred cover.
   static const customBackdropUrl = 'custom_backdrop_url';

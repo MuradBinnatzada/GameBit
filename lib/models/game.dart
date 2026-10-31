@@ -366,6 +366,7 @@ class Game {
     this.purchasePrice = 0,
     this.dateAdded,
     this.isFavorite = false,
+    this.isHidden = false,
     this.achievements,
     this.customBackdropUrl,
     this.releaseDate,
@@ -388,6 +389,10 @@ class Game {
   final IconData coverIcon;
   final String? coverUrl;
   final bool isFavorite;
+
+  /// The member hid the game from every other member (`user_games.is_hidden`): it
+  /// stays in their library, listed only under Hidden, and others never get it.
+  final bool isHidden;
 
   /// The member's own backdrop for the game (behind its screen's header and its
   /// Home card), an IGDB artwork or screenshot (`user_games.custom_backdrop_url`);
@@ -475,6 +480,7 @@ class Game {
       purchasePrice: (json['purchasePrice'] as num).toDouble(),
       dateAdded: dateAdded == null ? null : DateTime.tryParse('$dateAdded')?.toLocal(),
       isFavorite: json['isFavorite'] == true,
+      isHidden: json['isHidden'] == true,
       customBackdropUrl: json['customBackdropUrl'] as String?,
       releaseDate: _dateOrNull(json['releaseDate']),
       completedAt: _dateOrNull(json['completedAt']),
@@ -511,6 +517,7 @@ class Game {
         'purchasePrice': purchasePrice,
         'dateAdded': dateAdded?.toUtc().toIso8601String(),
         'isFavorite': isFavorite,
+        'isHidden': isHidden,
         'customBackdropUrl': customBackdropUrl,
         'releaseDate': releaseDate?.toUtc().toIso8601String(),
         'completedAt': completedAt?.toUtc().toIso8601String(),
@@ -573,6 +580,7 @@ class Game {
     DateTime? dateAdded,
     String? coverUrl,
     bool? isFavorite,
+    bool? isHidden,
     List<Achievement>? achievements,
     List<GamePlatform>? platforms,
     List<String>? genres,
@@ -605,6 +613,7 @@ class Game {
         purchasePrice: purchasePrice ?? this.purchasePrice,
         dateAdded: dateAdded ?? this.dateAdded,
         isFavorite: isFavorite ?? this.isFavorite,
+        isHidden: isHidden ?? this.isHidden,
         achievements: achievements ?? this.achievements,
         customBackdropUrl: customBackdropUrl,
         releaseDate: releaseDate ?? this.releaseDate,
@@ -639,6 +648,7 @@ class Game {
         purchasePrice: purchasePrice,
         dateAdded: dateAdded,
         isFavorite: isFavorite,
+        isHidden: isHidden,
         achievements: achievements,
         customBackdropUrl: customBackdropUrl,
         releaseDate: releaseDate,
@@ -673,6 +683,7 @@ class Game {
         purchasePrice: purchasePrice,
         dateAdded: dateAdded,
         isFavorite: isFavorite,
+        isHidden: isHidden,
         achievements: achievements,
         customBackdropUrl: url,
         releaseDate: releaseDate,
@@ -707,6 +718,7 @@ class Game {
         purchasePrice: purchasePrice,
         dateAdded: dateAdded,
         isFavorite: isFavorite,
+        isHidden: isHidden,
         achievements: achievements,
         customBackdropUrl: customBackdropUrl,
         releaseDate: releaseDate,

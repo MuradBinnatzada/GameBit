@@ -130,6 +130,17 @@ extension LibraryEditing on LibraryStore {
     await _saveUserGame(next);
   }
 
+  /// Hides a game of the library from every other member, or shows it to them
+  /// again. The member keeps it, and lists it under Hidden. A game that is not in
+  /// the library has nothing to hide.
+  Future<void> toggleHidden(String id) async {
+    final game = gameById(id);
+    if (!game.inLibrary) return;
+    final next = game.copyWith(isHidden: !game.isHidden);
+    _replaceGame(next);
+    await _saveUserGame(next);
+  }
+
   Future<void> addToLibrary(String id, GameStatus status) =>
       setStatus(id, status);
 
@@ -390,6 +401,7 @@ extension LibraryEditing on LibraryStore {
       purchasePrice: game.purchasePrice,
       dateAdded: game.dateAdded,
       isFavorite: game.isFavorite,
+      isHidden: game.isHidden,
       customBackdropUrl: game.customBackdropUrl,
       review: game.review,
       stillPlaying: game.stillPlaying,

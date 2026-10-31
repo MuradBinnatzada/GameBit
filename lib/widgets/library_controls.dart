@@ -537,27 +537,33 @@ class _LibraryListTile extends StatelessWidget {
 }
 
 /// The row of status tabs of a Library: "All", then one per [GameStatus], each
-/// with how many games it holds. [counts] has [GameStatus.values].length + 1
+/// with how many games it holds, and "Hidden" for the signed-in member's own
+/// ([hiddenCount]). [counts] has [GameStatus.values].length + 1
 /// entries, "All" first.
 class LibraryStatusTabBar extends StatelessWidget {
   const LibraryStatusTabBar({
     super.key,
     required this.controller,
     required this.counts,
+    this.hiddenCount,
   });
 
   final TabController controller;
   final List<int> counts;
 
+  /// How many games the member hid from other members; null: no Hidden tab.
+  final int? hiddenCount;
+
   @override
   Widget build(BuildContext context) {
-    Tab statusTab(String label, int count) => Tab(
+    Tab statusTab(String label, int count, {IconData? icon}) => Tab(
       height: 38,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (icon != null) ...[Icon(icon, size: 15), const SizedBox(width: 5)],
             Text(label),
             const SizedBox(width: 6),
             Text(
@@ -594,6 +600,7 @@ class LibraryStatusTabBar extends StatelessWidget {
         statusTab(context.l10n.all, counts[0]),
         for (var i = 0; i < GameStatus.values.length; i++)
           statusTab(GameStatus.values[i].label, counts[i + 1]),
+        if (hiddenCount case final hidden?) statusTab(context.l10n.libraryHiddenTab, hidden, icon: Icons.visibility_off_rounded),
       ],
     );
   }

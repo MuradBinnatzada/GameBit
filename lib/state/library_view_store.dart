@@ -44,6 +44,10 @@ class LibraryViewStore extends ChangeNotifier {
   /// Selected status tab. `null` means "All" (the default).
   GameStatus? _selectedStatus;
 
+  /// The Hidden tab is selected, which only the signed-in member's own Library
+  /// has (games they hid from other members); then [selectedStatus] is null.
+  bool _showHidden = false;
+
   LibraryView get view => _view;
   SortField get sortField => _sortField;
   bool get sortDescending => _sortDescending;
@@ -65,15 +69,23 @@ class LibraryViewStore extends ChangeNotifier {
   /// Selected status, or `null` when "All" is selected.
   GameStatus? get selectedStatus => _selectedStatus;
 
-  /// Tab index: 0 is the "All" tab, then one tab per [GameStatus].
-  int get currentTabIndex => _selectedStatus == null
+  /// Whether the Hidden tab is the one showing.
+  bool get showingHidden => _showHidden;
+
+  /// Tab index: 0 is the "All" tab, then one tab per [GameStatus], then Hidden
+  /// (the signed-in member's Library only).
+  int get currentTabIndex => _showHidden
+      ? GameStatus.values.length + 1
+      : _selectedStatus == null
       ? 0
       : GameStatus.values.indexOf(_selectedStatus!) + 1;
 
   void setTabIndex(int i) {
-    final next = i <= 0 ? null : GameStatus.values[i - 1];
-    if (next == _selectedStatus) return;
+    final hidden = i > GameStatus.values.length;
+    final next = i <= 0 || hidden ? null : GameStatus.values[i - 1];
+    if (next == _selectedStatus && hidden == _showHidden) return;
     _selectedStatus = next;
+    _showHidden = hidden;
     notifyListeners();
   }
 
@@ -81,6 +93,7 @@ class LibraryViewStore extends ChangeNotifier {
   /// filters. With [sortBy], also sorts by that field, highest first.
   void openTab(GameStatus? status, {SortField? sortBy}) {
     _selectedStatus = status;
+    _showHidden = false;
     _filters = FilterOptions.none;
     if (sortBy != null) {
       _sortField = sortBy;
@@ -261,15 +274,17 @@ class LibraryViewStore extends ChangeNotifier {
 
   /// The games of [library] with status [s], filtered and sorted; pass `null` for
   /// every status ("All"). The filters apply either way. A completed game still
-  /// being played is under Playing as well (see [Game.isListedUnder]).
-  List<Game> visible(Iterable<Game> library, GameStatus? s) => [
+  /// being played is under Playing as well (see [Game.isListedUnder]). A game the
+  /// member hid from other members is in none of these: it is only in the Hidden
+  /// tab, which is [hiddenOnly] (and then [s] is null).
+  List<Game> visible(Iterable<Game> library, GameStatus? s, {bool hiddenOnly = false}) => [
     for (final g in library)
-      if ((s == null || g.isListedUnder(s)) && _matches(g)) g,
+      if ((s == null || g.isListedUnder(s)) && g.isHidden == hiddenOnly && _matches(g)) g,
   ]..sort(_compare);
 
   /// How many games [visible] would return, without sorting them.
-  int count(Iterable<Game> library, GameStatus? s) => library
-      .where((g) => (s == null || g.isListedUnder(s)) && _matches(g))
+  int count(Iterable<Game> library, GameStatus? s, {bool hiddenOnly = false}) => library
+      .where((g) => (s == null || g.isListedUnder(s)) && g.isHidden == hiddenOnly && _matches(g))
       .length;
 
   /// The details arrived, or were dropped because another account signed in

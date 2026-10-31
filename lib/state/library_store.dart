@@ -633,6 +633,14 @@ class LibraryStore extends ChangeNotifier {
   /// with [LibraryViewStore.visible].
   List<Game> get libraryGames => _libraryGames;
 
+  /// The library without the games the member hid from other members: what the
+  /// app lists, counts and suggests. A hidden game is only in the Library's Hidden
+  /// tab (and in [libraryGames]), as a hidden game is in Steam.
+  List<Game> get listedGames => [
+    for (final g in _libraryGames)
+      if (!g.isHidden) g,
+  ];
+
   /// Library + popular games.
   List<Game> get games => _games;
 
@@ -651,7 +659,7 @@ class LibraryStore extends ChangeNotifier {
   /// Games being played now, most recently played first: Playing, and
   /// completed ones the member still plays.
   List<Game> playingNow() {
-    final list = _libraryGames.where((g) => g.isPlaying).toList();
+    final list = _libraryGames.where((g) => g.isPlaying && !g.isHidden).toList();
     final epoch = DateTime.fromMillisecondsSinceEpoch(0);
     list.sort(
       (a, b) =>
@@ -673,11 +681,17 @@ class LibraryStore extends ChangeNotifier {
   List<LogEntry> logsFor(String gameId) =>
       _logs.where((l) => l.gameId == gameId).toList();
 
+  /// The latest session of each game, newest first, at most [limit], without the
+  /// games hidden from other members.
   List<LogEntry> recentActivity({int limit = 10}) {
+    final hidden = {
+      for (final g in _libraryGames)
+        if (g.isHidden) g.id,
+    };
     final seen = <String>{};
     final out = <LogEntry>[];
     for (final l in _logs) {
-      if (seen.add(l.gameId)) {
+      if (!hidden.contains(l.gameId) && seen.add(l.gameId)) {
         out.add(l);
         if (out.length >= limit) break;
       }
@@ -686,9 +700,10 @@ class LibraryStore extends ChangeNotifier {
   }
 
   /// Games listed under [s] (see [Game.isListedUnder]): Playing counts the
-  /// completed games still being played too.
+  /// completed games still being played too. Not the hidden ones, as in the
+  /// Library's tabs.
   int count(GameStatus s) =>
-      _libraryGames.where((g) => g.isListedUnder(s)).length;
+      _libraryGames.where((g) => g.isListedUnder(s) && !g.isHidden).length;
   double get totalHours =>
       _libraryGames.fold<double>(0, (sum, g) => sum + g.hoursPlayed);
 
@@ -711,7 +726,7 @@ class LibraryStore extends ChangeNotifier {
       LibraryStats.hoursByPlatformOf(_libraryGames);
 
   List<Game> get topRated {
-    final rated = _libraryGames.where((g) => g.rating > 0).toList()
+    final rated = _libraryGames.where((g) => g.rating > 0 && !g.isHidden).toList()
       ..sort((a, b) {
         final c = b.rating.compareTo(a.rating);
         return c != 0 ? c : b.hoursPlayed.compareTo(a.hoursPlayed);

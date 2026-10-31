@@ -26,7 +26,7 @@ class LibraryScreen extends StatefulWidget {
 
 /// Owns the status-tab `TabController` and keeps it in lock-step with
 /// `LibraryViewStore.currentTabIndex` in both directions (tab 0 is "All", then
-/// one tab per `GameStatus`; `selectedStatus == null` means All):
+/// one tab per `GameStatus`, then "Hidden"; `selectedStatus == null` means All):
 ///   user taps/swipes a tab  → controller listener → viewStore.setTabIndex
 ///   viewStore.openTab()     → store listener      → controller.index = …
 /// Both sides compare before writing, so the two listeners can never loop.
@@ -42,7 +42,7 @@ class _LibraryScreenState extends State<LibraryScreen>
     super.initState();
     _viewStore = context.read<LibraryViewStore>(); // non-subscribing lookup is allowed in initState
     _tabs = TabController(
-      length: GameStatus.values.length + 1, // +1 for the leading "All" tab
+      length: GameStatus.values.length + 2, // the leading "All" tab and the trailing "Hidden" one
       vsync: this,
       initialIndex: _viewStore.currentTabIndex,
     )..addListener(_onTabsChanged);
@@ -124,11 +124,12 @@ class _LibraryScreenState extends State<LibraryScreen>
               for (final s in GameStatus.values)
                 view.count(library.libraryGames, s),
             ],
+            hiddenCount: view.count(library.libraryGames, null, hiddenOnly: true),
           ),
           const SizedBox(height: 8),
           LibrarySearchField(
             controller: _searchController,
-            tabLabel: view.selectedStatus?.label ?? context.l10n.all,
+            tabLabel: view.showingHidden ? context.l10n.libraryHiddenTab : (view.selectedStatus?.label ?? context.l10n.all),
             hasText: _searchQuery.isNotEmpty,
             onChanged: _onSearchChanged,
             onClear: _clearSearch,
@@ -149,6 +150,12 @@ class _LibraryScreenState extends State<LibraryScreen>
                     searchQuery: _searchQuery,
                     onClearSearch: _clearSearch,
                   ),
+                LibraryCollection(
+                  status: null,
+                  hidden: true,
+                  searchQuery: _searchQuery,
+                  onClearSearch: _clearSearch,
+                ),
               ],
             ),
           ),
@@ -242,11 +249,15 @@ class LibraryCollection extends StatelessWidget {
   const LibraryCollection({
     super.key,
     required this.status,
+    this.hidden = false,
     this.searchQuery = '',
     this.onClearSearch,
   });
   /// Status shown by this tab; `null` shows every game ("All").
   final GameStatus? status;
+
+  /// The Hidden tab: only the games hidden from other members, of any status.
+  final bool hidden;
 
   /// Free-text title filter, applied only to this tab's games.
   final String searchQuery;
@@ -276,7 +287,7 @@ class LibraryCollection extends StatelessWidget {
     final s = status; // local copy so null checks promote
     final query = searchQuery.trim().toLowerCase();
     final games = view
-        .visible(library.libraryGames, s)
+        .visible(library.libraryGames, s, hiddenOnly: hidden)
         .where((g) => g.title.toLowerCase().contains(query))
         .toList();
     if (games.isEmpty) {
@@ -299,6 +310,14 @@ class LibraryCollection extends StatelessWidget {
           ? view.gamesWithoutDetails(library.libraryGames) ?? 0
           : 0;
       final l10n = context.l10n;
+      if (hidden && !filtered) {
+        return EmptyState(
+          icon: Icons.visibility_off_rounded,
+          title: l10n.noHiddenGames,
+          message: l10n.noHiddenGamesMessage,
+          onRefresh: () => refreshMyData(context),
+        );
+      }
       return EmptyState(
         icon: s?.icon ?? Icons.apps_rounded,
         title: onlyPlatform
@@ -327,19 +346,50 @@ class LibraryCollection extends StatelessWidget {
         onRefresh: () => refreshMyData(context),
       );
     }
-    return AnimatedSwitcher(
+    final tab = hidden ? 'hidden' : (s?.name ?? 'all');
+    final body = AnimatedSwitcher(
       duration: motion(context, const Duration(milliseconds: 220)),
       child: view.view == LibraryView.grid
           ? LibraryPosterGrid(
-              key: ValueKey('grid-${s?.name ?? 'all'}'),
+              key: ValueKey('grid-$tab'),
               games: games,
               onRefresh: () => refreshMyData(context),
             )
           : LibraryGameList(
-              key: ValueKey('list-${s?.name ?? 'all'}'),
+              key: ValueKey('list-$tab'),
               games: games,
               onRefresh: () => refreshMyData(context),
             ),
+    );
+    if (!hidden) return body;
+    return Column(children: [
+      const _HiddenNote(),
+      Expanded(child: body),
+    ]);
+  }
+}
+
+/// Over the Hidden tab: who can and can't see what is in it.
+class _HiddenNote extends StatelessWidget {
+  const _HiddenNote();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 1),
+          child: Icon(Icons.visibility_off_rounded, size: 16, color: context.palette.muted),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            context.l10n.hiddenGamesNote,
+            style: TextStyle(color: context.palette.muted, fontSize: 12.5, height: 1.35),
+          ),
+        ),
+      ]),
     );
   }
 }

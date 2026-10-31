@@ -223,6 +223,7 @@ Game _gameFromUserGameRow(Map<String, dynamic> row) {
     purchasePrice: _double(row[Db.purchasePrice]),
     dateAdded: _date(row[Db.dateAdded]),
     isFavorite: row[Db.isFavorite] == true,
+    isHidden: row[Db.isHidden] == true,
     review: _firstText([row[Db.review]]) ?? '',
     stillPlaying: row[Db.stillPlaying] == true,
     perfected: row[Db.perfected] == true,

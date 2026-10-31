@@ -71,7 +71,8 @@ class LibraryFilterSheet extends StatelessWidget {
     final attributes = context.watch<LibraryAttributesStore>();
     final platforms = view.filterOptions(library);
     final years = view.yearSpan(library);
-    final shown = view.count(library, null);
+    // The games the filters let through, in the Library's tabs and in Hidden.
+    final shown = view.count(library, null) + view.count(library, null, hiddenOnly: true);
 
     return SheetFrame(
       title: context.l10n.filter,

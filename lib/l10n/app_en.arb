@@ -1580,6 +1580,14 @@
     }
   },
   "libraryEmpty": "Your library is empty",
+  "libraryHiddenTab": "Hidden",
+  "hiddenGamesNote": "Only you can see these games. Other members never see them: not in your library, on your profile, in reviews or in lists.",
+  "noHiddenGames": "Nothing hidden",
+  "noHiddenGamesMessage": "Hide a game from its screen and it shows up here. Other members won't see it anywhere.",
+  "hideGameFromOthers": "Hide from other members",
+  "showGameToOthers": "Show to other members",
+  "gameNowHidden": "Hidden from other members. It now shows only under Hidden in your Library.",
+  "gameNowShown": "Other members can see this game again.",
   "nothingInStatusYet": "Nothing in {status} yet",
   "@nothingInStatusYet": {
     "placeholders": {
@@ -1822,6 +1830,7 @@
   "privacyVisibleTitle": "Visible to other signed-in members",
   "privacyProfileText": "Display name, username, photo, bio and the month you joined.",
   "privacyLibraryText": "Each game with its status, your rating, hours played, platform and favorite flag, and the totals made from them.",
+  "privacyHiddenText": "Games you hide stay out of your library, favorites, recent activity, reviews, lists and totals as other members see them. Only you see them, under Hidden in your Library.",
   "privacyRecentActivity": "Recent activity",
   "privacyRecentActivityText": "Your latest play sessions: the game, hours, platform and when.",
   "privacyFollows": "Followers and following",

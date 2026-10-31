@@ -195,6 +195,19 @@ void main() {
       expect(game.inLibrary, isTrue);
     });
 
+    test('reads whether the member hid the game from others, and asks for the column', () async {
+      api.reply([
+        {...userGameRow('g1'), 'is_hidden': true},
+        userGameRow('g2'),
+      ]);
+
+      final games = await repo.fetchUserGames('u1');
+
+      expect(games.firstWhere((g) => g.id == 'g1').isHidden, isTrue);
+      expect(games.firstWhere((g) => g.id == 'g2').isHidden, isFalse);
+      expect(api.last.url.queryParameters['select'], contains('is_hidden'));
+    });
+
     test('reads the member\'s chosen backdrop, and none when the row has none', () async {
       const art = 'https://images.igdb.com/igdb/image/upload/t_1080p/ar5l8.jpg';
       api.reply([
@@ -1517,6 +1530,36 @@ void main() {
         perfected: true,
       );
       expect((api.bodyOf(api.last) as Map)['perfected'], isTrue);
+    });
+
+    test('upsertUserGame sends whether the game is hidden from other members, false unless said', () async {
+      Future<void> save({bool? hidden}) => hidden == null
+          ? repo.upsertUserGame(
+              userId: 'u1',
+              gameId: 'g1',
+              status: GameStatus.playing,
+              rating: 0,
+              hoursPlayed: 1,
+              playedOn: null,
+              purchasePrice: 0,
+              isFavorite: false,
+            )
+          : repo.upsertUserGame(
+              userId: 'u1',
+              gameId: 'g1',
+              status: GameStatus.playing,
+              rating: 0,
+              hoursPlayed: 1,
+              playedOn: null,
+              purchasePrice: 0,
+              isFavorite: false,
+              isHidden: hidden,
+            );
+
+      await save();
+      expect((api.bodyOf(api.last) as Map)['is_hidden'], isFalse);
+      await save(hidden: true);
+      expect((api.bodyOf(api.last) as Map)['is_hidden'], isTrue);
     });
 
     test('setConnectedAccounts replaces the services and the account names on the signed-in user\'s row', () async {

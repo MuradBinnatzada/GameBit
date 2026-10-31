@@ -55,6 +55,11 @@ class PrivacySection extends StatelessWidget {
                 text: l10n.privacyLibraryText,
               ),
               _Item(
+                icon: Icons.visibility_off_rounded,
+                title: l10n.libraryHiddenTab,
+                text: l10n.privacyHiddenText,
+              ),
+              _Item(
                 icon: Icons.history_rounded,
                 title: l10n.privacyRecentActivity,
                 text: l10n.privacyRecentActivityText,

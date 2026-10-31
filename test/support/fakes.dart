@@ -692,6 +692,7 @@ class FakeRepository implements CheckpointRepository {
     required GamePlatform? playedOn,
     required double purchasePrice,
     required bool isFavorite,
+    bool isHidden = false,
     String? customBackdropUrl,
     DateTime? dateAdded,
     String review = '',
@@ -705,6 +706,7 @@ class FakeRepository implements CheckpointRepository {
     reviews[gameId] = review;
     stillPlayingSent[gameId] = stillPlaying;
     perfectedSent[gameId] = perfected;
+    hiddenSent[gameId] = isHidden;
   }
 
   /// Holds [upsertUserGame] until completed, to have a game's save in flight.
@@ -719,6 +721,9 @@ class FakeRepository implements CheckpointRepository {
   /// The perfected flag (Platinum, all achievements, 100%) each game's last
   /// save sent.
   final Map<String, bool> perfectedSent = {};
+
+  /// Whether each game was last saved hidden from other members.
+  final Map<String, bool> hiddenSent = {};
 
   @override
   Future<void> upsertCompletionTime({

@@ -27,7 +27,7 @@ class ReleaseAlertsStore extends ChangeNotifier {
   static String _key(String userId) => 'release_alerts.v1.$userId';
 
   /// Wishlist games out within 60 days or out in the last 14, just out first.
-  List<ReleaseAlert> get alerts => releaseAlerts(_library.libraryGames, today: _clock());
+  List<ReleaseAlert> get alerts => releaseAlerts(_library.listedGames, today: _clock());
 
   Future<void> initialize() async {
     _auth.addListener(_onAuth);
