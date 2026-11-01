@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:checkpoint/models/share_link.dart';
+import 'package:checkpoint/services/admin_api_service.dart';
 import 'package:checkpoint/services/auth_service.dart';
 import 'package:checkpoint/services/checkpoint_repository.dart';
 import 'package:checkpoint/services/connectivity_service.dart';
@@ -13,6 +14,7 @@ import 'package:checkpoint/services/news_api_service.dart';
 import 'package:checkpoint/services/local_cache.dart';
 import 'package:checkpoint/services/release_notifier.dart';
 import 'package:checkpoint/services/steam_link_service.dart';
+import 'package:checkpoint/state/admin_store.dart';
 import 'package:checkpoint/state/auth_store.dart';
 import 'package:checkpoint/state/blocks_store.dart';
 import 'package:checkpoint/state/browse_store.dart';
@@ -107,6 +109,10 @@ import 'package:checkpoint/state/social_graph_store.dart';
 ///    the stores that hold what was fetched about members, so they drop that
 ///    member ([ProfileStore] forgets the follow), and unblocking makes
 ///    [DiscussionsStore] ask again;
+///  * [AdminStore] holds what a moderator sees (the open reports, the suspended
+///    members) and acts through the `admin-moderation` Edge Function; it asks
+///    the database whether the member is an admin when they sign in. It follows
+///    [AuthStore] only; nothing depends on it;
 ///  * [NewsStore] holds the News screen's articles (the outlets' latest, and
 ///    Steam's news for the member's games). It follows [AuthStore] only; the
 ///    screen reads [LibraryStore] to say which games to ask about;
@@ -123,6 +129,7 @@ class AppStores {
     GameApiService? apiService,
     NewsApiService? newsApi,
     DiscussionApiService? discussionApi,
+    AdminApiService? adminApi,
     ConnectivityService? connectivity,
     LinkTarget? initialLink,
     SteamLinkFlow? steamLink,
@@ -152,6 +159,7 @@ class AppStores {
     news = NewsStore(auth: auth, api: newsApi);
     discussions = DiscussionsStore(repository: repository, auth: auth, api: discussionApi);
     companies = CompanyStore(apiService: apiService);
+    admin = AdminStore(auth: auth, api: adminApi);
     blocks = BlocksStore(
       repository: repository,
       auth: auth,
@@ -247,6 +255,7 @@ class AppStores {
   late final NewsStore news;
   late final DiscussionsStore discussions;
   late final BlocksStore blocks;
+  late final AdminStore admin;
   late final CompanyStore companies;
   late final GameDetailsStore gameDetails;
   late final PublicProfileStore publicProfiles;
@@ -297,6 +306,7 @@ class AppStores {
     news.initialize();
     discussions.initialize();
     blocks.initialize();
+    admin.initialize();
     friendsFeed.initialize();
     communityTimes.initialize();
     publicAchievements.initialize();
@@ -327,6 +337,7 @@ class AppStores {
     communityTimes.dispose();
     gameReviews.dispose();
     blocks.dispose();
+    admin.dispose();
     discussions.dispose();
     news.dispose();
     gameFriends.dispose();

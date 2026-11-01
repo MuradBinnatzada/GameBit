@@ -3067,5 +3067,141 @@
   "translatedByDeepL": "Translated by DeepL",
   "originalText": "Original text",
   "showOriginal": "Show original",
-  "showTranslation": "Show translation"
+  "showTranslation": "Show translation",
+  "settingsAdmin": "Admin",
+  "adminReports": "Reports",
+  "adminReportsCount": "Reports ({count})",
+  "@adminReportsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adminSuspendedTab": "Suspended",
+  "adminSuspendedCount": "Suspended ({count})",
+  "@adminSuspendedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adminLoadFailed": "Couldn’t load this",
+  "adminNoReports": "No open reports",
+  "adminNoReportsMessage": "Nothing is waiting for a decision. Pull down to check again.",
+  "adminNoSuspended": "Nobody is suspended",
+  "adminNoSuspendedMessage": "Members you suspend appear here until you reinstate them.",
+  "adminSourceProfile": "Profile",
+  "adminSourceList": "List",
+  "adminSourceReview": "Review",
+  "adminSourceThread": "Discussion thread",
+  "adminSourceReply": "Discussion reply",
+  "adminSourceOther": "Other",
+  "adminOverdue": "Overdue · {hours} h",
+  "@adminOverdue": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "adminOpenUnderHour": "Open under 1 h",
+  "adminOpenHours": "Open {hours} h",
+  "@adminOpenHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "adminReportedFor": "Reported as: {reason}",
+  "@adminReportedFor": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "adminSuspendedBadge": "Suspended",
+  "adminReportsAbout": "Reports about {name}",
+  "@adminReportsAbout": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "adminSuspendAction": "Suspend…",
+  "adminSuspendActionSubtitle": "Signs them out and hides them from everyone",
+  "adminAlreadySuspended": "Already suspended",
+  "adminDismissAction": "Dismiss reports",
+  "adminDismissActionSubtitle": "Nothing was wrong",
+  "adminHandledAction": "Mark as handled",
+  "adminHandledActionSubtitle": "You dealt with it another way",
+  "adminReportsClosed": "Reports closed",
+  "adminSuspendTitle": "Suspend {name}?",
+  "@adminSuspendTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "adminSuspendBody": "They are signed out everywhere and can’t sign in, and other members stop seeing their profile, library, reviews, lists and posts. The open reports about them are closed.",
+  "adminReasonLabel": "Reason",
+  "adminReasonHelper": "For your records. The member is not shown it.",
+  "adminLengthDay": "1 day",
+  "adminLengthWeek": "7 days",
+  "adminLengthMonth": "30 days",
+  "adminLengthForGood": "Until reinstated",
+  "adminSuspend": "Suspend",
+  "adminMemberSuspended": "{name} is suspended",
+  "@adminMemberSuspended": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "adminReinstate": "Reinstate",
+  "adminReinstateTitle": "Reinstate {name}?",
+  "@adminReinstateTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "adminReinstateBody": "They can sign in again and other members see them again.",
+  "adminMemberReinstated": "{name} is reinstated",
+  "@adminMemberReinstated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "adminSuspendedForGood": "Suspended until you reinstate them",
+  "adminSuspendedUntil": "Suspended until {date}",
+  "@adminSuspendedUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "adminSuspendMember": "Suspend {name} (admin)",
+  "@adminSuspendMember": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "adminForbidden": "This account isn’t an admin.",
+  "adminRateLimited": "Too many requests. Try again in a minute.",
+  "adminMemberGone": "That member no longer exists.",
+  "adminMemberIsAdmin": "Admins can’t be suspended from the app.",
+  "adminFailed": "Couldn’t do that. Try again."
 }

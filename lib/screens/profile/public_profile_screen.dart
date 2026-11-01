@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:checkpoint/l10n/l10n.dart';
+import 'package:checkpoint/models/admin_moderation.dart';
 import 'package:checkpoint/models/game.dart';
 import 'package:checkpoint/models/game_reviews.dart' show MemberReportSubject;
 import 'package:checkpoint/models/public_profile.dart';
@@ -12,7 +13,9 @@ import 'package:checkpoint/screens/lists/lists_screen.dart';
 import 'package:checkpoint/screens/profile/milestones_section.dart';
 import 'package:checkpoint/widgets/share_link_button.dart';
 import 'package:checkpoint/screens/profile/profile_layout.dart';
+import 'package:checkpoint/sheets/admin_actions.dart';
 import 'package:checkpoint/sheets/member_actions.dart';
+import 'package:checkpoint/state/admin_store.dart';
 import 'package:checkpoint/state/auth_store.dart';
 import 'package:checkpoint/state/library_state.dart';
 import 'package:checkpoint/state/milestones_store.dart';
@@ -107,10 +110,11 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   }
 }
 
-enum _MemberAction { reportProfile, reportPhoto, block }
+enum _MemberAction { reportProfile, reportPhoto, block, suspend }
 
 /// Report this profile or its photo, or block the member (who is then gone from
-/// the whole app, and this screen closes).
+/// the whole app, and this screen closes). An admin can also suspend the member
+/// (who is then gone for everyone, and this screen closes).
 class _MemberMenu extends StatelessWidget {
   const _MemberMenu({required this.profile});
 
@@ -147,12 +151,24 @@ class _MemberMenu extends StatelessWidget {
           ),
         );
         if (blocked) navigator.pop();
+      case _MemberAction.suspend:
+        final suspended = await suspendMemberAfterAsking(
+          context,
+          ModeratedMember(
+            id: profile.id,
+            handle: profile.handle.replaceFirst('@', ''),
+            name: profile.name,
+          ),
+        );
+        if (suspended) navigator.pop();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    // This menu is never on your own profile, where the server would refuse it.
+    final canSuspend = context.watch<AdminStore>().isAdmin;
     PopupMenuItem<_MemberAction> item(_MemberAction value, IconData icon, String label) =>
         PopupMenuItem(
           value: value,
@@ -172,6 +188,8 @@ class _MemberMenu extends StatelessWidget {
         if (profile.avatarUrl != null)
           item(_MemberAction.reportPhoto, Icons.image_not_supported_outlined, l10n.reportPhoto),
         item(_MemberAction.block, Icons.person_off_outlined, l10n.blockMember(profile.name)),
+        if (canSuspend)
+          item(_MemberAction.suspend, Icons.gavel_rounded, l10n.adminSuspendMember(profile.name)),
       ],
     );
   }

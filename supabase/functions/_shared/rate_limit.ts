@@ -28,6 +28,9 @@ export const RATE_LIMITS = {
   steamSync: { bucket: 'sync-steam', maxHits: 10, windowSeconds: 3600 },
   achievements: { bucket: 'sync-achievements', maxHits: 100, windowSeconds: 600 },
   deleteAccount: { bucket: 'delete-account', maxHits: 10, windowSeconds: 3600 },
+  // The in-app moderation screens (admin-moderation): a list a few times a minute and an
+  // action now and then. Counted for every caller, admin or not, before the admin check.
+  adminModeration: { bucket: 'admin-moderation', maxHits: 300, windowSeconds: 600 },
   // Counted when a link starts and again when Steam sends the browser back:
   // ten Steam sign-ins an hour.
   steamLink: { bucket: 'steam-link', maxHits: 20, windowSeconds: 3600 },

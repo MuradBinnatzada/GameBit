@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:checkpoint/models/achievement.dart';
+import 'package:checkpoint/models/admin_moderation.dart';
 import 'package:checkpoint/models/achievement_summary.dart';
 import 'package:checkpoint/models/activity_entry.dart';
 import 'package:checkpoint/models/browse.dart';
@@ -28,6 +29,8 @@ import 'package:checkpoint/models/results_page.dart';
 import 'package:checkpoint/models/studio_filters.dart';
 import 'package:checkpoint/models/social_user.dart';
 import 'package:checkpoint/models/user_profile.dart';
+import 'package:checkpoint/services/admin_api_service.dart';
+import 'package:checkpoint/services/admin_failure.dart';
 import 'package:checkpoint/services/auth_service.dart';
 import 'package:checkpoint/services/discussion_api_service.dart';
 import 'package:checkpoint/services/discussion_failure.dart';
@@ -1911,4 +1914,114 @@ class FakeReleaseNotifier implements ReleaseNotifier {
 
   @override
   Future<void> openSystemSettings() async => calls.add('settings');
+}
+
+/// An open report about [memberId] for the admin queue.
+AdminReport testReport(
+  String memberId, {
+  String name = 'Rude Player',
+  String handle = 'rude',
+  ReportSource source = ReportSource.review,
+  ReportReason reason = ReportReason.abuse,
+  String content = 'A rude review',
+  double hoursOpen = 3,
+  bool overdue = false,
+  bool suspended = false,
+}) => AdminReport(
+  source: source,
+  reason: reason,
+  member: ModeratedMember(
+    id: memberId,
+    handle: handle,
+    name: name,
+    suspended: suspended,
+  ),
+  content: content,
+  hoursOpen: hoursOpen,
+  overdue: overdue,
+);
+
+/// The `admin-moderation` function and `am_i_admin`, on lists of their own: a
+/// suspension closes the reports about the member and lists them, as the server
+/// does. [admin] is the answer to "am I an admin"; [failWith] refuses every call
+/// that follows; [gate] holds the list calls until completed. [calls] is what was
+/// asked, in order.
+class FakeAdminApi extends AdminApiService {
+  FakeAdminApi({this.admin = true});
+
+  bool admin;
+  List<AdminReport> reportList = [];
+  List<SuspendedMember> suspendedList = [];
+  AdminFailure? failWith;
+  Completer<void>? gate;
+  final List<String> calls = [];
+
+  void _maybeFail() {
+    final failure = failWith;
+    if (failure != null) throw failure;
+  }
+
+  @override
+  Future<bool> isAdmin() async {
+    calls.add('isAdmin');
+    return admin;
+  }
+
+  @override
+  Future<List<AdminReport>> reports() async {
+    calls.add('reports');
+    await gate?.future;
+    _maybeFail();
+    return List.of(reportList);
+  }
+
+  @override
+  Future<List<SuspendedMember>> suspended() async {
+    calls.add('suspended');
+    await gate?.future;
+    _maybeFail();
+    return List.of(suspendedList);
+  }
+
+  @override
+  Future<void> suspend({
+    required String memberId,
+    required String reason,
+    int? days,
+  }) async {
+    calls.add('suspend:$memberId:$reason:${days ?? 'until reinstated'}');
+    _maybeFail();
+    final reported = reportList
+        .where((r) => r.member.id == memberId)
+        .map((r) => r.member)
+        .firstOrNull;
+    reportList.removeWhere((r) => r.member.id == memberId);
+    suspendedList.insert(
+      0,
+      SuspendedMember(
+        member: ModeratedMember(
+          id: memberId,
+          handle: reported?.handle ?? '',
+          name: reported?.name ?? '',
+          suspended: true,
+        ),
+        reason: reason,
+        until: days == null ? null : DateTime.now().add(Duration(days: days)),
+      ),
+    );
+  }
+
+  @override
+  Future<void> reinstate(String memberId) async {
+    calls.add('reinstate:$memberId');
+    _maybeFail();
+    suspendedList.removeWhere((s) => s.member.id == memberId);
+  }
+
+  @override
+  Future<void> closeReports(String memberId, {required bool dismissed}) async {
+    calls.add('close:$memberId:${dismissed ? 'dismissed' : 'actioned'}');
+    _maybeFail();
+    reportList.removeWhere((r) => r.member.id == memberId);
+  }
 }

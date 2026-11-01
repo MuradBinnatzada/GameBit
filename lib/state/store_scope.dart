@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:checkpoint/state/app_stores.dart';
+import 'package:checkpoint/state/admin_store.dart';
 import 'package:checkpoint/state/auth_store.dart';
 import 'package:checkpoint/state/blocks_store.dart';
 import 'package:checkpoint/state/browse_store.dart';
@@ -120,7 +121,10 @@ class AppStoresScope extends StatelessWidget {
                                                           store: stores.onboarding,
                                                           child: StoreScope<ReleaseRemindersStore>(
                                                             store: stores.releaseReminders,
-                                                            child: child,
+                                                            child: StoreScope<AdminStore>(
+                                                              store: stores.admin,
+                                                              child: child,
+                                                            ),
                                                           ),
                                                         ),
                                                       ),

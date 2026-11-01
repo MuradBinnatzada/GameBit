@@ -13,6 +13,29 @@ with what they report. The App Store (guideline 1.2) expects four things, and th
 Everything here is run in the **Supabase dashboard > SQL editor** (it runs as `postgres`). The `moderation`
 schema is not exposed by the API and no member can reach it.
 
+## From the app
+
+Most of this can be done in the app: **Settings > Admin** lists the open reports (oldest first, overdue ones
+in red) and the suspended members. Tap a report to **Suspend** the member (a reason and 1, 7, 30 days or until
+you reinstate them), **Dismiss** the reports about them (nothing was wrong) or mark them **handled**.
+**Suspended** has a **Reinstate** button for each member, and another member's profile menu has **Suspend**.
+Suspending closes the open reports about the member as actioned. Removing content (a review, a thread, a list,
+a profile) is still done below.
+
+Nobody is an admin until you add them, once, here (use the email of the account you sign in with; Google
+accounts have it too):
+
+```sql
+insert into moderation.admins (user_id)
+select id from auth.users where email = 'you@example.com';
+```
+
+Take someone out again with `delete from moderation.admins where user_id = '<id>';`. An admin can't be
+suspended from the app: remove them from the list first. Keep two-factor on for an admin's account; anyone who
+gets into it can suspend members. The app shows **Admin** only to admins and the server checks again on every
+request, so a member who is not listed gets a refusal (`FORBIDDEN`). Who suspended a member is in
+`moderation.suspensions.suspended_by` (`admin:<id>`), and who closed a report is in its `outcome`.
+
 ## Every day (and before 24 hours are up)
 
 ```sql

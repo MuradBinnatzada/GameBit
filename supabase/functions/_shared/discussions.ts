@@ -14,7 +14,7 @@ export const POST_MAX = 2000
 /** Most web addresses one text may have: more is advertising. */
 export const MAX_LINKS = 3
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const BOARD_ID = /^[a-z0-9-]{2,30}$/
 
 export type DiscussionRequest =

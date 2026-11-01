@@ -1,23 +1,28 @@
 import 'package:flutter/material.dart';
 
 import 'package:checkpoint/l10n/l10n.dart';
+import 'package:checkpoint/screens/settings/admin_section.dart';
 import 'package:checkpoint/screens/settings/account_section.dart';
 import 'package:checkpoint/screens/settings/appearance_section.dart';
 import 'package:checkpoint/screens/settings/data_section.dart';
 import 'package:checkpoint/screens/settings/notifications_section.dart';
 import 'package:checkpoint/screens/settings/privacy_section.dart';
 import 'package:checkpoint/screens/settings/security_section.dart';
+import 'package:checkpoint/state/admin_store.dart';
+import 'package:checkpoint/state/store_scope.dart';
 import 'package:checkpoint/theme/palette.dart';
 import 'package:checkpoint/widgets/app_choice_chip.dart';
 
-/// The parts of Settings, in the order they are listed.
+/// The parts of Settings, in the order they are listed. [admin] is listed only to
+/// a member who may moderate (see [AdminStore]).
 enum SettingsSection {
   account(Icons.person_rounded),
   security(Icons.shield_rounded),
   privacy(Icons.lock_rounded),
   notifications(Icons.notifications_rounded),
   appearance(Icons.palette_rounded),
-  data(Icons.import_export_rounded);
+  data(Icons.import_export_rounded),
+  admin(Icons.admin_panel_settings_rounded);
 
   const SettingsSection(this.icon);
   final IconData icon;
@@ -29,6 +34,7 @@ enum SettingsSection {
     notifications => L10n.current.settingsNotifications,
     appearance => L10n.current.settingsAppearance,
     data => L10n.current.settingsData,
+    admin => L10n.current.settingsAdmin,
   };
 }
 
@@ -61,8 +67,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _section = section);
   }
 
-  Widget _content() {
-    final body = switch (_section) {
+  Widget _content(SettingsSection section) {
+    final body = switch (section) {
       SettingsSection.account => AccountSection(
         onDeletingChanged: (deleting) => setState(() => _deleting = deleting),
       ),
@@ -71,13 +77,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
       SettingsSection.notifications => const NotificationsSection(),
       SettingsSection.appearance => const AppearanceSection(),
       SettingsSection.data => const DataSection(),
+      SettingsSection.admin => const AdminSection(),
     };
     // A section starts at its top, whatever the one before was scrolled to.
-    return KeyedSubtree(key: ValueKey(_section), child: body);
+    return KeyedSubtree(key: ValueKey(section), child: body);
   }
 
   @override
   Widget build(BuildContext context) {
+    final isAdmin = context.watch<AdminStore>().isAdmin;
+    final sections = [
+      for (final section in SettingsSection.values)
+        if (section != SettingsSection.admin || isAdmin) section,
+    ];
+    // Admin goes when the member stops being one (or signs out) while it is open.
+    final section = sections.contains(_section)
+        ? _section
+        : SettingsSection.account;
     return PopScope(
       canPop: !_deleting,
       child: Scaffold(
@@ -88,7 +104,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               final content = Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 640),
-                  child: _content(),
+                  child: _content(section),
                 ),
               );
               if (constraints.maxWidth >= SettingsScreen.sidebarBreakpoint) {
@@ -97,7 +113,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     SizedBox(
                       width: 232,
                       child: _Sidebar(
-                        selected: _section,
+                        sections: sections,
+                        selected: section,
                         enabled: !_deleting,
                         onSelect: _select,
                       ),
@@ -113,7 +130,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               return Column(
                 children: [
                   _SectionChips(
-                    selected: _section,
+                    sections: sections,
+                    selected: section,
                     enabled: !_deleting,
                     onSelect: _select,
                   ),
@@ -131,11 +149,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 /// The sections down the left side of a wide window.
 class _Sidebar extends StatelessWidget {
   const _Sidebar({
+    required this.sections,
     required this.selected,
     required this.enabled,
     required this.onSelect,
   });
 
+  final List<SettingsSection> sections;
   final SettingsSection selected;
   final bool enabled;
   final ValueChanged<SettingsSection> onSelect;
@@ -145,7 +165,7 @@ class _Sidebar extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(12, 16, 12, 16),
       children: [
-        for (final section in SettingsSection.values)
+        for (final section in sections)
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
             child: ListTile(
@@ -172,11 +192,13 @@ class _Sidebar extends StatelessWidget {
 /// The sections as a row of chips across the top of a narrow screen.
 class _SectionChips extends StatelessWidget {
   const _SectionChips({
+    required this.sections,
     required this.selected,
     required this.enabled,
     required this.onSelect,
   });
 
+  final List<SettingsSection> sections;
   final SettingsSection selected;
   final bool enabled;
   final ValueChanged<SettingsSection> onSelect;
@@ -189,8 +211,8 @@ class _SectionChips extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       child: Row(
         children: [
-          for (final section in SettingsSection.values) ...[
-            if (section != SettingsSection.values.first)
+          for (final section in sections) ...[
+            if (section != sections.first)
               const SizedBox(width: 8),
             IgnorePointer(
               ignoring: !enabled,
