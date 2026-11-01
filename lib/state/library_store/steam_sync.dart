@@ -4,7 +4,9 @@ part of '../library_store.dart';
 extension LibrarySteamSync on LibraryStore {
   /// Syncs the signed-in user's Steam library. Returns null when everything was
   /// imported, otherwise a message that is safe to show: why nothing was synced,
-  /// or what is still waiting when only part of it was. [syncStatus] says which.
+  /// or what is still waiting when only part of it was; or, for a sync that
+  /// finished, which games it moved to Hidden (see [_movedToHidden]).
+  /// [syncStatus] says which.
   Future<String?> syncLibrary() async {
     final current = _user;
     if (current == null) return L10n.current.syncSignIn;
@@ -34,7 +36,8 @@ extension LibrarySteamSync on LibraryStore {
       // are filled in once the re-read above has put them on screen, so what
       // comes back lands on them.
       if (_user?.id == current.id) _backfillAfterRefresh = true;
-      return delayed?.message;
+      final moved = _movedToHidden(data);
+      return delayed?.message ?? (moved > 0 ? L10n.current.syncMovedToHidden(moved) : null);
     } catch (e) {
       debugPrint('Error syncing Steam library: $e');
       final failure = SyncFailure.from(e);
@@ -141,4 +144,13 @@ extension LibrarySteamSync on LibraryStore {
       return L10n.current.achievementsLoadFailed;
     }
   }
+}
+
+/// How many games the sync moved to Hidden: those Steam no longer lists, which is
+/// how a game made private there looks to this app
+/// (`summary.steam_unlisted_hidden` of the function's answer).
+int _movedToHidden(Object? data) {
+  final summary = data is Map ? data['summary'] : null;
+  final moved = summary is Map ? summary['steam_unlisted_hidden'] : null;
+  return moved is num ? moved.toInt() : 0;
 }

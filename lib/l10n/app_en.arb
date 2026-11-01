@@ -1847,6 +1847,7 @@
     }
   },
   "privacyPrivateTitle": "Private to you",
+  "privacyHiddenTitle": "Hidden games",
   "emailAddress": "Email address",
   "privacyEmailText": "Never shown to other members.",
   "purchasePrices": "Purchase prices",
@@ -1936,6 +1937,14 @@
   "accountDeleted": "Your account was deleted",
   "deleteAccountDescription": "Permanently deletes your profile, library, play logs, follows and photo, and removes your sign-in. This can't be undone.",
   "librarySynced": "Library synced successfully",
+  "syncMovedToHidden": "{count, plural, =1{Library synced. 1 game Steam no longer lists (likely made private there) was moved to Hidden.} other{Library synced. {count} games Steam no longer lists (likely made private there) were moved to Hidden.}}",
+  "@syncMovedToHidden": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "syncing": "Syncing…",
   "retrySync": "Retry Sync",
   "syncLibrary": "Sync Library",

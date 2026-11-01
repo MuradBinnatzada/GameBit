@@ -79,6 +79,44 @@ void main() {
     expect(repo.libraryFetches, greaterThan(fetchesBefore));
   });
 
+  test('a sync that moved games to Hidden, because Steam no longer lists them, says so', () async {
+    repo.syncData = {
+      'success': true,
+      'summary': {'steam_unlisted_hidden': 2},
+    };
+    expect(await library.syncLibrary(), contains('2 games Steam no longer lists'));
+    expect(library.syncStatus, SyncStatus.synced);
+    expect(library.syncFailure, isNull);
+
+    repo.syncData = {
+      'success': true,
+      'summary': {'steam_unlisted_hidden': 1},
+    };
+    expect(await library.syncLibrary(), contains('1 game Steam no longer lists'));
+
+    // None moved, or an older function that doesn't say: nothing to report.
+    repo.syncData = {
+      'success': true,
+      'summary': {'steam_unlisted_hidden': 0},
+    };
+    expect(await library.syncLibrary(), isNull);
+    repo.syncData = {'success': true};
+    expect(await library.syncLibrary(), isNull);
+  });
+
+  test('what IGDB left for later is reported before the games moved to Hidden', () async {
+    repo.syncData = {
+      'success': true,
+      'summary': {'steam_unlisted_hidden': 3},
+      'delayed': {'code': 'IGDB_RATE_LIMITED', 'retry_after': 120, 'deferred': 30},
+    };
+
+    final message = await library.syncLibrary();
+
+    expect(library.syncStatus, SyncStatus.delayed);
+    expect(message, library.syncFailure!.message);
+  });
+
   test('a sync that IGDB cut short is "delayed", and the games it did match still show', () async {
     repo.syncData = {
       'success': true,

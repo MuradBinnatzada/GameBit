@@ -46,6 +46,9 @@
  *                  and log a play session for every library game Steam reports
  *                  more playtime for than at the last sync (`steam_playtime_minutes`,
  *                  _shared/steam_sessions.ts)
+ *   6b. Private     a game this member's library had from Steam and Steam no longer
+ *                  lists is one they made private there: it is hidden from other
+ *                  members (`mark_unlisted_steam_games`, _shared/steam_unlisted.ts).
  *   7. Achievements count the achievements of every game played since it was
  *                  last counted (ISteamUserStats/GetPlayerAchievements, one small
  *                  request per game, a few at a time, most recently played first)
@@ -107,6 +110,7 @@ import {
 } from '../_shared/achievement_counts.ts'
 import { failureDelayMs, shouldStopBatch, successDelayMs } from '../_shared/sync_schedule.ts'
 import { type PlaytimeSeen, playtimeUpdates, steamSessionPlatform } from '../_shared/steam_sessions.ts'
+import { listedAppIds, listIsWhole } from '../_shared/steam_unlisted.ts'
 import { releaseDate } from '../_shared/game_details.ts'
 import {
   pickLinkedGame,
@@ -710,7 +714,13 @@ function newUserGameRow(
 // ---- END PURE HELPERS ------------------------------------------------------
 
 // ---- Steam -----------------------------------------------------------------
-async function fetchSteamGames(steamId: string): Promise<SteamGame[]> {
+/** What GetOwnedGames answered: the games, and how many Steam says there are. */
+interface OwnedGames {
+  games: SteamGame[]
+  count: unknown
+}
+
+async function fetchSteamGames(steamId: string): Promise<OwnedGames> {
   const apiKey = Deno.env.get('STEAM_API_KEY')
   if (!apiKey) {
     console.error('STEAM_API_KEY is not set')
@@ -766,7 +776,7 @@ async function fetchSteamGames(steamId: string): Promise<SteamGame[]> {
       'Your Steam game details are private. Set "Game details" to Public in your Steam privacy settings, then try again.',
     )
   }
-  return Array.isArray(response.games) ? response.games : []
+  return { games: Array.isArray(response.games) ? response.games : [], count: response.game_count }
 }
 
 // ---- IGDB ------------------------------------------------------------------
@@ -1403,6 +1413,35 @@ async function upsertChunked(
   }
 }
 
+/**
+ * Hides the games this member's library had from Steam and Steam no longer lists, which
+ * is what a game made private looks like to this API (`mark_unlisted_steam_games`). Only
+ * from a list that is the whole library; it never fails the sync.
+ */
+async function hideUnlistedGames(
+  admin: SupabaseClient,
+  userId: string,
+  owned: SteamGame[],
+  claimed: unknown,
+): Promise<{ hidden: number }> {
+  if (!listIsWhole(owned.length, claimed)) return { hidden: 0 }
+  try {
+    const { data, error } = await admin.rpc('mark_unlisted_steam_games', {
+      target_user: userId,
+      listed_appids: listedAppIds(owned),
+    })
+    if (error) {
+      console.error('sync-steam: hiding unlisted games failed:', error.message)
+      return { hidden: 0 }
+    }
+    const row = Array.isArray(data) ? data[0] : data
+    return { hidden: Number(row?.hidden) || 0 }
+  } catch (e) {
+    console.error('sync-steam: hiding unlisted games failed:', e)
+    return { hidden: 0 }
+  }
+}
+
 // ---- Orchestration ---------------------------------------------------------
 async function syncLibrary(
   admin: SupabaseClient,
@@ -1414,7 +1453,7 @@ async function syncLibrary(
   const issues: SyncIssues = { warnings: [], igdb: null }
 
   // 1. Steam
-  const owned = await fetchSteamGames(steamId)
+  const { games: owned, count: ownedCount } = await fetchSteamGames(steamId)
   const { entries, junk, nonGames } = toSteamEntries(owned)
 
   // 2. What does the catalog already know about these Steam apps? An app is
@@ -1612,6 +1651,11 @@ async function syncLibrary(
     await upsertChunked(admin, 'user_games', libraryRows, 'user_id,game_id')
   }
 
+  // 6b. A game imported before that Steam no longer lists is one the member made
+  //     private there (to an outside app a private game is simply not owned), so it
+  //     goes to Hidden. See _shared/steam_unlisted.ts.
+  const unlisted = await hideUnlistedGames(admin, userId, owned, ownedCount)
+
   // The sessions go in after the baselines they were measured against moved on,
   // so a failure here loses a session rather than logging it twice next time.
   const sessionRows: Record<string, unknown>[] = []
@@ -1691,6 +1735,7 @@ async function syncLibrary(
       updated,
       unchanged,
       steam_sessions_logged: sessionsLogged,
+      steam_unlisted_hidden: unlisted.hidden,
       unmatched: unmatched.length,
       deferred,
       achievements_due: achievements.due,

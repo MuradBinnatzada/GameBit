@@ -55,11 +55,6 @@ class PrivacySection extends StatelessWidget {
                 text: l10n.privacyLibraryText,
               ),
               _Item(
-                icon: Icons.visibility_off_rounded,
-                title: l10n.libraryHiddenTab,
-                text: l10n.privacyHiddenText,
-              ),
-              _Item(
                 icon: Icons.history_rounded,
                 title: l10n.privacyRecentActivity,
                 text: l10n.privacyRecentActivityText,
@@ -87,6 +82,11 @@ class PrivacySection extends StatelessWidget {
           title: l10n.privacyPrivateTitle,
           child: Column(
             children: [
+              _Item(
+                icon: Icons.visibility_off_rounded,
+                title: l10n.privacyHiddenTitle,
+                text: l10n.privacyHiddenText,
+              ),
               _Item(
                 icon: Icons.mail_outline_rounded,
                 title: l10n.emailAddress,
