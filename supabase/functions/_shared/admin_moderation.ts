@@ -4,6 +4,11 @@
 // open reports, the suspended members, and suspending, reinstating and closing
 // reports (20261101020000_admin_moderation.sql). Pure functions with no I/O, so
 // they can be tested. The database decides who is an admin; nothing here does.
+//
+// Removing content (20261101030000_admin_remove_content.sql) names what is removed
+// the way the queue lists it: `kind` is the report's `source` and `reference` its
+// `reference` (the game of a review, the thread, the reply or the list; none for a
+// profile), `member` the author, who the database checks the content belongs to.
 
 import { tidyTitle, UUID } from './discussions.ts'
 
@@ -14,12 +19,17 @@ export const NOTE_MAX = 200
 /** The longest suspension in days (ten years); no days at all is "until reinstated". */
 export const DAYS_MAX = 3650
 
+/** What can be removed: the `source` of an open report. */
+export const CONTENT_KINDS = ['review', 'thread', 'reply', 'list', 'profile'] as const
+export type ContentKind = typeof CONTENT_KINDS[number]
+
 export type AdminRequest =
   | { action: 'reports' }
   | { action: 'suspended' }
   | { action: 'suspend'; member: string; reason: string; days: number | null }
   | { action: 'reinstate'; member: string }
   | { action: 'close'; member: string; result: 'actioned' | 'dismissed'; note: string }
+  | { action: 'remove'; kind: ContentKind; member: string; reference: string | null }
 
 /** Why a request is refused; the app words the message itself from `code`. */
 export type Refusal = { code: 'BAD_REQUEST'; message: string }
@@ -68,6 +78,17 @@ export function parseAdminRequest(body: unknown): AdminRequest | Refusal {
         return refuse('result must be actioned or dismissed')
       }
       return { action: 'close', member, result: raw.result, note: tidyTitle(raw.note).slice(0, NOTE_MAX) }
+    }
+    case 'remove': {
+      const member = memberId(raw.member)
+      if (!member) return refuse('member must be a member id')
+      const kind = CONTENT_KINDS.find((k) => k === raw.kind)
+      if (!kind) return refuse(`kind must be one of ${CONTENT_KINDS.join(', ')}`)
+      // A profile is wiped as a whole; everything else is one thing, found by its id.
+      if (kind === 'profile') return { action: 'remove', kind, member, reference: null }
+      const reference = memberId(raw.reference)
+      if (!reference) return refuse('reference must be the id of what to remove')
+      return { action: 'remove', kind, member, reference }
     }
     default:
       return refuse('Unknown action')

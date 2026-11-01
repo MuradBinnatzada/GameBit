@@ -108,6 +108,37 @@ Deno.test('closing reports takes actioned or dismissed and a short note', () => 
   }
 })
 
+Deno.test('removing content names the kind, the author and the thing', () => {
+  const THING = '7c9e6679-7425-40de-944b-e07fc1f90ae7'
+  for (const kind of ['review', 'thread', 'reply', 'list']) {
+    assertEquals<unknown>(parseAdminRequest({ action: 'remove', kind, member: MEMBER, reference: THING.toUpperCase() }), {
+      action: 'remove',
+      kind,
+      member: MEMBER,
+      reference: THING,
+    })
+  }
+})
+
+Deno.test('a profile is cleared as a whole, whatever reference comes with it', () => {
+  const expected = { action: 'remove', kind: 'profile', member: MEMBER, reference: null }
+  assertEquals<unknown>(parseAdminRequest({ action: 'remove', kind: 'profile', member: MEMBER }), expected)
+  assertEquals<unknown>(parseAdminRequest({ action: 'remove', kind: 'profile', member: MEMBER, reference: 'junk' }), expected)
+})
+
+Deno.test('removing needs a known kind, a member and, but for a profile, a real reference', () => {
+  const THING = '7c9e6679-7425-40de-944b-e07fc1f90ae7'
+  for (const kind of [undefined, null, '', 'comment', 'avatar', 'other', 7, ['list']]) {
+    assertEquals(isRefusal(parseAdminRequest({ action: 'remove', kind, member: MEMBER, reference: THING })), true, String(kind))
+  }
+  for (const member of [undefined, '', 'someone', 5]) {
+    assertEquals(isRefusal(parseAdminRequest({ action: 'remove', kind: 'list', member, reference: THING })), true, String(member))
+  }
+  for (const reference of [undefined, null, '', 'not-an-id', 5, THING + 'x']) {
+    assertEquals(isRefusal(parseAdminRequest({ action: 'remove', kind: 'thread', member: MEMBER, reference })), true, String(reference))
+  }
+})
+
 Deno.test('report rows become reports, and leave out who reported', () => {
   const rows = [{
     source: 'review',

@@ -17,11 +17,16 @@
 //                        { "action": "reinstate", "member": "<id>" }
 //                        { "action": "close", "member": "<id>", "result": "actioned" | "dismissed",
 //                          "note": "..." }
+//                        { "action": "remove", "kind": "review" | "thread" | "reply" | "list" |
+//                          "profile", "member": "<author id>", "reference": "<id>" }
+//                          (`kind` and `reference` are a report's `source` and `reference`; a
+//                          profile has no reference. A review is emptied, a profile wiped, the rest
+//                          deleted; the content must be the member's)
 //          Header:       Authorization: Bearer <user access token>
 // Response (JSON):       { "reports": [...] }         reports (see _shared/admin_moderation.ts)
 //                        { "members": [...] }         suspended
 //                        { "closed": 3 }              suspend, close: how many reports it closed
-//                        { "success": true }          reinstate
+//                        { "success": true }          reinstate, remove
 //                        or { "error": "...", "code": "...", "retry_after"?: seconds }
 //                          UNAUTHENTICATED  (401)  no valid user session
 //                          MFA_REQUIRED     (403)  two-factor is on and this session has not
@@ -29,7 +34,7 @@
 //                          FORBIDDEN        (403)  the caller is not an admin
 //                          RATE_LIMITED     (429)  too many requests; `retry_after`
 //                          BAD_REQUEST      (400 / 405)
-//                          NOT_FOUND        (404)  no such member
+//                          NOT_FOUND        (404)  no such member, or the content is gone
 //                          MEMBER_IS_ADMIN  (409)  admins are not suspended from the app
 //                          NOT_CONFIGURED   (500)  missing secrets
 //                          INTERNAL         (500)  anything else
@@ -133,6 +138,15 @@ async function handle(client: SupabaseClient, actor: string, request: AdminReque
     case 'reinstate':
       await call(client, 'admin_reinstate_member', { actor, target: request.member })
       console.log(`admin-moderation: ${actor} reinstated ${request.member}`)
+      return jsonResponse({ success: true })
+    case 'remove':
+      await call(client, 'admin_remove_content', {
+        actor,
+        kind: request.kind,
+        ref_id: request.reference,
+        target: request.member,
+      })
+      console.log(`admin-moderation: ${actor} removed ${request.kind} of ${request.member}`)
       return jsonResponse({ success: true })
     case 'close': {
       const closed = await call(client, 'admin_close_reports', {

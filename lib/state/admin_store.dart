@@ -162,6 +162,36 @@ class AdminStore extends AccountScopedStore {
     if (_reportsStatus == LoadStatus.ready) unawaited(loadReports());
   }
 
+  /// Takes down what [report] is about (see [AdminApiService.removeContent]), and
+  /// takes it, and any other report of the same thing, off the queue. Throws an
+  /// [AdminFailure] when it could not be done; when it was gone already the queue
+  /// is read again, since it is out of date.
+  Future<void> removeContent(AdminReport report) async {
+    final epoch = this.epoch;
+    try {
+      await _api.removeContent(
+        kind: report.source,
+        memberId: report.member.id,
+        reference: report.reference,
+      );
+    } on AdminFailure catch (e) {
+      if (e.code == AdminFailureCode.notFound && !isStale(epoch)) {
+        unawaited(loadReports());
+      }
+      rethrow;
+    }
+    if (isStale(epoch)) return;
+    _reports = List.unmodifiable(
+      _reports.where(
+        (r) =>
+            r.source != report.source ||
+            r.member.id != report.member.id ||
+            r.reference != report.reference,
+      ),
+    );
+    notifyIfAlive();
+  }
+
   /// Closes the open reports about [memberId]: [dismissed] when nothing was
   /// wrong, otherwise as actioned. Throws an [AdminFailure] when it could not be
   /// done.

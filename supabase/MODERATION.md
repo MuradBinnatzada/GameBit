@@ -17,10 +17,12 @@ schema is not exposed by the API and no member can reach it.
 
 Most of this can be done in the app: **Settings > Admin** lists the open reports (oldest first, overdue ones
 in red) and the suspended members. Tap a report to **Suspend** the member (a reason and 1, 7, 30 days or until
-you reinstate them), **Dismiss** the reports about them (nothing was wrong) or mark them **handled**.
-**Suspended** has a **Reinstate** button for each member, and another member's profile menu has **Suspend**.
-Suspending closes the open reports about the member as actioned. Removing content (a review, a thread, a list,
-a profile) is still done below.
+you reinstate them), **Dismiss** the reports about them (nothing was wrong) or mark them **handled**. The first button takes down what
+was reported, after asking: **Remove review** (the text is emptied; the rating and the game stay), **Remove
+thread** (with its replies), **Remove reply**, **Remove list**, or **Clear profile** (name, handle, bio, photo and
+service names). **Suspended** has a **Reinstate** button for each member, and another member's profile menu has
+**Suspend**. Suspending closes the open reports about the member as actioned; removing closes the reports about
+that content (the SQL below does the same by hand).
 
 Nobody is an admin until you add them, once, here (use the email of the account you sign in with; Google
 accounts have it too):

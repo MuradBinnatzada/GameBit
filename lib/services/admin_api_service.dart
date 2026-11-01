@@ -78,6 +78,24 @@ class AdminApiService {
     await _invoke({'action': 'reinstate', 'member': memberId});
   }
 
+  /// Takes down what a report is about: [kind] and [reference] are its source and
+  /// reference, [memberId] the member who wrote it. A review is emptied, a profile
+  /// cleared (it has no [reference]), a thread, reply or list deleted. The server
+  /// checks the content is the member's.
+  Future<void> removeContent({
+    required ReportSource kind,
+    required String memberId,
+    String? reference,
+  }) async {
+    assert(kind.removable);
+    await _invoke({
+      'action': 'remove',
+      'kind': kind.wire,
+      'member': memberId,
+      'reference': ?reference,
+    });
+  }
+
   /// Closes the open reports about [memberId]: [dismissed] when nothing was wrong,
   /// otherwise as actioned.
   Future<void> closeReports(String memberId, {required bool dismissed}) async {

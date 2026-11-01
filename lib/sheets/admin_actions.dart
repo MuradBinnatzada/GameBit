@@ -100,6 +100,71 @@ Future<bool> reinstateMemberAfterAsking(
   }
 }
 
+/// Asks to take down what [report] is about, and does: a review is emptied, a
+/// profile cleared, a thread, reply or list deleted. True when it was done.
+Future<bool> removeContentAfterAsking(
+  BuildContext context,
+  AdminReport report,
+) async {
+  final l10n = context.l10n;
+  final palette = context.palette;
+  final isProfile = report.source == ReportSource.profile;
+  final sure = await showDialog<bool>(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: Text('${report.source.removeLabel}?'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              report.member.displayName,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            if (report.content.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                report.content,
+                maxLines: 6,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: palette.muted),
+              ),
+            ],
+            const SizedBox(height: 14),
+            Text('${report.source.removeSubtitle}. ${l10n.adminRemoveUndone}'),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: palette.danger),
+          onPressed: () => Navigator.of(context).pop(true),
+          child: Text(isProfile ? l10n.adminClear : l10n.adminRemove),
+        ),
+      ],
+    ),
+  );
+  if (sure != true || !context.mounted) return false;
+  final store = context.read<AdminStore>();
+  final messenger = ScaffoldMessenger.of(context);
+  try {
+    await store.removeContent(report);
+    _say(
+      messenger,
+      isProfile ? l10n.adminProfileCleared : l10n.adminContentRemoved,
+    );
+    return true;
+  } catch (e) {
+    _say(messenger, AdminFailure.from(e).message);
+    return false;
+  }
+}
+
 /// Closes the open reports about [member] without suspending them: [dismissed]
 /// when nothing was wrong, otherwise they count as acted on. True when closed.
 Future<bool> closeReportsAbout(

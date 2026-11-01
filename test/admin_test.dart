@@ -98,6 +98,21 @@ void main() {
       expect(report.reference, isNull);
     });
 
+    test('a report can be taken down, but for one of an unknown kind', () {
+      for (final source in ReportSource.values) {
+        expect(
+          source.removable,
+          source != ReportSource.other,
+          reason: '$source',
+        );
+      }
+      expect(ReportSource.review.removeLabel, 'Remove review');
+      expect(ReportSource.thread.removeLabel, 'Remove thread');
+      expect(ReportSource.reply.removeLabel, 'Remove reply');
+      expect(ReportSource.list.removeLabel, 'Remove list');
+      expect(ReportSource.profile.removeLabel, 'Clear profile');
+    });
+
     test('a member with no name is shown by their handle', () {
       const member = ModeratedMember(id: 'm1', handle: 'rude', name: '');
 
@@ -355,6 +370,101 @@ void main() {
     );
 
     test(
+      'removing sends what the report is about, and takes it off the queue',
+      () async {
+        api.reportList = [
+          testReport('m1', source: ReportSource.thread, reference: 't1'),
+          testReport('m1', source: ReportSource.thread, reference: 't1'),
+          testReport('m1', source: ReportSource.thread, reference: 't2'),
+          testReport('m1', source: ReportSource.review, reference: 't1'),
+          testReport('m2', source: ReportSource.thread, reference: 't1'),
+        ];
+        await signedIn();
+        await stores.admin.loadReports();
+
+        await stores.admin.removeContent(stores.admin.reports.first);
+
+        expect(api.calls.last, 'remove:thread:m1:t1');
+        // Only that thread: not the member's other thread, their review, or another
+        // member's report with the same id.
+        expect(
+          stores.admin.reports.map((r) => (r.source, r.member.id, r.reference)),
+          [
+            (ReportSource.thread, 'm1', 't2'),
+            (ReportSource.review, 'm1', 't1'),
+            (ReportSource.thread, 'm2', 't1'),
+          ],
+        );
+      },
+    );
+
+    test(
+      'clearing a profile has no reference and clears its reports',
+      () async {
+        api.reportList = [
+          testReport('m1', source: ReportSource.profile),
+          testReport('m1', source: ReportSource.profile),
+          testReport('m1', source: ReportSource.review, reference: 'g1'),
+        ];
+        await signedIn();
+        await stores.admin.loadReports();
+
+        await stores.admin.removeContent(stores.admin.reports.first);
+
+        expect(api.calls.last, 'remove:profile:m1:-');
+        expect(stores.admin.reports.map((r) => r.source), [
+          ReportSource.review,
+        ]);
+      },
+    );
+
+    test(
+      'a removal that fails throws and leaves the queue as it was',
+      () async {
+        api.reportList = [
+          testReport('m1', source: ReportSource.list, reference: 'l1'),
+        ];
+        await signedIn();
+        await stores.admin.loadReports();
+        api.failRemoveWith = const AdminFailure(AdminFailureCode.forbidden);
+
+        await expectLater(
+          stores.admin.removeContent(stores.admin.reports.single),
+          throwsA(isA<AdminFailure>()),
+        );
+
+        expect(stores.admin.reports, hasLength(1));
+      },
+    );
+
+    test(
+      'content that is gone already throws, and the queue is read again',
+      () async {
+        api.reportList = [
+          testReport('m1', source: ReportSource.list, reference: 'l1'),
+        ];
+        await signedIn();
+        await stores.admin.loadReports();
+        api.reportList = []; // somebody else removed it
+        api.failRemoveWith = const AdminFailure(AdminFailureCode.notFound);
+
+        await expectLater(
+          stores.admin.removeContent(stores.admin.reports.single),
+          throwsA(
+            isA<AdminFailure>().having(
+              (f) => f.code,
+              'code',
+              AdminFailureCode.notFound,
+            ),
+          ),
+        );
+        await pumpEventQueue();
+
+        expect(stores.admin.reports, isEmpty);
+      },
+    );
+
+    test(
       'another account is asked again, and nothing of the last one stays',
       () async {
         await signedIn();
@@ -549,6 +659,137 @@ void main() {
           expect(find.text('Suspend Rude Player?'), findsNothing);
         },
       );
+    });
+
+    group('removing what was reported', () {
+      setUp(() {
+        api.reportList = [
+          testReport(
+            'm1',
+            source: ReportSource.thread,
+            content: 'Awful thread | with a body',
+            reference: 't1',
+          ),
+          testReport(
+            'm2',
+            name: 'Spammer',
+            handle: 'spam4u',
+            source: ReportSource.profile,
+            content: 'name: Buy keys | bio: cheap',
+          ),
+          testReport('m3', name: 'Mystery', source: ReportSource.other),
+        ];
+      });
+
+      Future<void> openSheet(WidgetTester tester, String who) async {
+        await tester.tap(text(who));
+        await tester.pumpAndSettle();
+      }
+
+      testWidgets(
+        'each kind has its own button, and an unknown kind has none',
+        (tester) async {
+          await openAdmin(tester);
+
+          await openSheet(tester, 'Rude Player');
+          expect(find.text('Remove thread'), findsOneWidget);
+          expect(find.text('Deletes it with all its replies'), findsOneWidget);
+          await tester.tapAt(const Offset(10, 10)); // closes the sheet
+          await tester.pumpAndSettle();
+
+          await openSheet(tester, 'Spammer');
+          expect(find.text('Clear profile'), findsOneWidget);
+          expect(
+            find.text(
+              'Resets the name, username, bio, photo and service names',
+            ),
+            findsOneWidget,
+          );
+          await tester.tapAt(const Offset(10, 10));
+          await tester.pumpAndSettle();
+
+          await openSheet(tester, 'Mystery');
+          expect(find.text('Suspend…'), findsOneWidget);
+          expect(find.textContaining('Remove'), findsNothing);
+          expect(find.text('Clear profile'), findsNothing);
+        },
+      );
+
+      testWidgets(
+        'asks first, showing what is removed, and cancelling removes nothing',
+        (tester) async {
+          await openAdmin(tester);
+
+          await openSheet(tester, 'Rude Player');
+          await tester.tap(find.text('Remove thread'));
+          await tester.pumpAndSettle();
+
+          expect(find.text('Remove thread?'), findsOneWidget);
+          expect(
+            find.descendant(
+              of: find.byType(AlertDialog),
+              matching: find.text('Awful thread | with a body'),
+            ),
+            findsOneWidget,
+          );
+          expect(find.textContaining('This can’t be undone.'), findsOneWidget);
+          await tester.tap(find.text('Cancel'));
+          await tester.pumpAndSettle();
+
+          expect(api.calls.where((c) => c.startsWith('remove:')), isEmpty);
+          expect(find.text('Reports (3)'), findsOneWidget);
+        },
+      );
+
+      testWidgets(
+        'removes it, tells the moderator and drops it from the queue',
+        (tester) async {
+          await openAdmin(tester);
+
+          await openSheet(tester, 'Rude Player');
+          await tester.tap(find.text('Remove thread'));
+          await tester.pumpAndSettle();
+          await tester.tap(find.widgetWithText(FilledButton, 'Remove'));
+          await tester.pumpAndSettle();
+
+          expect(api.calls, contains('remove:thread:m1:t1'));
+          expect(find.text('Removed'), findsOneWidget);
+          expect(find.text('Reports (2)'), findsOneWidget);
+          expect(find.text('Awful thread | with a body'), findsNothing);
+        },
+      );
+
+      testWidgets('a profile is cleared, not removed', (tester) async {
+        await openAdmin(tester);
+
+        await openSheet(tester, 'Spammer');
+        await tester.tap(find.text('Clear profile'));
+        await tester.pumpAndSettle();
+        expect(find.text('Clear profile?'), findsOneWidget);
+        await tester.tap(find.widgetWithText(FilledButton, 'Clear'));
+        await tester.pumpAndSettle();
+
+        expect(api.calls, contains('remove:profile:m2:-'));
+        expect(find.text('Profile cleared'), findsOneWidget);
+        expect(find.text('Reports (2)'), findsOneWidget);
+      });
+
+      testWidgets('a refusal is told and the report stays', (tester) async {
+        await openAdmin(tester);
+        api.failRemoveWith = const AdminFailure(AdminFailureCode.notFound);
+
+        await openSheet(tester, 'Rude Player');
+        await tester.tap(find.text('Remove thread'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(FilledButton, 'Remove'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('That no longer exists. It may have been removed already.'),
+          findsOneWidget,
+        );
+        expect(find.text('Removed'), findsNothing);
+      });
     });
 
     group('suspending', () {

@@ -31,6 +31,30 @@ enum ReportSource {
     other => L10n.current.adminSourceOther,
   };
 
+  /// Whether a moderator can take down what was reported: a review, thread,
+  /// reply or list is removed, a profile is cleared.
+  bool get removable => this != other;
+
+  /// The button that takes it down.
+  String get removeLabel => switch (this) {
+    review => L10n.current.adminRemoveReview,
+    thread => L10n.current.adminRemoveThread,
+    reply => L10n.current.adminRemoveReply,
+    list => L10n.current.adminRemoveList,
+    profile => L10n.current.adminClearProfile,
+    other => '',
+  };
+
+  /// What taking it down does.
+  String get removeSubtitle => switch (this) {
+    review => L10n.current.adminRemoveReviewSubtitle,
+    thread => L10n.current.adminRemoveThreadSubtitle,
+    reply => L10n.current.adminRemoveReplySubtitle,
+    list => L10n.current.adminRemoveListSubtitle,
+    profile => L10n.current.adminClearProfileSubtitle,
+    other => '',
+  };
+
   IconData get icon => switch (this) {
     profile => Icons.person_outline_rounded,
     list => Icons.list_alt_rounded,

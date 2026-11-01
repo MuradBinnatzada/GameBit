@@ -137,6 +137,8 @@ Future<void> _openActions(BuildContext context, AdminReport report) async {
   );
   if (action == null || !context.mounted) return;
   switch (action) {
+    case _ReportAction.remove:
+      await removeContentAfterAsking(context, report);
     case _ReportAction.suspend:
       await suspendMemberAfterAsking(context, report.member);
     case _ReportAction.dismiss:
@@ -146,7 +148,7 @@ Future<void> _openActions(BuildContext context, AdminReport report) async {
   }
 }
 
-enum _ReportAction { suspend, dismiss, handled }
+enum _ReportAction { remove, suspend, dismiss, handled }
 
 class _ReportActionsSheet extends StatelessWidget {
   const _ReportActionsSheet({required this.report});
@@ -177,6 +179,14 @@ class _ReportActionsSheet extends StatelessWidget {
       subtitle: report.member.atHandle.isEmpty ? null : report.member.atHandle,
       child: Column(
         children: [
+          if (report.source.removable)
+            row(
+              _ReportAction.remove,
+              Icons.delete_outline_rounded,
+              report.source.removeLabel,
+              report.source.removeSubtitle,
+              color: palette.danger,
+            ),
           row(
             _ReportAction.suspend,
             Icons.block_rounded,

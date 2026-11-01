@@ -1927,6 +1927,7 @@ AdminReport testReport(
   double hoursOpen = 3,
   bool overdue = false,
   bool suspended = false,
+  String? reference,
 }) => AdminReport(
   source: source,
   reason: reason,
@@ -1939,6 +1940,7 @@ AdminReport testReport(
   content: content,
   hoursOpen: hoursOpen,
   overdue: overdue,
+  reference: reference,
 );
 
 /// The `admin-moderation` function and `am_i_admin`, on lists of their own: a
@@ -1953,6 +1955,9 @@ class FakeAdminApi extends AdminApiService {
   List<AdminReport> reportList = [];
   List<SuspendedMember> suspendedList = [];
   AdminFailure? failWith;
+
+  /// Refuses only [removeContent], with this.
+  AdminFailure? failRemoveWith;
   Completer<void>? gate;
   final List<String> calls = [];
 
@@ -2016,6 +2021,24 @@ class FakeAdminApi extends AdminApiService {
     calls.add('reinstate:$memberId');
     _maybeFail();
     suspendedList.removeWhere((s) => s.member.id == memberId);
+  }
+
+  @override
+  Future<void> removeContent({
+    required ReportSource kind,
+    required String memberId,
+    String? reference,
+  }) async {
+    calls.add('remove:${kind.wire}:$memberId:${reference ?? '-'}');
+    final refusal = failRemoveWith;
+    if (refusal != null) throw refusal;
+    _maybeFail();
+    reportList.removeWhere(
+      (r) =>
+          r.source == kind &&
+          r.member.id == memberId &&
+          r.reference == reference,
+    );
   }
 
   @override

@@ -14,7 +14,7 @@ enum AdminFailureCode {
   forbidden('FORBIDDEN'),
   rateLimited('RATE_LIMITED'),
 
-  /// The member no longer exists.
+  /// The member or the content no longer exists.
   notFound('NOT_FOUND'),
 
   /// Admins are not suspended from the app.
@@ -65,7 +65,7 @@ class AdminFailure implements Exception {
       AdminFailureCode.mfaRequired => l10n.syncErrorMfaRequired,
       AdminFailureCode.forbidden => l10n.adminForbidden,
       AdminFailureCode.rateLimited => l10n.adminRateLimited,
-      AdminFailureCode.notFound => l10n.adminMemberGone,
+      AdminFailureCode.notFound => l10n.adminNotFound,
       AdminFailureCode.memberIsAdmin => l10n.adminMemberIsAdmin,
       AdminFailureCode.offline => l10n.serverUnreachable,
       AdminFailureCode.other => l10n.adminFailed,
