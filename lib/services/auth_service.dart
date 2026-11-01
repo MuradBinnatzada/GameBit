@@ -53,8 +53,11 @@ class TotpSetup {
 ///
 /// Requires `google_sign_in: ^6.x` in pubspec.yaml.
 class AuthService {
-  AuthService(this._client);
+  /// [googleSignIn] stands in for the native Google client, in tests.
+  AuthService(this._client, {GoogleSignIn? googleSignIn})
+    : _providedGoogleSignIn = googleSignIn;
   final SupabaseClient _client;
+  final GoogleSignIn? _providedGoogleSignIn;
 
   GoTrueClient get _auth => _client.auth;
 
@@ -80,11 +83,25 @@ class AuthService {
   HttpServer? _loopback;
 
   /// Built on first use and reused, so sign-in and sign-out talk to the same native client.
-  late final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId: _googleIosClientId.isEmpty ? null : _googleIosClientId,
-    serverClientId: _googleWebClientId,
-    scopes: ['email', 'profile'],
-  );
+  late final GoogleSignIn _googleSignIn =
+      _providedGoogleSignIn ??
+      GoogleSignIn(
+        clientId: _googleIosClientId.isEmpty ? null : _googleIosClientId,
+        serverClientId: _googleWebClientId,
+        scopes: ['email', 'profile'],
+      );
+
+  /// Makes the native Google client forget the account it last signed in. Left
+  /// alone it keeps handing that account back without showing the picker, so a
+  /// member whose account Supabase refused (suspended, say) could never choose
+  /// another one.
+  Future<void> _forgetGoogleAccount() async {
+    try {
+      await _googleSignIn.signOut();
+    } catch (e) {
+      debugPrint('Google sign-out failed: $e');
+    }
+  }
 
   /// The user from the session Supabase restored from disk (null = signed out).
   User? get currentUser => _auth.currentUser;
@@ -140,27 +157,45 @@ class AuthService {
     if (!_usesNativeGoogle) {
       // Web has no native account picker: use Supabase's browser flow.
       // Return to whichever host served the app (localhost, Netlify, ...).
-      await _auth.signInWithOAuth(OAuthProvider.google, redirectTo: Uri.base.origin);
+      await _auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: Uri.base.origin,
+        queryParams: _askWhichGoogleAccount,
+      );
       return;
     }
     if (_googleWebClientId.isEmpty) {
       throw AuthException("Google sign-in isn't configured. Set _googleWebClientId in services/auth_service.dart.");
     }
 
-    // Native flow: Google account picker → ID token → Supabase session.
+    // Native flow: Google account picker → ID token → Supabase session. The
+    // picker is always shown: Google would otherwise reuse the account of the
+    // last attempt.
+    await _forgetGoogleAccount();
     final account = await _googleSignIn.signIn();
     if (account == null) throw AuthException(L10n.current.authGoogleCancelled);
 
-    final googleAuth = await account.authentication;
-    final idToken = googleAuth.idToken;
-    if (idToken == null) throw AuthException(L10n.current.authGoogleNoToken);
+    try {
+      final googleAuth = await account.authentication;
+      final idToken = googleAuth.idToken;
+      if (idToken == null) throw AuthException(L10n.current.authGoogleNoToken);
 
-    await _auth.signInWithIdToken(
-      provider: OAuthProvider.google,
-      idToken: idToken,
-      accessToken: googleAuth.accessToken,
-    );
+      await _auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: googleAuth.accessToken,
+      );
+    } catch (_) {
+      // Refused (a suspended account, no network): the next try offers the
+      // picker again instead of this account.
+      await _forgetGoogleAccount();
+      rethrow;
+    }
   }
+
+  /// Sent to Google's browser sign-in so it lists the accounts instead of
+  /// continuing with the one the browser is already signed in to.
+  static const _askWhichGoogleAccount = {'prompt': 'select_account'};
 
   /// Apple's sheet → ID token → Supabase session. Supabase checks the token
   /// against the SHA-256 of a one-time nonce that only this call knows, so a
@@ -244,6 +279,7 @@ class AuthService {
         OAuthProvider.google,
         redirectTo: _desktopRedirectUrl,
         authScreenLaunchMode: LaunchMode.externalApplication,
+        queryParams: _askWhichGoogleAccount,
       );
       if (!opened) throw AuthException("Couldn't open your browser for Google sign-in.");
 
@@ -488,13 +524,7 @@ class AuthService {
 
   Future<void> signOut() async {
     await _auth.signOut();
-    if (_usesNativeGoogle) {
-      try {
-        await _googleSignIn.signOut();
-      } catch (e) {
-        debugPrint('Google sign-out failed: $e');
-      }
-    }
+    if (_usesNativeGoogle) await _forgetGoogleAccount();
   }
 
   /// Text for the UI. Raw exceptions never reach the screen.
