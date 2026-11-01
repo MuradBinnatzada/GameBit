@@ -76,7 +76,7 @@ class _EditSessionSheetState extends State<EditSessionSheet> {
       widget.session.platform,
     }.toList();
     final hours = parseNum(_hours.text);
-    final valid = hours != null && hours > 0 && hours <= maxTotalHours;
+    final valid = hours != null && hours > 0 && (hours <= maxManualHours || hours <= widget.session.hours);
 
     return SheetFrame(
       title: context.l10n.editSession,
@@ -88,7 +88,11 @@ class _EditSessionSheetState extends State<EditSessionSheet> {
           inputFormatters: [decimalFormatter],
           onChanged: (_) => setState(() {}),
           decoration: fieldDecoration(context, context.l10n.hoursPlayed, suffix: context.l10n.hrsUnit).copyWith(
-            errorText: hours != null && !valid ? context.l10n.enterMoreThanZeroHours : null,
+            errorText: hours == null || valid
+                ? null
+                : hours > 0
+                ? context.l10n.sessionHoursMax(fmtThousands(maxManualHours.round()))
+                : context.l10n.enterMoreThanZeroHours,
           ),
         ),
         const SizedBox(height: 18),

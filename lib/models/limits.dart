@@ -4,8 +4,15 @@
 /// refuse from being sent.
 library;
 
-/// The most hours a game's total, or one session, can hold.
+/// The most hours a game's total, or one session, can hold. The database's own
+/// range, which a Steam sync can reach, so the store clamps to it and no lower.
 const maxTotalHours = 100000.0;
+
+/// The most hours a member can type in for a game's total or a session (Log
+/// Hours, Edit session). Well under [maxTotalHours] so a slip like an extra zero
+/// is refused: 20 000 hours is over 5 a day for 10 years in one game. A total
+/// that is already past it (from Steam) can still be kept or lowered.
+const maxManualHours = 20000.0;
 
 /// The longest session the app logs at once: one sitting. A bigger change is
 /// made to the game's total (Log Hours), which logs the difference.

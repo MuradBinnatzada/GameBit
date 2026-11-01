@@ -1182,6 +1182,7 @@
   "editSession": "Изменить сессию",
   "hoursPlayed": "Сыграно часов",
   "enterMoreThanZeroHours": "Введите больше 0 часов.",
+  "sessionHoursMax": "В сессии может быть не больше {hours} часов.",
   "saveChanges": "Сохранить изменения",
   "deleteSession": "Удалить сессию",
   "listTitle": "Название",

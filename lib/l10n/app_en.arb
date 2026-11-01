@@ -2627,6 +2627,14 @@
   "editSession": "Edit session",
   "hoursPlayed": "Hours played",
   "enterMoreThanZeroHours": "Enter more than 0 hours.",
+  "sessionHoursMax": "A session can be at most {hours} hours.",
+  "@sessionHoursMax": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
   "saveChanges": "Save changes",
   "deleteSession": "Delete session",
   "listTitle": "Title",

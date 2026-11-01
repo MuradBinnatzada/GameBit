@@ -56,7 +56,7 @@ class _LogHoursSheetState extends State<LogHoursSheet> {
   @override
   Widget build(BuildContext context) {
     final total = parseNum(_total.text);
-    final valid = total != null && total >= 0 && total <= maxTotalHours;
+    final valid = total != null && total >= 0 && (total <= maxManualHours || total <= _game.hoursPlayed);
     final delta = total == null ? null : total - _game.hoursPlayed;
 
     final l10n = context.l10n;
@@ -64,7 +64,7 @@ class _LogHoursSheetState extends State<LogHoursSheet> {
     if (delta == null) {
       preview = l10n.hoursInvalid;
     } else if (!valid) {
-      preview = l10n.totalHoursMax(fmtThousands(maxTotalHours.round()));
+      preview = l10n.totalHoursMax(fmtThousands(maxManualHours.round()));
     } else if (delta > 0.04) {
       preview = _platform == null
           ? l10n.addsSession(fmtHours(delta))
