@@ -20,7 +20,6 @@ import 'package:checkpoint/state/milestones_store.dart';
 import 'package:checkpoint/state/nav_store.dart';
 import 'package:checkpoint/state/news_store.dart';
 import 'package:checkpoint/state/onboarding_store.dart';
-import 'package:checkpoint/state/play_timer_store.dart';
 import 'package:checkpoint/state/profile_store.dart';
 import 'package:checkpoint/state/public_achievements_store.dart';
 import 'package:checkpoint/state/public_library_store.dart';
@@ -97,34 +96,31 @@ class AppStoresScope extends StatelessWidget {
                                   store: stores.companies,
                                   child: StoreScope<FriendsFeedStore>(
                                     store: stores.friendsFeed,
-                                    child: StoreScope<PlayTimerStore>(
-                                      store: stores.playTimer,
-                                      child: StoreScope<ListsStore>(
-                                        store: stores.lists,
-                                        child: StoreScope<ReleaseAlertsStore>(
-                                          store: stores.releaseAlerts,
-                                          child: StoreScope<SharedLinkStore>(
-                                            store: stores.links,
-                                            child: StoreScope<CommunityTimesStore>(
-                                              store: stores.communityTimes,
-                                              child: StoreScope<MilestonesStore>(
-                                                store: stores.milestones,
-                                                child: StoreScope<GameReviewsStore>(
-                                                  store: stores.gameReviews,
-                                                  child: StoreScope<NewsStore>(
-                                                    store: stores.news,
-                                                    child: StoreScope<DiscussionsStore>(
-                                                      store: stores.discussions,
-                                                      child: StoreScope<BlocksStore>(
-                                                        store: stores.blocks,
-                                                        child: StoreScope<OnboardingStore>(
-                                                          store: stores.onboarding,
-                                                          child: StoreScope<ReleaseRemindersStore>(
-                                                            store: stores.releaseReminders,
-                                                            child: StoreScope<AdminStore>(
-                                                              store: stores.admin,
-                                                              child: child,
-                                                            ),
+                                    child: StoreScope<ListsStore>(
+                                      store: stores.lists,
+                                      child: StoreScope<ReleaseAlertsStore>(
+                                        store: stores.releaseAlerts,
+                                        child: StoreScope<SharedLinkStore>(
+                                          store: stores.links,
+                                          child: StoreScope<CommunityTimesStore>(
+                                            store: stores.communityTimes,
+                                            child: StoreScope<MilestonesStore>(
+                                              store: stores.milestones,
+                                              child: StoreScope<GameReviewsStore>(
+                                                store: stores.gameReviews,
+                                                child: StoreScope<NewsStore>(
+                                                  store: stores.news,
+                                                  child: StoreScope<DiscussionsStore>(
+                                                    store: stores.discussions,
+                                                    child: StoreScope<BlocksStore>(
+                                                      store: stores.blocks,
+                                                      child: StoreScope<OnboardingStore>(
+                                                        store: stores.onboarding,
+                                                        child: StoreScope<ReleaseRemindersStore>(
+                                                          store: stores.releaseReminders,
+                                                          child: StoreScope<AdminStore>(
+                                                            store: stores.admin,
+                                                            child: child,
                                                           ),
                                                         ),
                                                       ),

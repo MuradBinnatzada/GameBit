@@ -99,6 +99,5 @@ void main() {
     await tester.pumpAndSettle();
     final id = second == 'Alpha' ? 'a' : 'b';
     expect(stores.library.gameById(id).status, GameStatus.playing);
-    expect(stores.playTimer.isRunningFor(id), isTrue);
   });
 }

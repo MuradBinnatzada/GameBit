@@ -5,9 +5,7 @@ import 'package:checkpoint/models/game.dart';
 import 'package:checkpoint/models/limits.dart';
 import 'package:checkpoint/state/auth_store.dart';
 import 'package:checkpoint/state/library_store.dart';
-import 'package:checkpoint/state/play_timer_store.dart';
 import 'package:checkpoint/state/store_scope.dart';
-import 'package:checkpoint/theme/palette.dart';
 import 'package:checkpoint/utils/formatters.dart';
 import 'package:checkpoint/widgets/platform_widgets.dart';
 import 'package:checkpoint/widgets/session_time_field.dart';
@@ -32,62 +30,23 @@ Future<void> showQuickLogSheet(BuildContext context, {String? gameId}) async {
   );
 }
 
-/// The Quick Log sheet for the play timer that is running, filled in with its
-/// game, its time and when it started. Saving logs the session and stops the
-/// timer; closing the sheet leaves the timer running.
-Future<void> showTimerLogSheet(BuildContext context) async {
-  if (_blockedByReadOnly(context)) return;
-  final timers = context.read<PlayTimerStore>();
-  final timer = timers.running;
-  if (timer == null) return;
-  if (context.read<LibraryStore>().maybeGame(timer.gameId) == null) {
-    timers.clear(); // the game is gone (removed on another device)
-    return;
-  }
-  await showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    builder: (_) => QuickLogSheet(
-      initialGameId: timer.gameId,
-      initialHours: timerHours(timers.elapsed, maxHours: maxSessionHours),
-      startedAt: timer.startedAt,
-      fromTimer: true,
-    ),
-  );
-}
-
 /// FAB sheet: pick a game, pick the platform you played on, add a session.
 class QuickLogSheet extends StatefulWidget {
-  const QuickLogSheet({
-    super.key,
-    this.initialGameId,
-    this.initialHours = 1,
-    this.startedAt,
-    this.fromTimer = false,
-  });
+  const QuickLogSheet({super.key, this.initialGameId});
   final String? initialGameId;
-  final double initialHours;
-
-  /// When the session started, for one played earlier (the play timer's start).
-  final DateTime? startedAt;
-
-  /// Opened by stopping the play timer: saving stops it, and it can be thrown
-  /// away from here.
-  final bool fromTimer;
 
   @override
   State<QuickLogSheet> createState() => _QuickLogSheetState();
 }
 
 class _QuickLogSheetState extends State<QuickLogSheet> {
-  late final _hours = TextEditingController(text: fmtHours(widget.initialHours));
+  late final _hours = TextEditingController(text: fmtHours(1));
   final _note = TextEditingController();
   String? _gameId;
   GamePlatform? _platform;
 
   /// When it was played; null is now.
-  late DateTime? _at = widget.startedAt;
+  DateTime? _at;
 
   @override
   void initState() {
@@ -112,7 +71,6 @@ class _QuickLogSheetState extends State<QuickLogSheet> {
         ? context.l10n.loggedHoursOf(fmtHours(hours), game.title)
         : context.l10n.loggedHoursOfOn(fmtHours(hours), game.title, _platform!.label);
     context.read<LibraryStore>().logSession(gameId: game.id, hours: hours, platform: _platform, note: _note.text, at: _at);
-    if (widget.fromTimer) context.read<PlayTimerStore>().clear();
     Navigator.pop(context);
     messenger
       ..hideCurrentSnackBar()
@@ -134,7 +92,7 @@ class _QuickLogSheetState extends State<QuickLogSheet> {
       });
 
     return SheetFrame(
-      title: widget.fromTimer ? context.l10n.logYourTimer : context.l10n.logASession,
+      title: context.l10n.logASession,
       subtitle: context.l10n.logSessionSubtitle,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         DropdownMenu<String>(
@@ -202,19 +160,6 @@ class _QuickLogSheetState extends State<QuickLogSheet> {
             child: Text(context.l10n.saveSession),
           ),
         ),
-        if (widget.fromTimer) ...[
-          const SizedBox(height: 8),
-          Center(
-            child: TextButton(
-              style: TextButton.styleFrom(foregroundColor: context.palette.danger),
-              onPressed: () {
-                context.read<PlayTimerStore>().clear();
-                Navigator.pop(context);
-              },
-              child: Text(context.l10n.discardTimer),
-            ),
-          ),
-        ],
       ]),
     );
   }

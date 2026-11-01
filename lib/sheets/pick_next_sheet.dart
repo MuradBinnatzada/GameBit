@@ -10,7 +10,6 @@ import 'package:checkpoint/utils/formatters.dart';
 import 'package:checkpoint/utils/navigation.dart';
 import 'package:checkpoint/widgets/app_choice_chip.dart';
 import 'package:checkpoint/widgets/cover_art.dart';
-import 'package:checkpoint/widgets/play_timer_widgets.dart';
 import 'package:checkpoint/widgets/sheet_frame.dart';
 
 /// "What should I play next?": a game picked at random from the backlog (or the
@@ -62,8 +61,6 @@ class _PickNextSheetState extends State<PickNextSheet> {
     final store = context.read<LibraryStore>();
     final navigator = Navigator.of(context);
     if (game.status != GameStatus.playing) await store.setStatus(game.id, GameStatus.playing);
-    if (!mounted) return;
-    await startPlayTimer(context, game);
     if (!mounted) return;
     navigator.pop();
     openGame(navigator.context, game.id);

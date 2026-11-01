@@ -27,7 +27,6 @@ import 'package:checkpoint/state/onboarding_store.dart';
 import 'package:checkpoint/state/profile_store.dart';
 import 'package:checkpoint/state/store_scope.dart';
 import 'package:checkpoint/utils/navigation.dart';
-import 'package:checkpoint/widgets/play_timer_widgets.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -281,24 +280,20 @@ class _AppShellState extends State<AppShell> {
                 label: Text(context.l10n.logGame),
               )
             : null,
-        bottomNavigationBar: Column(mainAxisSize: MainAxisSize.min, children: [
-          // While the play timer runs, from any tab.
-          const PlayTimerBar(),
-          NavigationBar(
-            selectedIndex: navIndex,
-            onDestinationSelected: (i) {
-              FocusManager.instance.primaryFocus?.unfocus();
-              context.read<NavStore>().select(i);
-            },
-            destinations: [
-              NavigationDestination(icon: const Icon(Icons.home_outlined), selectedIcon: const Icon(Icons.home_rounded), label: context.l10n.navHome),
-              NavigationDestination(icon: const Icon(Icons.search_rounded), selectedIcon: const Icon(Icons.search_rounded), label: context.l10n.navSearch),
-              NavigationDestination(icon: const Icon(Icons.forum_outlined), selectedIcon: const Icon(Icons.forum_rounded), label: context.l10n.navDiscussions),
-              NavigationDestination(icon: const Icon(Icons.collections_bookmark_outlined), selectedIcon: const Icon(Icons.collections_bookmark_rounded), label: context.l10n.navLibrary),
-              NavigationDestination(icon: const Icon(Icons.person_outline_rounded), selectedIcon: const Icon(Icons.person_rounded), label: context.l10n.navProfile),
-            ],
-          ),
-        ]),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: navIndex,
+          onDestinationSelected: (i) {
+            FocusManager.instance.primaryFocus?.unfocus();
+            context.read<NavStore>().select(i);
+          },
+          destinations: [
+            NavigationDestination(icon: const Icon(Icons.home_outlined), selectedIcon: const Icon(Icons.home_rounded), label: context.l10n.navHome),
+            NavigationDestination(icon: const Icon(Icons.search_rounded), selectedIcon: const Icon(Icons.search_rounded), label: context.l10n.navSearch),
+            NavigationDestination(icon: const Icon(Icons.forum_outlined), selectedIcon: const Icon(Icons.forum_rounded), label: context.l10n.navDiscussions),
+            NavigationDestination(icon: const Icon(Icons.collections_bookmark_outlined), selectedIcon: const Icon(Icons.collections_bookmark_rounded), label: context.l10n.navLibrary),
+            NavigationDestination(icon: const Icon(Icons.person_outline_rounded), selectedIcon: const Icon(Icons.person_rounded), label: context.l10n.navProfile),
+          ],
+        ),
       ),
     );
   }

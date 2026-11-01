@@ -6,7 +6,7 @@ Your game library and playtime tracker. Build a library, log your hours, rate ga
 
 - Search games (powered by IGDB) and add them to your library, or browse the most popular, highest rated and newest releases
 - Track status, playtime, ratings and reviews per game
-- Log play sessions, backdate them, edit or delete them later, or time them with the live play timer
+- Log play sessions, backdate them, and edit or delete them later
 - Import your Steam library; new Steam playtime becomes play sessions on its own; achievement progress for every Steam game, on your profile and other members'
 - Year in Review: your year of play by month, game, platform and genre
 - Custom lists of games, private or public; "What should I play next?"; wishlist release alerts
@@ -144,7 +144,7 @@ pg_cron calls `sync-steam` every 15 minutes (`20261017130000_background_steam_sy
 
 ### Play sessions
 
-A session is logged from the Quick Log sheet (with **When** to backdate it), from **Log Hours** on a game (the difference becomes a session), or with the **play timer**: *Play it* in **What should I play?** starts it, and *Stop* (on the bar above the tabs) opens the session filled in with the time and when it started. The timer is kept on the device per account, so it keeps running while the app is closed. Tapping a session on a game's screen (or under *See all*) edits its hours, platform, day and note, or deletes it with Undo; the game's total moves with it. Edits and deletes made offline are kept and sent later, like any other edit (`PendingEdits.logEdits`, `logDeletes`).
+A session is logged from the Quick Log sheet (with **When** to backdate it), or from **Log Hours** on a game (the difference becomes a session). Tapping a session on a game's screen (or under *See all*) edits its hours, platform, day and note, or deletes it with Undo; the game's total moves with it. Edits and deletes made offline are kept and sent later, like any other edit (`PendingEdits.logEdits`, `logDeletes`).
 
 **From Steam** (`20261019014800_steam_playtime_sessions.sql`, `supabase/functions/_shared/steam_sessions.ts`): `sync-steam` keeps the Steam playtime it saw on each library row (`steam_playtime_minutes`). When a later sync (by hand or the background one) sees more, it logs the difference as a session with `source = 'steam'`, dated when Steam says the game was last played; under 5 minutes waits for the next sync. The first playtime seen for a game is its history, so it is only recorded. Members can't set `source` themselves (a trigger keeps it).
 
@@ -162,7 +162,7 @@ Profile > **Year in Review** works out a year on the device (`lib/models/year_re
 
 **Lists** (`20261019115300_game_lists.sql`): Profile > **Lists**, and the list button on a game's screen. A list holds any catalog game, in the order you drag them into; a public list shows on your profile and opens from a link for any signed-in member, a private one is yours only. 100 lists per member and 500 games per list. Lists need a connection (they aren't kept offline); an edit the server refuses is put back with a message. `merge_game_into` moves list entries when it folds a duplicate game.
 
-**What should I play?** (Home): picks a game at random from your To Play and Playing games (or the statuses and platform you choose), never the same one twice in a row; *Play it* marks it Playing and starts the timer.
+**What should I play?** (Home): picks a game at random from your To Play and Playing games (or the statuses and platform you choose), never the same one twice in a row; *Play it* marks it Playing and opens it.
 
 ### Wishlist release alerts
 

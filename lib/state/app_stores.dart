@@ -33,7 +33,6 @@ import 'package:checkpoint/state/milestones_store.dart';
 import 'package:checkpoint/state/nav_store.dart';
 import 'package:checkpoint/state/news_store.dart';
 import 'package:checkpoint/state/onboarding_store.dart';
-import 'package:checkpoint/state/play_timer_store.dart';
 import 'package:checkpoint/state/profile_store.dart';
 import 'package:checkpoint/state/public_achievements_store.dart';
 import 'package:checkpoint/state/public_library_store.dart';
@@ -79,8 +78,6 @@ import 'package:checkpoint/state/social_graph_store.dart';
 ///    achievements go with it) or synced with Steam (which counts them again).
 ///    [PublicAchievementsStore] hands the lists of your own games it fetches
 ///    from Steam back to [LibraryStore];
-///  * [PlayTimerStore] follows [AuthStore] only: the timer is the device's, per
-///    account, and becomes a session through [LibraryStore] from the UI;
 ///  * [ListsStore] follows [AuthStore] and asks [LibraryStore] to put a game in
 ///    the catalog before it goes on a list; [LibraryStore] finds the games of
 ///    lists through it (a game tapped on a list);
@@ -213,7 +210,6 @@ class AppStores {
       auth: auth,
     );
     libraryView = LibraryViewStore(nav: nav, attributes: libraryAttributes);
-    playTimer = PlayTimerStore(auth: auth);
     lists = ListsStore(
       repository: repository,
       auth: auth,
@@ -269,7 +265,6 @@ class AppStores {
   late final LibraryStore library;
   late final LibraryAttributesStore libraryAttributes;
   late final LibraryViewStore libraryView;
-  late final PlayTimerStore playTimer;
   late final ListsStore lists;
   late final ReleaseAlertsStore releaseAlerts;
   late final ReleaseRemindersStore releaseReminders;
@@ -317,7 +312,6 @@ class AppStores {
       profile.initialize(),
       library.initialize(),
       search.initialize(),
-      playTimer.initialize(),
       releaseAlerts.initialize(),
       onboarding.initialize(),
       releaseReminders.initialize(),
@@ -331,7 +325,6 @@ class AppStores {
     onboarding.dispose();
     releaseAlerts.dispose();
     lists.dispose();
-    playTimer.dispose();
     publicAchievements.dispose();
     friendsFeed.dispose();
     communityTimes.dispose();

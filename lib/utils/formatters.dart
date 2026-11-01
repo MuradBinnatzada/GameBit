@@ -129,10 +129,3 @@ String fmtDay(DateTime d, {DateTime? now}) {
   if (daysAgo == 1) return L10n.current.yesterday;
   return d.year == today.year ? DateFormat.MMMd().format(d) : DateFormat.yMMMd().format(d);
 }
-
-/// 0:04:09, 1:02:33: a running timer, hours first.
-String fmtElapsed(Duration d) {
-  final seconds = d.isNegative ? 0 : d.inSeconds;
-  String two(int n) => n.toString().padLeft(2, '0');
-  return '${seconds ~/ 3600}:${two(seconds ~/ 60 % 60)}:${two(seconds % 60)}';
-}

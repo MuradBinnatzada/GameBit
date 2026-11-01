@@ -1421,7 +1421,7 @@
       }
     }
   },
-  "yearNothingLoggedMessage": "Log your sessions (or start the timer on a game) and your year adds up here.",
+  "yearNothingLoggedMessage": "Log your sessions and your year adds up here.",
   "daysPlayed": "{count, plural, =1{Day played} other{Days played}}",
   "@daysPlayed": {
     "description": "Under the number of days played.",
@@ -1436,7 +1436,7 @@
   "gamesAdded": "Games added",
   "mostPlayed": "Most played",
   "topGenres": "Top genres",
-  "yearHoursFootnote": "Hours come from the sessions you logged, the timer and your Steam playtime. Hours a Steam import added without a session count in no year.",
+  "yearHoursFootnote": "Hours come from the sessions you logged and your Steam playtime. Hours a Steam import added without a session count in no year.",
   "yearPlayedSummary": "played in {year}, over {sessions} {games}",
   "@yearPlayedSummary": {
     "description": "Under the hours played in a year: \"played in 2026, over 12 sessions of 3 games\".",
@@ -2535,7 +2535,6 @@
       }
     }
   },
-  "logYourTimer": "Log your timer",
   "logSessionSubtitle": "Track your time and where you played.",
   "game": "Game",
   "showGames": "Show games",
@@ -2552,7 +2551,6 @@
   },
   "noteOptional": "Note (optional)",
   "saveSession": "Save session",
-  "discardTimer": "Discard timer",
   "whatShouldIPlay": "What should I play?",
   "gamesToPickFrom": "{count, plural, =1{1 game to pick from} other{{count} games to pick from}}",
   "@gamesToPickFrom": {
@@ -2917,20 +2915,6 @@
   "boardOffTopicDescription": "Everything else, kept friendly.",
   "boardFeedback": "Gamebit feedback",
   "boardFeedbackDescription": "Ideas, bugs and questions about the app.",
-  "anotherGame": "another game",
-  "replaceTimerTitle": "Replace the running timer?",
-  "replaceTimerBody": "A timer is running for {other}. Starting one for {game} throws its time away. To keep it, stop it and log it first.",
-  "@replaceTimerBody": {
-    "placeholders": {
-      "other": {
-        "type": "String"
-      },
-      "game": {
-        "type": "String"
-      }
-    }
-  },
-  "replace": "Replace",
   "accountVerified": "Verified through sign-in",
   "accountNotVerified": "Added by the member, not verified",
   "openServiceProfile": "Open {service} profile",
