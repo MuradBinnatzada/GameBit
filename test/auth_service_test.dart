@@ -249,6 +249,31 @@ void main() {
       );
     });
 
+    test('says the server had a problem when it answered with an error, not that it is unreachable', () {
+      // What the app got when a database trigger failed during sign-up.
+      final failedSignUp = AuthRetryableFetchException(
+        message: '{"code":"unexpected_failure","message":"Database error saving new user"}',
+        statusCode: '500',
+      );
+      for (final error in [
+        failedSignUp,
+        AuthRetryableFetchException(message: '<html>Bad gateway</html>', statusCode: '502'),
+        AuthRetryableFetchException(message: 'Unavailable', statusCode: '503'),
+      ]) {
+        expect(AuthService.messageFor(error), "Gamebit's server had a problem. Try again in a minute.");
+      }
+    });
+
+    test('still says it is unreachable when nothing answered, or the status is not a server error', () {
+      for (final error in [
+        AuthRetryableFetchException(message: 'ClientException: Failed host lookup'),
+        AuthRetryableFetchException(message: 'x', statusCode: 'abc'),
+        AuthRetryableFetchException(message: 'x', statusCode: '408'),
+      ]) {
+        expect(AuthService.messageFor(error), "Can't reach Gamebit. Check your connection and try again.");
+      }
+    });
+
     test('passes other messages through, as the Google flow relies on', () {
       expect(
         AuthService.messageFor(AuthException('Google sign-in was cancelled.')),

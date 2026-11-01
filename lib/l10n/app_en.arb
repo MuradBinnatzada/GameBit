@@ -716,6 +716,7 @@
   "authCallbackSignedInBody": "You can close this tab and go back to Gamebit.",
   "authCallbackFailedBody": "Go back to Gamebit and try again.",
   "authOffline": "Can't reach Gamebit. Check your connection and try again.",
+  "authServerProblem": "Gamebit's server had a problem. Try again in a minute.",
   "authInvalidCredentials": "Wrong email or password. If you joined with Google, use Continue with Google.",
   "authEmailExists": "That email is already registered. Sign in instead, or use Forgot password? to choose a new password.",
   "authWeakPassword": "That password is too weak. {reason}",

@@ -48,7 +48,7 @@ class _SecuritySectionState extends State<SecuritySection> {
       message = l10n.signedOutOtherDevices;
     } catch (e) {
       debugPrint('Signing out other devices failed: $e');
-      message = e is SessionPending || isConnectionFailure(e)
+      message = e is SessionPending || (e is! AuthException && isConnectionFailure(e))
           ? l10n.serverUnreachable
           : auth.messageFor(e);
     }

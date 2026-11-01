@@ -530,7 +530,13 @@ class AuthService {
   /// Text for the UI. Raw exceptions never reach the screen.
   static String messageFor(Object e) {
     final l10n = L10n.current;
-    if (e is AuthRetryableFetchException) return l10n.authOffline;
+    if (e is AuthRetryableFetchException) {
+      // Supabase answered, with an error of its own (a 500 from its database, a 502
+      // while it restarts): the connection is fine, so don't say it isn't. A request
+      // that got no answer at all has no status.
+      final status = int.tryParse(e.statusCode ?? '');
+      return status != null && status >= 500 ? l10n.authServerProblem : l10n.authOffline;
+    }
     if (e is AuthException) {
       // The codes Supabase sends for email sign-in, sign-up and password
       // changes; anything else (the Google flow's own messages included) is
