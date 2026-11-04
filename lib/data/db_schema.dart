@@ -119,20 +119,6 @@ abstract final class Db {
   /// `public_profiles` only: whether a Steam ID is set.
   static const steamConnected = 'steam_connected';
 
-  /// Names of the services connected besides Steam (`psn`, `xbox`, `nintendo`,
-  /// `discord`, `instagram`, `twitch`). Readable in `public_profiles` and
-  /// writable on your own `profiles` row.
-  static const connectedServices = 'connected_services';
-
-  /// The account names behind the services: PSN id, Xbox gamertag, Discord,
-  /// Instagram and Twitch usernames. Public to signed-in members (the profile
-  /// links open them).
-  static const psnId = 'psn_id';
-  static const xboxId = 'xbox_id';
-  static const discordId = 'discord_id';
-  static const instagramId = 'instagram_id';
-  static const twitchId = 'twitch_id';
-
   /// `public_profiles` only: `profiles.created_at`, the member's join date.
   static const joinedAt = 'joined_at';
 

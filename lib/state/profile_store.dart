@@ -21,20 +21,17 @@ import 'package:checkpoint/services/sync_failure.dart';
 import 'package:checkpoint/state/auth_store.dart';
 
 /// The signed-in user as a person: their profile, who they follow, and the
-/// gaming accounts they have connected. Reloads when the account changes, shows
-/// the copy saved on the device first, and keeps it when the network is down.
+/// game account they have connected (Steam). Reloads when the account changes,
+/// shows the copy saved on the device first, and keeps it when the network is down.
 ///
 /// Follows and unfollows made while the server can't be reached are kept on the
 /// device ([PendingEdits.follows]), shown as if saved, and sent when the
 /// connection is back ([flushPending]). One the server refuses is reverted
 /// instead.
 ///
-/// Which services are connected, and the account names behind PSN, Xbox, Discord,
-/// Instagram and Twitch, are saved on the device first and mirrored to the profile
-/// row (`connected_services`, `psn_id`, `xbox_id`, `discord_id`, `instagram_id`,
-/// `twitch_id`), which is what other members' profile pages show and open. A change
-/// the server hasn't received is remembered and sent when the connection is back;
-/// see [_pushServices].
+/// Steam is the only connected service: it is connected exactly when the profile
+/// has a Steam ID, which only the `steam-link` Edge Function can write, after
+/// Steam itself confirmed the sign-in.
 class ProfileStore extends ChangeNotifier {
   ProfileStore({
     required this._repository,
@@ -72,11 +69,10 @@ class ProfileStore extends ChangeNotifier {
 
   User? _user;
 
-  /// The account whose local service data is loaded, and whether its saved copy
-  /// has been read. Tracked as state rather than inferred from "a different user
-  /// signed in": a load that was overtaken by a second auth event never got to
-  /// read them, and the load that overtook it sees the same user.
-  String? _localDataFor;
+  /// Whether the saved copy of the account's profile and follows has been read.
+  /// Tracked as state rather than inferred from "a different user signed in": a
+  /// load that was overtaken by a second auth event never got to read it, and the
+  /// load that overtook it sees the same user.
   bool _hydrated = false;
 
   UserProfile _profile;
@@ -139,13 +135,7 @@ class ProfileStore extends ChangeNotifier {
     // The Steam ID now lives on the `profiles` row. Delete any copy that an
     // older build left on this device; it is deliberately not read or migrated.
     await prefs.remove('steam_id');
-    // These used to be saved for the whole device, so they showed up on whichever
-    // account signed in next. They are saved per account now (see
-    // _loadAccountLocalData); delete the old shared copies, which can't be
-    // attributed to anyone.
-    for (final key in const ['psn_id', 'xbox_id', 'discord_id', 'connected_services']) {
-      await prefs.remove(key);
-    }
+    await _forgetTypedInAccounts(prefs);
     _authSubscription = _auth.userChanges.listen((user) {
       unawaited(_onUser(user));
     });
@@ -156,18 +146,13 @@ class ProfileStore extends ChangeNotifier {
         unawaited(refresh());
       } else {
         unawaited(flushPending());
-        unawaited(_pushServices());
       }
     });
     await _onUser(_auth.user);
   }
 
-  /// Set by [dispose]: a send that ends after it tells no one.
-  bool _disposed = false;
-
   @override
   void dispose() {
-    _disposed = true;
     unawaited(_authSubscription?.cancel());
     unawaited(_connectivitySubscription?.cancel());
     unawaited(_cancelDataSubscriptions());
@@ -188,9 +173,7 @@ class ProfileStore extends ChangeNotifier {
     _user = user;
     if (!sameUser) {
       // A different account (or signing out) must not inherit the previous
-      // account's profile, follows or local service data.
-      _clearAccountLocalData();
-      _localDataFor = null;
+      // account's profile or follows.
       _hydrated = false;
       _profile = _guestProfile();
       _followingIds = {};
@@ -215,11 +198,6 @@ class ProfileStore extends ChangeNotifier {
       _setNotice(_steamLinkMessage(linkResult));
     }
 
-    if (_localDataFor != user.id) {
-      await _loadAccountLocalData(user.id);
-      if (seq != _loadSeq) return;
-      _localDataFor = user.id;
-    }
     // Their own copy, not the saved server copy: these follows exist nowhere else
     // (and stay on the device when the account signs out).
     if (_pendingFor != user.id) {
@@ -271,12 +249,10 @@ class ProfileStore extends ChangeNotifier {
   /// CheckpointRepository.ensureProfile; AuthService has no copy of it, so two
   /// code paths can't race to create the same row during sign-in.
   Future<bool> _loadProfile(User user, int seq) async {
-    final versionBefore = _serviceVersion;
     try {
       final fetched = await _repository.ensureProfile(user);
       if (seq != _loadSeq) return true;
       _profile = fetched;
-      _applyServerAccounts(user.id, fetched, versionBefore);
       notifyListeners();
       unawaited(_cache.writeProfile(user.id, fetched));
       return true;
@@ -340,12 +316,10 @@ class ProfileStore extends ChangeNotifier {
   }
 
   Future<void> _refreshProfile(User user) async {
-    final versionBefore = _serviceVersion;
     try {
       final fetched = await _repository.fetchProfile(user);
       if (_user?.id != user.id) return;
       _profile = fetched;
-      _applyServerAccounts(user.id, fetched, versionBefore);
       notifyListeners();
       unawaited(_cache.writeProfile(user.id, fetched));
     } catch (e, st) {
@@ -369,59 +343,32 @@ class ProfileStore extends ChangeNotifier {
     }
   }
 
-  // ---- Per-account local data: account names + connected flags ----
-  // Steam is not stored here. It is connected exactly when the signed-in user's
-  // profile has a Steam ID (see [steamConnected]).
-  //
-  // Every key ends in `.<user id>`, which is what lets account deletion find and
-  // erase them (LocalCache.eraseAccount).
+  // ---- Leftovers of the typed-in accounts ----
 
-  static String _scoped(String key, String userId) => '$key.$userId';
+  /// What earlier builds saved per account for the services that could be typed
+  /// in (`<name>.<user id>`), and for the whole device before that (`<name>`).
+  static const _typedInAccountKeys = [
+    'psn_id',
+    'xbox_id',
+    'discord_id',
+    'instagram_id',
+    'twitch_id',
+    'connected_services',
+    'accounts_pending',
+  ];
 
-  /// Forgets the previous account's service data (memory only; the saved copy
-  /// stays on disk for when that account signs in again).
-  void _clearAccountLocalData() {
-    _psnId = null;
-    _xboxId = null;
-    _discordId = null;
-    _instagramId = null;
-    _twitchId = null;
-    _connected.clear();
-    _servicesPending = false;
-    _serviceVersion++;
-  }
-
-  /// Loads the service names and connected flags saved for [userId].
-  Future<void> _loadAccountLocalData(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (_user?.id != userId) return; // signed out or switched while we waited
-    _psnId = prefs.getString(_scoped('psn_id', userId));
-    _xboxId = prefs.getString(_scoped('xbox_id', userId));
-    _discordId = prefs.getString(_scoped('discord_id', userId));
-    _instagramId = prefs.getString(_scoped('instagram_id', userId));
-    _twitchId = prefs.getString(_scoped('twitch_id', userId));
-    final saved = prefs.getStringList(_scoped('connected_services', userId));
-    _connected.addAll(connectedServicesFromDb(saved));
-    // No record means the accounts were saved before the server kept them (the
-    // list, and the names too, which came later): what this device has is then
-    // newer than what the server has, and goes up.
-    _servicesPending =
-        prefs.getBool(_scoped(_servicesPendingKey, userId)) ?? _connected.isNotEmpty;
-  }
-
-  /// Whether the server has the device's connected accounts yet. (An earlier
-  /// build kept `services_pending` for the list alone; it is not read any more, so
-  /// that every device sends the account names once.)
-  static const _servicesPendingKey = 'accounts_pending';
-
-  /// Saves the connected services and whether the server has them yet.
-  Future<void> _saveConnectedServices(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(
-      _scoped('connected_services', userId),
-      _connected.map((e) => e.name).toList(),
-    );
-    await prefs.setBool(_scoped(_servicesPendingKey, userId), _servicesPending);
+  /// Deletes those copies. Nothing reads them any more: only Steam, which Steam
+  /// itself confirms, can be connected, so a name that was only ever typed in
+  /// does not stay on the device.
+  static Future<void> _forgetTypedInAccounts(SharedPreferences prefs) async {
+    for (final key in prefs.getKeys()) {
+      for (final name in _typedInAccountKeys) {
+        if (key == name || key.startsWith('$name.')) {
+          await prefs.remove(key);
+          break;
+        }
+      }
+    }
   }
 
   // ---- Following ----
@@ -575,20 +522,19 @@ class ProfileStore extends ChangeNotifier {
 
   // ---- Connected services ----
 
-  final Set<ConnectedService> _connected = {};
-
   /// Steam is connected exactly when the signed-in user's profile has a Steam ID.
-  /// Every other service is a flag saved per account on this device.
   bool get steamConnected =>
       _user != null && (_profile.steamId?.trim().isNotEmpty ?? false);
 
-  int get connectedCount => connectedServices.length;
   Set<ConnectedService> get connectedServices => Set.unmodifiable({
-    ..._connected,
     if (steamConnected) ConnectedService.steam,
   });
-  bool isConnected(ConnectedService s) =>
-      s == ConnectedService.steam ? steamConnected : _connected.contains(s);
+
+  /// The ID behind each connected service, for the Connected accounts box.
+  Map<ConnectedService, String> get accountNames => {
+    if (steamId?.trim() case final id? when steamConnected && id.isNotEmpty)
+      ConnectedService.steam: id,
+  };
 
   /// The signed-in user's Steam ID64, read from `profiles.steam_id` along with
   /// the rest of their profile. `null` when signed out or not set yet.
@@ -721,245 +667,6 @@ class ProfileStore extends ChangeNotifier {
       debugPrint('Disconnecting Steam failed: $e\n$st');
       return L10n.current.steamDisconnectFailed;
     }
-  }
-
-  void toggleService(ConnectedService s) async {
-    if (s == ConnectedService.steam) {
-      // Toggling Steam off clears its ID. Connecting goes through [connectSteam].
-      unawaited(disconnectSteam());
-      return;
-    }
-    if (!_connected.remove(s)) _connected.add(s);
-    _servicesPending = true;
-    _serviceVersion++;
-    notifyListeners();
-
-    final userId = _user?.id;
-    if (userId == null) return;
-    await _saveConnectedServices(userId);
-    unawaited(_pushServices(userAction: true));
-  }
-
-  // ---- Connected accounts on the server ----
-  //
-  // `profiles.connected_services` names the connected services other than Steam,
-  // and `psn_id` / `xbox_id` / `discord_id` / `instagram_id` / `twitch_id` hold the
-  // account names behind them:
-  // what another member's profile shows, and what its icons open. They are a
-  // mirror of what the device has, written as a whole, so sending them twice is
-  // harmless and there is no queue of edits: only whether the latest arrived.
-
-  /// What the device has connected, as the server stores it: a service that is
-  /// not connected has no name.
-  ConnectedAccounts get _accounts => ConnectedAccounts(
-    services: {..._connected},
-    psnId: _connected.contains(ConnectedService.psn) ? _psnId : null,
-    xboxId: _connected.contains(ConnectedService.xbox) ? _xboxId : null,
-    discordId: _connected.contains(ConnectedService.discord) ? _discordId : null,
-    instagramId: _connected.contains(ConnectedService.instagram) ? _instagramId : null,
-    twitchId: _connected.contains(ConnectedService.twitch) ? _twitchId : null,
-  );
-
-  /// The device has a change the server doesn't have yet. Saved with the list.
-  bool _servicesPending = false;
-
-  /// The server has the connected accounts this device has: no change to them
-  /// is waiting to be sent. Listeners hear when a send gets through.
-  bool get servicesSaved => !_servicesPending;
-
-  /// Bumped by every change made on the device and every send that reached the
-  /// server, so a read of the server's accounts that was under way meanwhile can
-  /// tell its answer is out of date.
-  int _serviceVersion = 0;
-
-  /// The send that is running, if any.
-  Future<void>? _servicesPush;
-
-  /// The server's accounts were just read (as part of [server], the profile). A
-  /// change the device hasn't sent goes up now; otherwise the server's accounts are
-  /// the truth (another device may have changed them) and replace the device's,
-  /// except a name this device has and the server lacks, which goes up.
-  /// [versionBefore] is [_serviceVersion] from before the read started.
-  void _applyServerAccounts(
-    String userId,
-    UserProfile server,
-    int versionBefore,
-  ) {
-    if (versionBefore != _serviceVersion) return;
-    if (_servicesPending) {
-      unawaited(_pushServices());
-      return;
-    }
-    final onServer = ConnectedAccounts(
-      services: server.connectedServices,
-      psnId: server.psnId,
-      xboxId: server.xboxId,
-      discordId: server.discordId,
-      instagramId: server.instagramId,
-      twitchId: server.twitchId,
-    );
-    if (onServer == _accounts) return;
-
-    _connected
-      ..clear()
-      ..addAll(server.connectedServices);
-    // The server's name wins; where it has none, this device's is kept. A name
-    // for a service the server doesn't list as connected is stale, and ignored.
-    bool listed(ConnectedService s) => server.connectedServices.contains(s);
-    if (listed(ConnectedService.psn)) _psnId = server.psnId ?? _psnId;
-    if (listed(ConnectedService.xbox)) _xboxId = server.xboxId ?? _xboxId;
-    if (listed(ConnectedService.discord)) {
-      _discordId = server.discordId ?? _discordId;
-    }
-    if (listed(ConnectedService.instagram)) {
-      _instagramId = server.instagramId ?? _instagramId;
-    }
-    if (listed(ConnectedService.twitch)) {
-      _twitchId = server.twitchId ?? _twitchId;
-    }
-    unawaited(_saveAccountNames(userId));
-    if (onServer != _accounts) {
-      // This device knows a name the server doesn't.
-      _servicesPending = true;
-      _serviceVersion++;
-      unawaited(_saveConnectedServices(userId));
-      unawaited(_pushServices());
-      return;
-    }
-    unawaited(_saveConnectedServices(userId));
-  }
-
-  Future<void> _saveAccountNames(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
-    for (final (key, name) in [
-      ('psn_id', _psnId),
-      ('xbox_id', _xboxId),
-      ('discord_id', _discordId),
-      ('instagram_id', _instagramId),
-      ('twitch_id', _twitchId),
-    ]) {
-      if (name != null) await prefs.setString(_scoped(key, userId), name);
-    }
-  }
-
-  /// Sends the connected accounts to the server while the device has a change it
-  /// hasn't received. Does nothing without a live session or with nothing to send,
-  /// and a second call joins the one running. A failed send leaves the change
-  /// pending: it is tried again when the profile next loads or the connection
-  /// comes back. [userAction] says the user just made the change, so they are told
-  /// when it did not get through.
-  Future<void> _pushServices({bool userAction = false}) {
-    final running = _servicesPush;
-    if (running != null) return running;
-    final user = _user;
-    if (user == null || !_servicesPending) return Future.value();
-    if (_auth.isSessionPending) {
-      if (userAction) _setNotice(queuedNotice);
-      return Future.value();
-    }
-    return _servicesPush = _sendServices(user, userAction).whenComplete(() {
-      _servicesPush = null;
-    });
-  }
-
-  Future<void> _sendServices(User user, bool userAction) async {
-    // Again while a change was made during the send.
-    while (_servicesPending && _user?.id == user.id) {
-      final sent = _accounts;
-      try {
-        await _repository.setConnectedAccounts(sent);
-      } catch (e, st) {
-        debugPrint('Saving the connected accounts failed: $e\n$st');
-        if (userAction && _user?.id == user.id) {
-          _setNotice(
-            isConnectionFailure(e)
-                ? queuedNotice
-                : isContentRefusal(e)
-                ? L10n.current.contentRefused
-                : L10n.current.connectedAccountsSaveFailed,
-          );
-        }
-        return;
-      }
-      if (_user?.id != user.id) return;
-      _serviceVersion++;
-      if (sent == _accounts) {
-        _servicesPending = false;
-        await _saveConnectedServices(user.id);
-        if (!_disposed && _user?.id == user.id) notifyListeners();
-      }
-    }
-  }
-
-  String? _psnId;
-  String? _xboxId;
-  String? _discordId;
-  String? _instagramId;
-  String? _twitchId;
-  String? get psnId => _psnId;
-  String? get xboxId => _xboxId;
-  String? get discordId => _discordId;
-  String? get instagramId => _instagramId;
-  String? get twitchId => _twitchId;
-
-  /// The name saved for each connected service that has one, for the Connected
-  /// accounts box on the Profile tab: the Steam ID and the PSN, Xbox, Discord,
-  /// Instagram and Twitch names. A service that is not connected is left out.
-  Map<ConnectedService, String> get accountNames => {
-    for (final s in connectedServices)
-      if (_nameOf(s)?.trim() case final name? when name.isNotEmpty) s: name,
-  };
-
-  String? _nameOf(ConnectedService s) => switch (s) {
-    ConnectedService.steam => steamId,
-    ConnectedService.psn => _psnId,
-    ConnectedService.xbox => _xboxId,
-    ConnectedService.discord => _discordId,
-    ConnectedService.instagram => _instagramId,
-    ConnectedService.twitch => _twitchId,
-    ConnectedService.nintendo => null,
-  };
-
-  /// Saves the username for PSN, Xbox, Discord, Instagram or Twitch, marks that
-  /// service as connected, and persists both the ID and the connected-services
-  /// list. Steam uses [connectSteam] (the server stores it on the profile);
-  /// Nintendo has no stored ID.
-  void setServiceId(ConnectedService service, String id) async {
-    final String prefKey;
-    switch (service) {
-      case ConnectedService.psn:
-        _psnId = id;
-        prefKey = 'psn_id';
-      case ConnectedService.xbox:
-        _xboxId = id;
-        prefKey = 'xbox_id';
-      case ConnectedService.discord:
-        _discordId = id;
-        prefKey = 'discord_id';
-      case ConnectedService.instagram:
-        _instagramId = id;
-        prefKey = 'instagram_id';
-      case ConnectedService.twitch:
-        _twitchId = id;
-        prefKey = 'twitch_id';
-      case ConnectedService.steam || ConnectedService.nintendo:
-        debugPrint('setServiceId: ${service.name} has no stored ID.');
-        return;
-    }
-    // The name may have changed even if the service was already connected.
-    _connected.add(service);
-    _servicesPending = true;
-    _serviceVersion++;
-    notifyListeners();
-
-    // Saved per account, so another account on this device doesn't see it; the
-    // server gets a copy for other members' profile pages.
-    final userId = _user?.id;
-    if (userId == null) return;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_scoped(prefKey, userId), id);
-    await _saveConnectedServices(userId);
-    unawaited(_pushServices(userAction: true));
   }
 
   // ---- Privacy ----

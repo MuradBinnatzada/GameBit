@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:checkpoint/models/connected_service.dart';
 import 'package:checkpoint/models/game.dart';
 import 'package:checkpoint/models/user_profile.dart';
 import 'package:checkpoint/services/local_cache.dart';
@@ -61,16 +60,21 @@ void main() {
     expect(game.playedOn, isNull);
   });
 
-  test('a profile saved by a build that did not know the connected services still reads', () {
+  test('a profile saved by a build that kept typed-in service names still reads', () {
     final profile = UserProfile.fromJson({
       'name': 'Ada',
       'handle': '@ada',
       'joined': '2026-01-01T00:00:00.000Z',
       'followers': 0,
       'following': 0,
+      'connectedServices': ['psn', 'nintendo'],
+      'psnId': 'ps_user',
+      'instagramId': 'ada.plays',
     });
 
-    expect(profile.connectedServices, isEmpty);
+    expect(profile.name, 'Ada');
+    expect(profile.toJson(), isNot(contains('psnId')));
+    expect(profile.toJson(), isNot(contains('connectedServices')));
   });
 
   test('logs, profile and follows round-trip', () async {
@@ -81,7 +85,6 @@ void main() {
       bio: 'hi',
       avatarUrl: 'https://example.com/a.png',
       steamId: '7656',
-      connectedServices: {ConnectedService.psn, ConnectedService.nintendo},
       joined: DateTime.utc(2026, 1, 1),
       followers: 0,
       following: 0,
@@ -101,7 +104,6 @@ void main() {
     expect(readProfile.name, 'Ada');
     expect(readProfile.steamId, '7656');
     expect(readProfile.avatarUrl, 'https://example.com/a.png');
-    expect(readProfile.connectedServices, {ConnectedService.psn, ConnectedService.nintendo});
 
     final social = (await cache.readSocial('u1'))!.value;
     expect(social.followingIds, {'x', 'y'});

@@ -4,9 +4,8 @@ import 'package:checkpoint/models/connected_service.dart';
 import 'package:checkpoint/models/milestone.dart';
 
 /// Another member's profile header: what `public_profiles` exposes to signed-in
-/// members. That is the name, handle, photo, bio, which services they linked and
-/// the account names behind them (what makes the service icons tappable). Never
-/// the email.
+/// members. That is the name, handle, photo, bio, their Steam ID (what makes the
+/// Steam icon tappable) and their frame and milestones. Never the email.
 @immutable
 class PublicProfile {
   const PublicProfile({
@@ -16,14 +15,8 @@ class PublicProfile {
     this.avatarUrl,
     this.steamConnected = false,
     this.showSteamAchievements = true,
-    this.services = const {},
     this.bio,
     this.steamId,
-    this.psnId,
-    this.xboxId,
-    this.discordId,
-    this.instagramId,
-    this.twitchId,
     this.joined,
     this.flair = ProfileFlair.none,
   });
@@ -41,21 +34,12 @@ class PublicProfile {
   /// out none of them, and the profile leaves the Achievements card out.
   final bool showSteamAchievements;
 
-  /// The connected services besides Steam (`profiles.connected_services`).
-  final Set<ConnectedService> services;
-
   /// Null when they wrote none.
   final String? bio;
 
-  /// Steam ID64, PSN id, Xbox gamertag and the Discord, Instagram and Twitch
-  /// usernames, as the member entered them. Null when not given (a service can be
-  /// connected without a name, until the member's app has uploaded it).
+  /// Steam ID64, as Steam confirmed it when the member connected. Null when they
+  /// have not connected Steam.
   final String? steamId;
-  final String? psnId;
-  final String? xboxId;
-  final String? discordId;
-  final String? instagramId;
-  final String? twitchId;
 
   /// When they joined.
   final DateTime? joined;
@@ -63,25 +47,15 @@ class PublicProfile {
   /// The frame, title and milestones they show off.
   final ProfileFlair flair;
 
-  /// Every service the member has connected, Steam (derived from [steamConnected])
-  /// included.
+  /// Every service the member has connected: Steam, once they have.
   Set<ConnectedService> get connectedServices => {
     if (steamConnected) ConnectedService.steam,
-    ...services.where((s) => s != ConnectedService.steam),
   };
 
-  /// The names behind [connectedServices] that the member gave, for the
-  /// Connected accounts box.
+  /// The account IDs behind [connectedServices], for the Connected accounts box.
   Map<ConnectedService, String> get accountNames => {
-    for (final (service, name) in [
-      (ConnectedService.steam, steamId),
-      (ConnectedService.psn, psnId),
-      (ConnectedService.xbox, xboxId),
-      (ConnectedService.discord, discordId),
-      (ConnectedService.instagram, instagramId),
-      (ConnectedService.twitch, twitchId),
-    ])
-      if (name?.trim() case final text? when text.isNotEmpty) service: text,
+    if (steamId?.trim() case final id? when steamConnected && id.isNotEmpty)
+      ConnectedService.steam: id,
   };
 }
 

@@ -2,18 +2,12 @@ part of '../checkpoint_repository.dart';
 
 /// Another member's profile, library and latest activity, read through the `public_*` views.
 mixin _PublicMemberQueries on _RepositoryBase {
-  /// Everything `public_profiles` has: see 20261018120000_public_profile_details.sql.
+  /// Everything `public_profiles` has: see 20261101050000_verified_services_only.sql.
   static final String _publicProfileColumns = [
     _memberColumns,
     Db.steamConnected,
-    Db.connectedServices,
     Db.bio,
     Db.steamId,
-    Db.psnId,
-    Db.xboxId,
-    Db.discordId,
-    Db.instagramId,
-    Db.twitchId,
     Db.joinedAt,
     Db.showSteamAchievements,
     Db.avatarFrame,

@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:checkpoint/models/connected_service.dart';
 import 'package:checkpoint/models/milestone.dart';
 
 @immutable
@@ -11,12 +10,6 @@ class UserProfile {
     this.bio,
     this.avatarUrl,
     this.steamId,
-    this.connectedServices = const {},
-    this.psnId,
-    this.xboxId,
-    this.discordId,
-    this.instagramId,
-    this.twitchId,
     this.showSteamAchievements = true,
     this.flair = ProfileFlair.none,
     required this.joined,
@@ -30,12 +23,6 @@ class UserProfile {
         bio: json['bio'] as String?,
         avatarUrl: json['avatarUrl'] as String?,
         steamId: json['steamId'] as String?,
-        connectedServices: connectedServicesFromDb(json['connectedServices']),
-        psnId: json['psnId'] as String?,
-        xboxId: json['xboxId'] as String?,
-        discordId: json['discordId'] as String?,
-        instagramId: json['instagramId'] as String?,
-        twitchId: json['twitchId'] as String?,
         // A copy saved before the setting existed: the default.
         showSteamAchievements: json['showSteamAchievements'] as bool? ?? true,
         flair: profileFlairFromJson(json['flair']),
@@ -52,19 +39,6 @@ class UserProfile {
   /// Steam ID64 from `profiles.steam_id`. Only ever populated for the signed-in
   /// user's own profile; it is never read for other members.
   final String? steamId;
-
-  /// The services besides Steam that `profiles.connected_services` says are
-  /// connected: the list other members see. The PSN / Xbox / Discord names behind
-  /// them are not on the server.
-  final Set<ConnectedService> connectedServices;
-
-  /// The account names the server has for PSN, Xbox, Discord, Instagram and
-  /// Twitch (`profiles.psn_id` and so on): what other members' links open.
-  final String? psnId;
-  final String? xboxId;
-  final String? discordId;
-  final String? instagramId;
-  final String? twitchId;
 
   /// Whether other members see the Achievements card on this profile
   /// (`profiles.show_steam_achievements`, Settings > Privacy). The member always
@@ -86,12 +60,6 @@ class UserProfile {
         'bio': bio,
         'avatarUrl': avatarUrl,
         'steamId': steamId,
-        'connectedServices': connectedServicesToDb(connectedServices),
-        'psnId': psnId,
-        'xboxId': xboxId,
-        'discordId': discordId,
-        'instagramId': instagramId,
-        'twitchId': twitchId,
         'showSteamAchievements': showSteamAchievements,
         'flair': profileFlairToJson(flair),
         'joined': joined.toUtc().toIso8601String(),
@@ -116,12 +84,6 @@ class UserProfile {
         bio: bio ?? this.bio,
         avatarUrl: avatarUrl ?? this.avatarUrl,
         steamId: clearSteamId ? null : (steamId ?? this.steamId),
-        connectedServices: connectedServices,
-        psnId: psnId,
-        xboxId: xboxId,
-        discordId: discordId,
-        instagramId: instagramId,
-        twitchId: twitchId,
         showSteamAchievements:
             showSteamAchievements ?? this.showSteamAchievements,
         flair: flair ?? this.flair,

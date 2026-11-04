@@ -161,7 +161,7 @@ class LocalCache {
   /// Deletes everything this device holds for [userId], for an account that no
   /// longer exists: the saved copy ([clearAccount]) and also what a sign-out
   /// leaves behind on purpose (follows and library edits still waiting for the
-  /// server, the PSN / Xbox / Discord names).
+  /// server).
   ///
   /// Every per-account key on the device ends in `.<user id>` (ids are UUIDs, so
   /// the suffix can't match another account), which keeps this working for keys

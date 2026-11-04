@@ -101,7 +101,7 @@ class AccountSection extends StatelessWidget {
           services: profileStore.connectedServices,
           names: profileStore.accountNames,
           editor: accountEditorFor(context),
-          gameFooter: profileStore.steamConnected
+          footer: profileStore.steamConnected
               ? const SyncLibraryButton()
               : null,
         ),

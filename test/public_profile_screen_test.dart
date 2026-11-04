@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show FunctionException;
@@ -9,7 +8,6 @@ import 'package:supabase_flutter/supabase_flutter.dart' show FunctionException;
 import 'package:checkpoint/models/achievement.dart';
 import 'package:checkpoint/models/achievement_summary.dart';
 import 'package:checkpoint/models/activity_entry.dart';
-import 'package:checkpoint/models/connected_service.dart';
 import 'package:checkpoint/models/game.dart';
 import 'package:checkpoint/models/game_reviews.dart' show MemberReportSubject, ReportReason;
 import 'package:checkpoint/models/public_profile.dart';
@@ -72,15 +70,6 @@ void main() {
       bio: 'Speedrunner and soulslike enjoyer.',
       steamConnected: true,
       steamId: '76561198000000000',
-      services: {
-        ConnectedService.discord,
-        ConnectedService.nintendo,
-        ConnectedService.instagram,
-        ConnectedService.twitch,
-      },
-      discordId: 'member#1',
-      instagramId: 'member.one',
-      twitchId: 'memberone',
       joined: DateTime.utc(2026, 3, 4),
     );
     repo.members['m2'] = const PublicProfile(
@@ -201,43 +190,34 @@ void main() {
     );
 
     testWidgets(
-      'shows the connected accounts as small icons above the bio: game profiles, then social media',
+      'shows the connected account as a small icon above the bio',
       (tester) async {
         await openProfile(tester);
 
-        // Tapping an icon opens the account (Discord copies the username).
-        expect(accountIcon('Open Steam profile'), findsOneWidget);
-        expect(accountIcon('Copy Discord username'), findsOneWidget);
-        expect(accountIcon('Open Instagram profile'), findsOneWidget);
-        expect(accountIcon('Open Twitch channel'), findsOneWidget);
-        // Nintendo is connected but has nothing to open; PSN and Xbox are not connected.
-        expect(accountIcon('Nintendo'), findsOneWidget);
+        // Tapping the icon opens the account.
+        final icon = accountIcon('Open Steam profile');
+        expect(icon, findsOneWidget);
+        // Steam is the only service there is: nothing else is offered.
+        expect(
+          find.descendant(
+            of: find.byType(ConnectedAccountIcons),
+            matching: find.byType(Tooltip),
+          ),
+          findsOneWidget,
+        );
         expect(accountIcon('PSN'), findsNothing);
         expect(accountIcon('Xbox'), findsNothing);
-        // Icons only: no box, no names, nothing to change.
+        expect(accountIcon('Nintendo'), findsNothing);
+        // Icons only: no box, no ID, nothing to change.
         expect(find.text('Connected accounts'), findsNothing);
-        expect(find.text('GAME PROFILES'), findsNothing);
-        expect(find.text('memberone'), findsNothing);
+        expect(find.text('76561198000000000'), findsNothing);
         expect(find.text('Connect'), findsNothing);
         expect(find.text('Sync Library'), findsNothing);
 
-        // One row, game profiles first.
-        final icons = [
-          accountIcon('Open Steam profile'),
-          accountIcon('Nintendo'),
-          accountIcon('Copy Discord username'),
-          accountIcon('Open Instagram profile'),
-          accountIcon('Open Twitch channel'),
-        ];
-        final lefts = [for (final i in icons) tester.getTopLeft(i).dx];
-        expect(lefts, orderedEquals([...lefts]..sort()));
-        for (final i in icons) {
-          expect(top(tester, i), top(tester, icons.first));
-        }
         // Under the name, above the bio.
-        expect(top(tester, find.text('Member One')), lessThan(top(tester, icons.first)));
+        expect(top(tester, find.text('Member One')), lessThan(top(tester, icon)));
         expect(
-          top(tester, icons.first),
+          top(tester, icon),
           lessThan(top(tester, find.text('Speedrunner and soulslike enjoyer.'))),
         );
       },
@@ -322,61 +302,18 @@ void main() {
       },
     );
 
-    testWidgets('the Discord icon copies the username', (tester) async {
-      String? copied;
-      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-        SystemChannels.platform,
-        (call) async {
-          if (call.method == 'Clipboard.setData') {
-            copied = (call.arguments as Map)['text'] as String?;
-          }
-          return null;
-        },
-      );
-      addTearDown(
-        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-          SystemChannels.platform,
-          null,
-        ),
-      );
-      await openProfile(tester);
-
-      await tester.tap(accountIcon('Copy Discord username'));
-      await tester.pump();
-
-      expect(copied, 'member#1');
-      expect(find.text('Discord username copied to clipboard'), findsOneWidget);
-    });
-
-    testWidgets('a service without a saved name is shown but not tappable', (
+    testWidgets('a member who has not connected Steam has no icon', (
       tester,
     ) async {
       repo.members['m1'] = const PublicProfile(
         id: 'm1',
         name: 'Member One',
         handle: '@member_one',
-        services: {ConnectedService.psn},
       );
       await openProfile(tester);
 
-      expect(accountIcon('PSN'), findsOneWidget);
-      expect(accountIcon('Open PSN profile'), findsNothing);
-    });
-
-    testWidgets('a name that is not one Instagram allows gets no link', (
-      tester,
-    ) async {
-      repo.members['m1'] = const PublicProfile(
-        id: 'm1',
-        name: 'Member One',
-        handle: '@member_one',
-        services: {ConnectedService.instagram},
-        instagramId: '../explore/tags',
-      );
-      await openProfile(tester);
-
-      expect(accountIcon('Instagram'), findsOneWidget);
-      expect(accountIcon('Open Instagram profile'), findsNothing);
+      expect(find.byType(ConnectedAccountIcons), findsNothing);
+      expect(accountIcon('Open Steam profile'), findsNothing);
     });
 
     testWidgets('shows the name from the tapped row while it loads', (

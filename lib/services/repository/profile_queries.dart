@@ -185,38 +185,6 @@ mixin _ProfileQueries on _RepositoryBase {
         .eq(Db.id, userId);
   }
 
-  /// Saves which services the signed-in user has connected, and the account
-  /// names behind PSN, Xbox, Discord, Instagram and Twitch, on their own
-  /// `profiles` row. This is what
-  /// other members see on the profile: the icons, and what tapping one opens.
-  /// Replaces everything, so sending the same accounts twice is harmless, and a
-  /// service that is not connected has its name cleared. Never Steam: it follows
-  /// from the Steam ID. Read back with [fetchProfile] (as
-  /// [UserProfile.connectedServices] and its account names).
-  Future<void> setConnectedAccounts(ConnectedAccounts accounts) async {
-    final userId = _requireUserId();
-    String? name(ConnectedService s) {
-      if (!accounts.services.contains(s)) return null;
-      final text = accounts.nameOf(s)?.trim();
-      if (text == null || text.isEmpty) return null;
-      return text.length <= accountNameMaxLength
-          ? text
-          : text.substring(0, accountNameMaxLength);
-    }
-
-    await _client
-        .from(Db.profiles)
-        .update({
-          Db.connectedServices: connectedServicesToDb(accounts.services),
-          Db.psnId: name(ConnectedService.psn),
-          Db.xboxId: name(ConnectedService.xbox),
-          Db.discordId: name(ConnectedService.discord),
-          Db.instagramId: name(ConnectedService.instagram),
-          Db.twitchId: name(ConnectedService.twitch),
-        })
-        .eq(Db.id, userId);
-  }
-
   /// Uploads [image] to the public `avatars` bucket and returns its public
   /// URL. Files go under `<userId>/` with a unique name per upload, so a new
   /// photo never collides with a cached copy of the old one.

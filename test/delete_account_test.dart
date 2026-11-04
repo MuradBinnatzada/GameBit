@@ -17,16 +17,14 @@ import 'package:checkpoint/theme/app_theme.dart';
 import 'support/fakes.dart';
 
 /// The keys that hold u1's data on the device: the saved copy (LocalCache), the
-/// edits still waiting for the server (PendingEditsStorage) and the per-account
-/// service names (ProfileStore).
+/// edits still waiting for the server (PendingEditsStorage) and the flag that the
+/// first-run walk-through was shown (OnboardingStore).
 const u1Keys = {
   'cache.v1.library.u1',
   'cache.v1.profile.u1',
   'pending.v1.u1',
   'pending.v1.follows.u1',
-  'psn_id.u1',
-  'connected_services.u1',
-  'accounts_pending.u1',
+  'onboarding.v1.u1',
 };
 
 /// A device with u1 (the account that gets deleted), u2 and the app's own data
@@ -34,12 +32,8 @@ const u1Keys = {
 /// when stores load, so the queued edits are not sent (and removed) on the way.
 Future<void> seedDevice() async {
   SharedPreferences.setMockInitialValues({
-    'psn_id.u1': 'ps_user',
-    'connected_services.u1': ['psn'],
-    'accounts_pending.u1': true,
-    'psn_id.u2': 'other',
-    'connected_services.u2': ['xbox'],
-    'accounts_pending.u2': false,
+    'onboarding.v1.u1': true,
+    'onboarding.v1.u2': true,
     'theme': 'dark',
   });
   final cache = LocalCache();
@@ -58,9 +52,7 @@ Future<void> seedDevice() async {
 const otherData = [
   'cache.v1.library.u2',
   'pending.v1.u2',
-  'psn_id.u2',
-  'connected_services.u2',
-  'accounts_pending.u2',
+  'onboarding.v1.u2',
   'cache.v1.popular',
   'theme',
 ];

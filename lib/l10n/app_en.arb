@@ -194,7 +194,7 @@
   "milestoneDropped1": "Know When to Fold",
   "milestoneDropped1Description": "Drop a game.",
   "milestoneSteamConnected": "Plugged In",
-  "milestoneSteamConnectedDescription": "Connect a game account: Steam, PSN, Xbox or Nintendo.",
+  "milestoneSteamConnectedDescription": "Connect your Steam account.",
   "milestoneTwoFactor": "Locked Down",
   "milestoneTwoFactorDescription": "Turn on two-factor authentication.",
   "milestonePerfectGame": "Perfectionist",
@@ -599,8 +599,6 @@
   "attributeEngines": "Engines",
   "attributeDevelopers": "Developers",
   "attributePublishers": "Publishers",
-  "serviceGroupGame": "Game profiles",
-  "serviceGroupSocial": "Social media",
   "releaseOutToday": "Out today",
   "releaseOutNow": "Out now",
   "releaseOutTomorrow": "Out tomorrow",
@@ -662,7 +660,6 @@
   "steamLinkFailed": "Could not connect Steam. Please try again.",
   "steamConnectSignIn": "Sign in to connect your Steam account.",
   "steamDisconnectFailed": "Could not disconnect Steam. Please try again.",
-  "connectedAccountsSaveFailed": "Could not update the accounts shown on your profile.",
   "privacySignIn": "Sign in to change your privacy settings.",
   "privacyAchievementsOffline": "Could not reach the server, so your achievements setting was not changed.",
   "privacySaveFailed": "Could not save your privacy setting. Please try again.",
@@ -1837,7 +1834,7 @@
   "privacyFollows": "Followers and following",
   "privacyFollowsText": "Who follows you and who you follow.",
   "connectedAccounts": "Connected accounts",
-  "privacyConnectedText": "Your Steam ID and your PSN, Xbox, Discord, Instagram and Twitch names, which is what their links open.",
+  "privacyConnectedText": "Your Steam ID, which is what the link to your Steam profile opens.",
   "privacyAchievementsText": "Your Steam achievement progress, unless you turn off {setting} above.",
   "@privacyAchievementsText": {
     "placeholders": {
@@ -1888,8 +1885,6 @@
       }
     }
   },
-  "nintendoIdHint": "Enter your Nintendo Gamertag/ID",
-  "nintendoIdRequired": "Enter your Nintendo ID",
   "changeServiceUsername": "Change {service} username",
   "@changeServiceUsername": {
     "placeholders": {
@@ -1898,23 +1893,7 @@
       }
     }
   },
-  "serviceUsernameHint": "Enter your {service} username",
-  "@serviceUsernameHint": {
-    "placeholders": {
-      "service": {
-        "type": "String"
-      }
-    }
-  },
   "connect": "Connect",
-  "serviceUsernameInvalid": "That isn't a valid {service} username",
-  "@serviceUsernameInvalid": {
-    "placeholders": {
-      "service": {
-        "type": "String"
-      }
-    }
-  },
   "disconnectServiceTitle": "Disconnect {service}?",
   "@disconnectServiceTitle": {
     "placeholders": {
@@ -1924,7 +1903,6 @@
     }
   },
   "disconnectSteamBody": "Your Steam ID is removed and library sync stops. Games already in your library stay.",
-  "disconnectServiceBody": "It's removed from your profile. You can connect it again any time.",
   "disconnect": "Disconnect",
   "connectSteamBody": "Sign in on Steam's page to show the account is yours. Gamebit gets your Steam ID from Steam, never your password.",
   "clearLibraryTitle": "Clear your library?",
@@ -2925,26 +2903,8 @@
   "boardFeedback": "Gamebit feedback",
   "boardFeedbackDescription": "Ideas, bugs and questions about the app.",
   "accountVerified": "Verified through sign-in",
-  "accountNotVerified": "Added by the member, not verified",
   "openServiceProfile": "Open {service} profile",
   "@openServiceProfile": {
-    "placeholders": {
-      "service": {
-        "type": "String"
-      }
-    }
-  },
-  "copyServiceUsername": "Copy {service} username",
-  "@copyServiceUsername": {
-    "placeholders": {
-      "service": {
-        "type": "String"
-      }
-    }
-  },
-  "openTwitchChannel": "Open Twitch channel",
-  "serviceUsernameCopied": "{service} username copied to clipboard",
-  "@serviceUsernameCopied": {
     "placeholders": {
       "service": {
         "type": "String"
@@ -3003,15 +2963,6 @@
   "connectAccounts": "Connect accounts",
   "notConnected": "Not connected",
   "connected": "Connected",
-  "serviceOptions": "{service} options",
-  "@serviceOptions": {
-    "placeholders": {
-      "service": {
-        "type": "String"
-      }
-    }
-  },
-  "changeUsername": "Change username",
   "hoursByPlatform": "Hours by platform",
   "noSessionsLoggedYet": "No sessions logged yet.",
   "dayPlayed": "Day played",

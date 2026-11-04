@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 
 import 'package:checkpoint/l10n/l10n.dart';
 import 'package:checkpoint/models/achievement.dart';
-import 'package:checkpoint/models/connected_service.dart';
 import 'package:checkpoint/models/discussion.dart';
 import 'package:checkpoint/models/game.dart';
 import 'package:checkpoint/models/share_link.dart';
@@ -785,7 +784,7 @@ class _AchievementsPanelState extends State<_AchievementsPanel> {
   /// adopted yet; the Edge Function still decodes the app id from those.
   bool _canLoad(BuildContext context) {
     final g = widget.game;
-    return context.watch<ProfileStore>().isConnected(ConnectedService.steam) &&
+    return context.watch<ProfileStore>().steamConnected &&
         g.inLibrary &&
         (g.playedOn == GamePlatform.pc || g.playedOn == GamePlatform.steamDeck) &&
         (g.steamAppId != null || g.id.startsWith(legacySteamIdPrefix));

@@ -338,129 +338,54 @@ void main() {
   });
 
   group('Connect accounts', () {
-    testWidgets(
-      'lists every service under Game profiles and Social media, with Connect on each',
-      (tester) async {
-        await open(tester, size: tall);
-
-        expect(find.text('GAME PROFILES'), findsOneWidget);
-        expect(find.text('SOCIAL MEDIA'), findsOneWidget);
-        for (final s in ConnectedService.values) {
-          expect(find.text(s.label), findsOneWidget, reason: s.label);
-          expect(connectButton(s.label), findsOneWidget, reason: s.label);
-        }
-        expect(
-          find.text('Not connected'),
-          findsNWidgets(ConnectedService.values.length),
-        );
-        // Nothing to sync without a Steam account.
-        expect(find.text('Sync Library'), findsNothing);
-      },
-    );
-
-    testWidgets('connecting Instagram asks for the username and saves it', (
+    testWidgets('lists Steam, the one service that is proved, with Connect on it', (
       tester,
     ) async {
       await open(tester, size: tall);
 
-      await tester.tap(connectButton('Instagram'));
-      await tester.pumpAndSettle();
-      expect(find.text('Connect Instagram'), findsOneWidget);
+      expect(ConnectedService.values, [ConnectedService.steam]);
+      expect(find.text('Steam'), findsOneWidget);
+      expect(connectButton('Steam'), findsOneWidget);
+      expect(find.text('Not connected'), findsOneWidget);
+      // Nothing that could only be typed in is offered.
+      for (final name in ['PSN', 'Xbox', 'Nintendo', 'Discord', 'Instagram', 'Twitch']) {
+        expect(find.text(name), findsNothing, reason: name);
+      }
+      expect(find.text('SOCIAL MEDIA'), findsNothing);
+      // Nothing to sync without a Steam account.
+      expect(find.text('Sync Library'), findsNothing);
+    });
 
-      await tester.enterText(find.byType(TextField), '@ada.plays');
-      await tester.tap(find.widgetWithText(FilledButton, 'Connect'));
+    Finder disconnectButton(String label) => find.descendant(
+      of: rowOf(label),
+      matching: find.widgetWithText(TextButton, 'Disconnect'),
+    );
+
+    testWidgets('a connected Steam shows its ID and can be disconnected', (
+      tester,
+    ) async {
+      repo.steamId = '76561198000000000';
+      await open(tester, size: tall);
+
+      expect(find.text('76561198000000000'), findsOneWidget);
+      expect(find.text('Change username'), findsNothing);
+      await tester.tap(disconnectButton('Steam'));
+      await tester.pumpAndSettle();
+      expect(find.text('Disconnect Steam?'), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, 'Disconnect'));
       await tester.pumpAndSettle();
       await settle(tester);
 
-      expect(stores.profile.isConnected(ConnectedService.instagram), isTrue);
-      expect(stores.profile.instagramId, 'ada.plays');
-      expect(repo.savedInstagramId, 'ada.plays');
-      expect(find.text('@ada.plays'), findsOneWidget);
-      expect(find.byTooltip('Open Instagram profile'), findsOneWidget);
+      expect(stores.profile.steamConnected, isFalse);
+      expect(repo.steamId, isNull);
+      expect(connectButton('Steam'), findsOneWidget);
     });
-
-    testWidgets(
-      'a username the service does not allow is refused in the dialog',
-      (tester) async {
-        await open(tester, size: tall);
-
-        await tester.tap(connectButton('Twitch'));
-        await tester.pumpAndSettle();
-        await tester.enterText(find.byType(TextField), 'not a name');
-        await tester.tap(find.widgetWithText(FilledButton, 'Connect'));
-        await tester.pumpAndSettle();
-
-        expect(find.text("That isn't a valid Twitch username"), findsOneWidget);
-        expect(stores.profile.isConnected(ConnectedService.twitch), isFalse);
-
-        await tester.tap(find.text('Cancel'));
-        await tester.pumpAndSettle();
-        expect(stores.profile.isConnected(ConnectedService.twitch), isFalse);
-      },
-    );
-
-    testWidgets(
-      'a connected service can be renamed and disconnected from its menu',
-      (tester) async {
-        // On the server already, as if connected on this or another device.
-        repo
-          ..connectedServices = {ConnectedService.psn}
-          ..savedPsnId = 'ps_user';
-        await open(tester, size: tall);
-        expect(find.text('ps_user'), findsOneWidget);
-
-        await tester.tap(
-          find.descendant(
-            of: rowOf('PSN'),
-            matching: find.byIcon(Icons.more_vert_rounded),
-          ),
-        );
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Change username'));
-        await tester.pumpAndSettle();
-        expect(find.text('Change PSN username'), findsOneWidget);
-        await tester.enterText(find.byType(TextField), 'new_name');
-        await tester.tap(find.widgetWithText(FilledButton, 'Save'));
-        await tester.pumpAndSettle();
-        await settle(tester);
-        expect(stores.profile.psnId, 'new_name');
-        expect(repo.savedPsnId, 'new_name');
-
-        await tester.tap(
-          find.descendant(
-            of: rowOf('PSN'),
-            matching: find.byIcon(Icons.more_vert_rounded),
-          ),
-        );
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Disconnect'));
-        await tester.pumpAndSettle();
-        expect(find.text('Disconnect PSN?'), findsOneWidget);
-        await tester.tap(find.widgetWithText(FilledButton, 'Disconnect'));
-        await tester.pumpAndSettle();
-        await settle(tester);
-
-        expect(stores.profile.isConnected(ConnectedService.psn), isFalse);
-        expect(repo.connectedServices, isEmpty);
-        expect(connectButton('PSN'), findsOneWidget);
-      },
-    );
 
     testWidgets('cancelling the disconnect keeps the account', (tester) async {
       repo.steamId = '76561198000000000';
       await open(tester, size: tall);
 
-      await tester.tap(
-        find.descendant(
-          of: rowOf('Steam'),
-          matching: find.byIcon(Icons.more_vert_rounded),
-        ),
-      );
-      await tester.pumpAndSettle();
-      // A Steam ID is proved by signing in, never typed: nothing to change.
-      expect(find.text('Change Steam ID'), findsNothing);
-      expect(find.text('Change username'), findsNothing);
-      await tester.tap(find.text('Disconnect'));
+      await tester.tap(disconnectButton('Steam'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
@@ -493,10 +418,10 @@ void main() {
         // The server saved it; the app wrote no Steam ID.
         expect(repo.writes.where((w) => w.startsWith('steam:')), isEmpty);
         expect(find.text('Sync Library'), findsOneWidget);
-      // The sync button belongs to the game profiles, above Social media.
+        // The sync button sits under the Steam row.
         expect(
           top(tester, find.text('Sync Library')),
-          lessThan(top(tester, find.text('SOCIAL MEDIA'))),
+          greaterThan(top(tester, find.text('Steam'))),
         );
       },
     );
@@ -650,7 +575,12 @@ void main() {
         await scrollPrivacyTo(tester, text);
         expect(find.text(text), findsOneWidget, reason: text);
       }
-      expect(find.textContaining('Instagram and Twitch'), findsOneWidget);
+      expect(
+        find.text('Your Steam ID, which is what the link to your Steam profile opens.'),
+        findsOneWidget,
+      );
+      // Only a Steam ID is shared for the connected accounts: no typed-in names.
+      expect(find.textContaining('Instagram'), findsNothing);
     });
 
     SwitchListTile achievementsSwitch(WidgetTester tester) => tester.widget(

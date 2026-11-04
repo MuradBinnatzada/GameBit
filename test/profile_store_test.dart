@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:checkpoint/models/connected_service.dart';
 import 'package:checkpoint/models/user_profile.dart';
 import 'package:checkpoint/services/local_cache.dart';
 import 'package:checkpoint/state/auth_store.dart';
@@ -21,10 +20,7 @@ void main() {
 
   setUp(() {
     debugPrint = (String? message, {int? wrapWidth}) {};
-    SharedPreferences.setMockInitialValues({
-      'psn_id.u1': 'ps_user',
-      'connected_services.u1': ['psn'],
-    });
+    SharedPreferences.setMockInitialValues({});
     repo = FakeRepository();
     authService = FakeAuthService(testUser('u1'));
     cache = LocalCache();
@@ -38,14 +34,12 @@ void main() {
     auth.dispose();
   });
 
-  test('loads the profile, follows and the services saved on this device', () async {
+  test('loads the profile and follows', () async {
     await profile.initialize();
 
     expect(profile.profile.name, 'Ada');
     expect(profile.followingCount, 1);
     expect(profile.followersCount, 3);
-    expect(profile.psnId, 'ps_user');
-    expect(profile.isConnected(ConnectedService.psn), isTrue);
   });
 
   test('keeps the saved profile and follows when the server cannot be reached', () async {
@@ -92,8 +86,6 @@ void main() {
     await loading;
     await pumpEventQueue();
 
-    expect(profile.psnId, 'ps_user');
-    expect(profile.isConnected(ConnectedService.psn), isTrue);
     expect(profile.profile.name, 'Saved Ada');
   });
 
@@ -106,7 +98,7 @@ void main() {
     await pumpEventQueue();
 
     expect(profile.profile.handle, '@guest');
-    expect(profile.psnId, isNull);
+    expect(profile.steamConnected, isFalse);
     expect(profile.followingCount, 0);
     expect(await cache.readProfile('u1'), isNull);
     expect(await cache.readSocial('u1'), isNull);

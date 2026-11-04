@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:checkpoint/models/connected_service.dart';
 import 'package:checkpoint/models/log_entry.dart';
 import 'package:checkpoint/models/milestone.dart';
 import 'package:checkpoint/models/milestone_progress.dart';
@@ -122,10 +121,7 @@ class MilestonesStore extends AccountScopedStore {
     following: _profile.followingCount,
     followers: _profile.followersCount,
     profile: accountId == null ? null : _profile.profile,
-    // Steam's ID is on the server already; the others count once they are.
-    gameAccount: _profile.steamConnected || _profile.servicesSaved
-        ? _profile.connectedServices.any((s) => s.group == ServiceGroup.game)
-        : null,
+    gameAccount: _profile.steamConnected,
     twoFactor: _auth.hasTwoFactor,
     now: _now(),
   );

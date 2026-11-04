@@ -9,7 +9,6 @@ import 'package:checkpoint/models/activity_entry.dart';
 import 'package:checkpoint/models/browse.dart';
 import 'package:checkpoint/models/completion_time.dart';
 import 'package:checkpoint/models/company.dart';
-import 'package:checkpoint/models/connected_service.dart';
 import 'package:checkpoint/models/filter_options.dart';
 import 'package:checkpoint/models/friend_activity.dart';
 import 'package:checkpoint/models/game.dart';
@@ -299,16 +298,6 @@ class FakeRepository implements CheckpointRepository {
   Completer<void>? awardGate;
   bool failAwards = false;
 
-  /// `profiles.connected_services`: the services saved for the signed-in user, as
-  /// other members see them (Steam is never in it), and the account names saved
-  /// with them (`psn_id`, `xbox_id`, `discord_id`, `instagram_id`, `twitch_id`).
-  Set<ConnectedService> connectedServices = {};
-  String? savedPsnId;
-  String? savedXboxId;
-  String? savedDiscordId;
-  String? savedInstagramId;
-  String? savedTwitchId;
-
   /// What `sync-steam` answers, or the error it throws when [syncError] is set.
   Object? syncData = {'success': true, 'delayed': null};
   Object? syncError;
@@ -316,9 +305,6 @@ class FakeRepository implements CheckpointRepository {
 
   /// Holds [follow] until completed, to have a request in flight.
   Completer<void>? followGate;
-
-  /// Holds [setConnectedAccounts] until completed.
-  Completer<void>? servicesGate;
 
   /// Holds the signed-in user's own profile read ([ensureProfile]) until completed.
   Completer<void>? profileLoadGate;
@@ -393,8 +379,6 @@ class FakeRepository implements CheckpointRepository {
 
   @override
   Future<UserProfile> ensureProfile(User user) async {
-    // The row as it is when the request is made, like a read that is under way.
-    final services = {...connectedServices};
     await profileLoadGate?.future;
     _checkOnline();
     return UserProfile(
@@ -402,12 +386,6 @@ class FakeRepository implements CheckpointRepository {
       handle: '@ada',
       bio: profileBio,
       steamId: steamId,
-      connectedServices: services,
-      psnId: savedPsnId,
-      xboxId: savedXboxId,
-      discordId: savedDiscordId,
-      instagramId: savedInstagramId,
-      twitchId: savedTwitchId,
       showSteamAchievements: showSteamAchievements,
       flair: profileFlair,
       joined: DateTime.utc(2026, 1, 1),
@@ -418,19 +396,6 @@ class FakeRepository implements CheckpointRepository {
 
   @override
   Future<UserProfile> fetchProfile(User user) => ensureProfile(user);
-
-  @override
-  Future<void> setConnectedAccounts(ConnectedAccounts accounts) async {
-    await servicesGate?.future;
-    _checkWrite();
-    connectedServices = {...accounts.services};
-    savedPsnId = accounts.psnId;
-    savedXboxId = accounts.xboxId;
-    savedDiscordId = accounts.discordId;
-    savedInstagramId = accounts.instagramId;
-    savedTwitchId = accounts.twitchId;
-    writes.add('services:${connectedServicesToDb(accounts.services).join(',')}');
-  }
 
   /// Where each `steam-link` start asked to come back to (null: nowhere).
   final List<Uri?> steamLinkStarts = [];

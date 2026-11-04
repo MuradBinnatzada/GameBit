@@ -200,16 +200,6 @@ void main() {
     // rows of the Recent activity panel (not part of this change) would not fit.
     repo
       ..logs = []
-      ..connectedServices = {
-        ConnectedService.psn,
-        ConnectedService.xbox,
-        ConnectedService.nintendo,
-        ConnectedService.discord,
-        ConnectedService.instagram,
-        ConnectedService.twitch,
-      }
-      ..savedPsnId = 'a_very_long_playstation_network_identifier_that_goes_on'
-      ..savedDiscordId = 'another_extremely_long_discord_username_for_testing'
       ..steamId = '76561198000000000';
     await open(tester, width: 340);
 
@@ -234,48 +224,24 @@ void main() {
     });
 
     testWidgets(
-      'connected ones are small icons above the bio, game profiles first, each a link',
+      'the connected account is a small icon above the bio and a link',
       (tester) async {
-        repo
-          ..connectedServices = {
-            ConnectedService.twitch,
-            ConnectedService.psn,
-            ConnectedService.discord,
-          }
-          ..savedPsnId = 'ps_user'
-          ..savedDiscordId = 'ada#1'
-          ..savedTwitchId = 'ada_plays'
-          ..steamId = '76561198000000000';
+        repo.steamId = '76561198000000000';
         await open(tester);
 
-        final icons = [
-          accountIcon('Open Steam profile'),
-          accountIcon('Open PSN profile'),
-          accountIcon('Copy Discord username'),
-          accountIcon('Open Twitch channel'),
-        ];
-        for (final i in icons) {
-          expect(i, findsOneWidget);
-        }
-        // Services that are not connected are not shown.
+        final icon = accountIcon('Open Steam profile');
+        expect(icon, findsOneWidget);
+        // Nothing else can be connected, so nothing else is shown.
+        expect(find.byType(FaIcon), findsOneWidget);
         expect(accountIcon('Xbox'), findsNothing);
+        expect(accountIcon('PSN'), findsNothing);
         expect(accountIcon('Nintendo'), findsNothing);
-        expect(accountIcon('Instagram'), findsNothing);
 
-        // One row, game profiles before social media.
-        final lefts = [for (final i in icons) tester.getTopLeft(i).dx];
-        expect(lefts, orderedEquals([...lefts]..sort()));
-        for (final i in icons) {
-          expect(top(tester, i), top(tester, icons.first));
-        }
         // Under the name, above the counts.
-        expect(top(tester, find.text('Ada')), lessThan(top(tester, icons.first)));
-        expect(
-          top(tester, icons.first),
-          lessThan(top(tester, find.text('Followers'))),
-        );
-        // Names are in Settings, not on the page.
-        expect(find.text('ps_user'), findsNothing);
+        expect(top(tester, find.text('Ada')), lessThan(top(tester, icon)));
+        expect(top(tester, icon), lessThan(top(tester, find.text('Followers'))));
+        // The ID is in Settings, not on the page.
+        expect(find.text('76561198000000000'), findsNothing);
         expect(find.text('Connect'), findsNothing);
       },
     );

@@ -10,7 +10,6 @@ import 'package:checkpoint/models/achievement.dart';
 import 'package:checkpoint/models/achievement_summary.dart';
 import 'package:checkpoint/models/activity_entry.dart';
 import 'package:checkpoint/models/completion_time.dart';
-import 'package:checkpoint/models/connected_service.dart';
 import 'package:checkpoint/models/discussion.dart';
 import 'package:checkpoint/models/friend_activity.dart';
 import 'package:checkpoint/models/game.dart';

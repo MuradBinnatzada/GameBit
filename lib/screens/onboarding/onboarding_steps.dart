@@ -32,8 +32,8 @@ class _StepHeader extends StatelessWidget {
   }
 }
 
-/// Step 1: the game services the member plays on, connected the way Settings
-/// does it (Steam signs in through Steam, the others take a name).
+/// Step 1: the game service the member plays on, connected the way Settings
+/// does it (Steam signs in through Steam).
 class OnboardingConnectStep extends StatelessWidget {
   const OnboardingConnectStep({super.key});
 
@@ -43,7 +43,6 @@ class OnboardingConnectStep extends StatelessWidget {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _StepHeader(title: context.l10n.onboardingConnectTitle, body: context.l10n.onboardingConnectBody),
       ConnectedAccountsPanel(
-        groups: const [ServiceGroup.game],
         services: profile.connectedServices,
         names: profile.accountNames,
         editor: accountEditorFor(context),

@@ -191,10 +191,11 @@ void main() {
 
       expect(find.text('Step 1 of 3'), findsOneWidget);
       expect(find.text('Where do you play?'), findsOneWidget);
-      // The game services only: no social media.
+      // Steam only: the one service the app can prove, and no typed-in names.
       expect(find.text('Steam'), findsOneWidget);
-      expect(find.text('Xbox'), findsOneWidget);
-      expect(find.text('Discord'), findsNothing);
+      for (final name in ['PSN', 'Xbox', 'Nintendo', 'Discord']) {
+        expect(find.text(name), findsNothing, reason: name);
+      }
       expect(find.text('Back'), findsNothing);
 
       await next(tester);

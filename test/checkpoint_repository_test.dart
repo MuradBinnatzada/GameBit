@@ -666,25 +666,6 @@ void main() {
       expect(api.requests, hasLength(1)); // nothing was written
     });
 
-    test('the profile carries the connected services saved on the row, not the account names', () async {
-      api.reply({
-        'id': 'u1',
-        'display_name': 'Ada',
-        'handle': 'ada',
-        'connected_services': ['xbox', 'steam', 'epic'],
-      });
-
-      final profile = await repo.fetchProfile(testUser('u1'));
-
-      expect(profile.connectedServices, {ConnectedService.xbox});
-    });
-
-    test('a row without the column (migration not applied yet) has no connected services', () async {
-      api.reply({'id': 'u1', 'display_name': 'Ada', 'handle': 'ada'});
-
-      expect((await repo.fetchProfile(testUser('u1'))).connectedServices, isEmpty);
-    });
-
     test('the profile carries whether other members see the achievements', () async {
       api.reply({'id': 'u1', 'display_name': 'Ada', 'handle': 'ada', 'show_steam_achievements': false});
       expect((await repo.fetchProfile(testUser('u1'))).showSteamAchievements, isFalse);
@@ -960,7 +941,7 @@ void main() {
       expect(profile.steamConnected, isTrue);
     });
 
-    test('fetchPublicProfile reads the bio, the services and the account names behind them', () async {
+    test('fetchPublicProfile reads the bio and the Steam ID, and nothing that was only typed in', () async {
       api.reply({
         'id': 'm1',
         'handle': 'zed',
@@ -968,88 +949,32 @@ void main() {
         'bio': ' Speedrunner ',
         'steam_connected': true,
         'steam_id': '76561198000000000',
-        'psn_id': 'zed_psn',
-        'xbox_id': '  ',
-        'discord_id': 'zed#1',
-        'instagram_id': 'zed.gram',
-        'twitch_id': ' ',
         'joined_at': '2026-03-04T00:00:00+00:00',
-        'connected_services': ['xbox', 'psn', 'nintendo', 'discord', 'instagram', 'twitch'],
       });
 
       final profile = (await repo.fetchPublicProfile('m1'))!;
 
       final select = api.last.url.queryParameters['select']!;
+      for (final column in ['bio', 'steam_id', 'joined_at']) {
+        expect(select, contains(column));
+      }
+      // The columns of the services that could be typed in are gone from the view.
       for (final column in [
+        'email',
         'connected_services',
-        'bio',
-        'steam_id',
         'psn_id',
         'xbox_id',
         'discord_id',
         'instagram_id',
         'twitch_id',
-        'joined_at',
       ]) {
-        expect(select, contains(column));
+        expect(select, isNot(contains(column)));
       }
-      expect(select, isNot(contains('email')));
       expect(profile.bio, 'Speedrunner');
       expect(profile.steamId, '76561198000000000');
-      expect(profile.psnId, 'zed_psn');
-      expect(profile.xboxId, isNull); // blank text is no name
-      expect(profile.discordId, 'zed#1');
-      expect(profile.instagramId, 'zed.gram');
-      expect(profile.twitchId, isNull);
       expect(profile.joined!.toUtc(), DateTime.utc(2026, 3, 4));
-      expect(profile.services, {
-        ConnectedService.psn,
-        ConnectedService.xbox,
-        ConnectedService.discord,
-        ConnectedService.nintendo,
-        ConnectedService.instagram,
-        ConnectedService.twitch,
-      });
-      // The accounts come out in the enum's order, Steam first when it is linked.
-      expect(profile.connectedServices.toList(), [
-        ConnectedService.steam,
-        ConnectedService.psn,
-        ConnectedService.xbox,
-        ConnectedService.nintendo,
-        ConnectedService.discord,
-        ConnectedService.instagram,
-        ConnectedService.twitch,
-      ]);
-    });
-
-    test('Steam is its own flag and stays first next to the other services', () async {
-      api.reply({
-        'id': 'm1',
-        'handle': 'zed',
-        'display_name': 'Zed',
-        'steam_connected': true,
-        'connected_services': ['psn'],
-      });
-
-      final profile = (await repo.fetchPublicProfile('m1'))!;
-
-      expect(profile.connectedServices, {ConnectedService.steam, ConnectedService.psn});
-      expect(profile.connectedServices.first, ConnectedService.steam);
-    });
-
-    test('a service name this build does not know, or "steam", is skipped instead of failing the read', () async {
-      api.reply({
-        'id': 'm1',
-        'handle': 'zed',
-        'display_name': 'Zed',
-        'steam_connected': false,
-        'connected_services': ['psn', 'steam', 'epic', 7, null],
-      });
-
-      final profile = (await repo.fetchPublicProfile('m1'))!;
-
-      expect(profile.services, {ConnectedService.psn});
-      expect(profile.connectedServices, {ConnectedService.psn});
+      expect(profile.connectedServices, {ConnectedService.steam});
+      expect(profile.accountNames, {ConnectedService.steam: '76561198000000000'});
     });
 
     test('fetchPublicProfile is null for a member who does not exist', () async {
@@ -1076,7 +1001,6 @@ void main() {
       expect(profile.handle, startsWith('@player_'));
       expect(profile.steamConnected, isFalse);
       expect(profile.showSteamAchievements, isTrue);
-      expect(profile.services, isEmpty);
       expect(profile.connectedServices, isEmpty);
     });
 
@@ -1562,72 +1486,6 @@ void main() {
       expect((api.bodyOf(api.last) as Map)['is_hidden'], isTrue);
     });
 
-    test('setConnectedAccounts replaces the services and the account names on the signed-in user\'s row', () async {
-      await signIn('u1');
-
-      await repo.setConnectedAccounts(const ConnectedAccounts(
-        services: {
-          ConnectedService.xbox,
-          ConnectedService.steam, // derived from steam_id, never stored
-          ConnectedService.psn,
-          ConnectedService.nintendo,
-          ConnectedService.instagram,
-        },
-        psnId: ' ps_user ',
-        xboxId: 'gamer',
-        instagramId: 'gamer.gram',
-        twitchId: 'left_over', // not connected
-      ));
-
-      expect(api.last.method, 'PATCH');
-      expect(api.last.url.path, '/rest/v1/profiles');
-      expect(api.last.url.queryParameters['id'], 'eq.u1');
-      expect(api.bodyOf(api.last), {
-        'connected_services': ['instagram', 'nintendo', 'psn', 'xbox'],
-        'psn_id': 'ps_user',
-        'xbox_id': 'gamer',
-        'discord_id': null,
-        'instagram_id': 'gamer.gram',
-        'twitch_id': null,
-      });
-    });
-
-    test('a name for a service that is not connected is cleared, not sent', () async {
-      await signIn('u1');
-
-      await repo.setConnectedAccounts(const ConnectedAccounts(
-        services: {ConnectedService.psn},
-        psnId: 'ps_user',
-        xboxId: 'left_over',
-        discordId: 'left_over#1',
-        instagramId: 'left_over',
-        twitchId: 'left_over',
-      ));
-
-      expect(api.bodyOf(api.last), {
-        'connected_services': ['psn'],
-        'psn_id': 'ps_user',
-        'xbox_id': null,
-        'discord_id': null,
-        'instagram_id': null,
-        'twitch_id': null,
-      });
-    });
-
-    test('a blank name is stored as none, and a very long one is cut to what the database allows', () async {
-      await signIn('u1');
-
-      await repo.setConnectedAccounts(ConnectedAccounts(
-        services: const {ConnectedService.psn, ConnectedService.xbox},
-        psnId: '   ',
-        xboxId: 'x' * 100,
-      ));
-
-      final body = api.bodyOf(api.last) as Map<String, dynamic>;
-      expect(body['psn_id'], isNull);
-      expect(body['xbox_id'], 'x' * accountNameMaxLength);
-    });
-
     test('setShowSteamAchievements writes only that column of the signed-in user\'s row', () async {
       await signIn('u1');
 
@@ -1637,29 +1495,6 @@ void main() {
       expect(api.last.url.path, '/rest/v1/profiles');
       expect(api.last.url.queryParameters['id'], 'eq.u1');
       expect(api.bodyOf(api.last), {'show_steam_achievements': false});
-    });
-
-    test('setConnectedAccounts with nothing connected clears everything', () async {
-      await signIn('u1');
-
-      await repo.setConnectedAccounts(const ConnectedAccounts());
-
-      expect(api.bodyOf(api.last), {
-        'connected_services': <String>[],
-        'psn_id': null,
-        'xbox_id': null,
-        'discord_id': null,
-        'instagram_id': null,
-        'twitch_id': null,
-      });
-    });
-
-    test('setConnectedAccounts needs a signed-in user', () async {
-      await expectLater(
-        repo.setConnectedAccounts(const ConnectedAccounts(services: {ConnectedService.psn})),
-        throwsStateError,
-      );
-      expect(api.requests, isEmpty);
     });
 
     test('insertLogEntry trims the note', () async {

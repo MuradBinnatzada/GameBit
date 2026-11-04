@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:checkpoint/models/connected_service.dart';
 import 'package:checkpoint/models/game.dart';
 import 'package:checkpoint/models/milestone.dart';
 import 'package:checkpoint/services/local_cache.dart';
@@ -249,26 +248,19 @@ void main() {
       expect(ids(announced.last.milestones), ['perfect_game']);
     });
 
-    test('connecting PSN asks once the server has it', () async {
+    test('connecting Steam asks once the profile has the Steam ID', () async {
       repo.library = [testGame('a')];
-      // Connected accounts are sent for a signed-in profile.
       await profile.initialize();
       await start();
       expect(repo.awardCalls, hasLength(1));
+      expect(store.progress.valueOf(MilestoneMetric.gameAccount), 0);
 
       repo.reachable = {'steam_connected': now};
-      repo.servicesGate = Completer<void>();
-      profile.setServiceId(ConnectedService.psn, 'Kratos');
+      repo.steamId = '76561198000000000'; // what the steam-link function saves
+      await profile.refresh();
       await pumpEventQueue();
 
-      // Still on its way: the server couldn't count it yet.
-      expect(store.progress.valueOf(MilestoneMetric.gameAccount), isNull);
-      expect(repo.awardCalls, hasLength(1));
-
-      repo.servicesGate!.complete();
-      await pumpEventQueue();
-
-      expect(repo.connectedServices, contains(ConnectedService.psn));
+      expect(store.progress.valueOf(MilestoneMetric.gameAccount), 1);
       expect(repo.awardCalls, hasLength(2));
       expect(store.earned.has('steam_connected'), isTrue);
       expect(ids(announced.last.milestones), ['steam_connected']);
