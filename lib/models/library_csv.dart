@@ -290,9 +290,9 @@ class ImportFile {
 }
 
 /// The search hit that is [row]'s game: the one with its IGDB id when the file
-/// has one; otherwise the one whose title is the same (ignoring case and
-/// punctuation), preferring the release year the file gives. Null when none is
-/// a sure match.
+/// has one; otherwise the one whose title is the same (ignoring case, accents and
+/// punctuation), preferring the one released on the platform the row says it was
+/// played on, then the release year the file gives. Null when none is a sure match.
 Game? matchImportRow(ImportRow row, List<Game> hits) {
   if (row.igdbId != null) {
     for (final hit in hits) {
@@ -300,9 +300,14 @@ Game? matchImportRow(ImportRow row, List<Game> hits) {
     }
     return null;
   }
-  String norm(String s) => s.toLowerCase().replaceAll(RegExp('[^a-z0-9]'), '');
-  final same = [for (final hit in hits) if (norm(hit.title) == norm(row.title)) hit];
-  if (same.isEmpty) return null;
+  String norm(String s) => _foldAccents(s.toLowerCase()).replaceAll(RegExp('[^a-z0-9]'), '');
+  final title = norm(row.title);
+  final sameTitle = [for (final hit in hits) if (norm(hit.title) == title) hit];
+  if (sameTitle.isEmpty) return null;
+  // A game on a console (a retro one) is the entry released on it, not a remake.
+  final platform = row.playedOn;
+  final onPlatform = platform == null ? sameTitle : [for (final hit in sameTitle) if (hit.platforms.contains(platform)) hit];
+  final same = onPlatform.isEmpty ? sameTitle : onPlatform;
   final year = row.releaseYear;
   if (year != null) {
     for (final hit in same) {
@@ -311,3 +316,15 @@ Game? matchImportRow(ImportRow row, List<Game> hits) {
   }
   return same.length == 1 || year == null ? same.first : null;
 }
+
+const _accents = {
+  'à': 'a', 'á': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a', 'å': 'a', 'ā': 'a', 'æ': 'ae',
+  'ç': 'c', 'è': 'e', 'é': 'e', 'ê': 'e', 'ë': 'e', 'ē': 'e', 'ì': 'i', 'í': 'i',
+  'î': 'i', 'ï': 'i', 'ñ': 'n', 'ò': 'o', 'ó': 'o', 'ô': 'o', 'õ': 'o', 'ö': 'o',
+  'ø': 'o', 'ō': 'o', 'œ': 'oe', 'ù': 'u', 'ú': 'u', 'û': 'u', 'ü': 'u', 'ū': 'u',
+  'ý': 'y', 'ÿ': 'y', 'ß': 'ss',
+};
+
+/// [text] (already lower case) with its accented Latin letters as plain ones, so
+/// "Pokémon" and "Pokemon" are the same title.
+String _foldAccents(String text) => text.split('').map((c) => _accents[c] ?? c).join();

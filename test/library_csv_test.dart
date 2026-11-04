@@ -104,6 +104,26 @@ void main() {
       expect(matchImportRow(row(year: 2005), hits), isNull);
       expect(matchImportRow(ImportRow(line: 2, title: 'Doom Eternal'), hits)?.igdbId, 3);
     });
+
+    test('accents do not tell two titles apart', () {
+      final hits = [catalogGame('Pokémon Red', 1)];
+      expect(matchImportRow(ImportRow(line: 2, title: 'Pokemon Red'), hits)?.igdbId, 1);
+      expect(matchImportRow(ImportRow(line: 2, title: 'POKÉMON  RED'), hits)?.igdbId, 1);
+    });
+
+    test('a game played on a console is the entry released on it, and any entry when none was', () {
+      Game metroid(int igdbId, GamePlatform platform) =>
+          testGame(gameIdForIgdb(igdbId), title: 'Metroid', status: null, igdbId: igdbId, hours: 0, cover: false, platforms: [platform]);
+      final original = metroid(1, GamePlatform.nes);
+      final remake = metroid(2, GamePlatform.gba);
+      ImportRow row(GamePlatform? on) => ImportRow(line: 2, title: 'Metroid', playedOn: on);
+
+      expect(matchImportRow(row(GamePlatform.nes), [remake, original])?.igdbId, 1);
+      expect(matchImportRow(row(GamePlatform.gba), [original, remake])?.igdbId, 2);
+      // A console that none of them was released on rules none of them out.
+      expect(matchImportRow(row(GamePlatform.pc), [original])?.igdbId, 1);
+      expect(matchImportRow(row(null), [remake, original])?.igdbId, 2);
+    });
   });
 
   group('reading a Grouvee export', () {
