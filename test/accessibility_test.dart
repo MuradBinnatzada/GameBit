@@ -298,7 +298,7 @@ void main() {
                   'c1',
                   title: 'Outer Wilds',
                   hours: 22,
-                ).copyWith(rating: 5),
+                ).copyWith(rating: 10),
               ],
             ),
           ),
@@ -313,7 +313,7 @@ void main() {
 
     // With cover art there is no title on the poster; the button names the game.
     expect(
-      find.bySemanticsLabel('Outer Wilds, rated 5 out of 5, 22 hours played'),
+      find.bySemanticsLabel('Outer Wilds, rated 10 out of 10, 22 hours played'),
       findsOneWidget,
     );
     semantics.dispose();
@@ -349,7 +349,7 @@ void main() {
       isSemantics(
         isSlider: true,
         label: 'Rating',
-        value: '3 out of 5 stars',
+        value: '3 out of 10 stars',
         hasIncreaseAction: true,
         hasDecreaseAction: true,
       ),

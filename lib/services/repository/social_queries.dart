@@ -145,7 +145,7 @@ mixin _SocialQueries on _RepositoryBase {
         FriendWithGame(
           member: _socialUserFromProfile(row),
           status: status,
-          rating: _double(row[Db.rating]),
+          rating: _stars(row[Db.rating]),
           dateAdded: _date(row[Db.dateAdded]),
         ),
       );
@@ -187,7 +187,7 @@ mixin _SocialQueries on _RepositoryBase {
           kind: kind,
           at: at,
           hours: _double(row[Db.hours]),
-          rating: _double(row[Db.rating]),
+          rating: _stars(row[Db.rating]),
         ),
       );
     }

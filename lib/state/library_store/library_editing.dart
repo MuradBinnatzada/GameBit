@@ -206,7 +206,7 @@ extension LibraryEditing on LibraryStore {
     final importedHours = hours?.clamp(0, maxTotalHours).toDouble();
     var next = existing.copyWith(
       status: status,
-      rating: rating?.clamp(0, 5).toDouble(),
+      rating: rating?.clamp(0, 10).toDouble(),
       hoursPlayed: importedHours != null && importedHours > existing.hoursPlayed ? importedHours : null,
       playedOn: playedOn,
       review: review == null || review.length <= Db.reviewMaxLength ? review : review.substring(0, Db.reviewMaxLength),
@@ -244,7 +244,7 @@ extension LibraryEditing on LibraryStore {
     final game = gameById(id);
     final next = game.copyWith(
       status: game.status ?? GameStatus.playing,
-      rating: rating.clamp(0, 5).toDouble(),
+      rating: rating.clamp(0, 10).toDouble(),
       dateAdded: game.dateAdded ?? DateTime.now(),
     );
     _replaceGame(next);

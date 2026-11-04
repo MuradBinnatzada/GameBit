@@ -961,15 +961,15 @@ class FakeRepository implements CheckpointRepository {
     if (given != null) return given;
     final reviews = gameReviews[gameId] ?? const <GameReview>[];
     final rated = [for (final r in reviews) if (r.rating > 0) r.rating];
-    final halves = List.filled(10, 0);
+    final stars = List.filled(10, 0);
     for (final r in rated) {
-      halves[(r * 2).round() - 1]++;
+      stars[r.ceil() - 1]++; // a half star counts under the star above it
     }
     return CommunityRatings(
       ratings: rated.length,
       average: rated.isEmpty ? 0 : rated.reduce((a, b) => a + b) / rated.length,
       reviews: reviews.length,
-      halfStars: halves,
+      starCounts: stars,
     );
   }
 

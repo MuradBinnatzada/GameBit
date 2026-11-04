@@ -74,7 +74,7 @@ class GameReview {
   final String text;
   final GameStatus? status;
 
-  /// Out of 5, in halves; 0 when they did not rate the game.
+  /// Out of 10 stars, in halves; 0 when they did not rate the game.
   final double rating;
   final double hours;
 
@@ -113,55 +113,50 @@ enum MemberReportSubject {
 }
 
 /// How the members rated a game: how many did, the average, how many wrote a
-/// review, and how many gave each half star (the `game_review_stats` function).
+/// review, and how many gave each star (the `game_review_stats` function).
 @immutable
 class CommunityRatings {
   const CommunityRatings({
     this.ratings = 0,
     this.average = 0,
     this.reviews = 0,
-    this.halfStars = const [],
+    this.starCounts = const [],
   });
 
   /// Members who rated the game.
   final int ratings;
 
-  /// Their average rating out of 5; 0 when nobody rated it.
+  /// Their average rating out of 10 stars; 0 when nobody rated it.
   final double average;
 
   /// Members who wrote a review.
   final int reviews;
 
-  /// How many gave 0.5, 1, 1.5 ... 5 stars: ten entries, or none.
-  final List<int> halfStars;
+  /// How many gave 1, 2, 3 ... 10 stars: ten entries, or none.
+  final List<int> starCounts;
 
   bool get isEmpty => ratings == 0 && reviews == 0;
 
-  /// How many gave [stars] (1 to 5): a rating in the half star under it counts
-  /// too, so 4 holds 3.5 and 4, and 1 holds 0.5 and 1.
-  int countForStars(int stars) {
-    final high = stars * 2 - 1;
-    final low = high - 1;
-    return [low, high].fold(
-      0,
-      (sum, i) => i >= 0 && i < halfStars.length ? sum + halfStars[i] : sum,
-    );
-  }
+  /// How many gave [stars] (1 to 10), counting the half star under it too: 8
+  /// holds 7.5 and 8.
+  int countForStars(int stars) => stars >= 1 && stars <= starCounts.length ? starCounts[stars - 1] : 0;
 
   /// What the `game_review_stats` function answered (one row), or null when it
   /// is not such a row.
   static CommunityRatings? fromRow(Object? row) {
     if (row is! Map) return null;
     int whole(Object? v) => v is num && v.isFinite && v > 0 ? v.toInt() : 0;
+    // The function answers as the database rates, 0 to 5 in halves: its ten
+    // `half_stars` are the ten stars, and its average is half the stars'.
     final stars = row['half_stars'];
     final average = row['average'];
     return CommunityRatings(
       ratings: whole(row['ratings']),
       average: average is num && average.isFinite
-          ? average.toDouble().clamp(0, 5).toDouble()
+          ? (average.toDouble() * 2).clamp(0, 10).toDouble()
           : 0,
       reviews: whole(row['reviews']),
-      halfStars: [
+      starCounts: [
         if (stars is List)
           for (final n in stars) whole(n),
       ],

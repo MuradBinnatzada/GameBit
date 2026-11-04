@@ -64,12 +64,28 @@ void main() {
     test('an export reads back in as the same games', () {
       final file = ImportRow.parse(libraryCsv([
         testGame('a', title: 'Celeste', cover: false, igdbId: 1, status: GameStatus.dropped, hours: 3.25, playedOn: GamePlatform.nswitch)
-            .copyWith(rating: 3.5, review: 'Hard'),
+            .copyWith(rating: 7.5, review: 'Hard'),
       ]));
       final row = file.rows.single;
       expect(file.skipped, isEmpty);
       expect((row.title, row.igdbId, row.status, row.rating, row.hours, row.playedOn, row.review),
-          ('Celeste', 1, GameStatus.dropped, 3.5, 3.25, GamePlatform.nswitch, 'Hard'));
+          ('Celeste', 1, GameStatus.dropped, 7.5, 3.25, GamePlatform.nswitch, 'Hard'));
+    });
+
+    test('the rating column says it is out of 10, so a rating of 3 stays 3', () {
+      final csv = libraryCsv([testGame('a', title: 'Celeste', cover: false).copyWith(rating: 3)]);
+      expect(parseCsv(csv).first[3], 'rating_out_of_10');
+      expect(ImportRow.parse(csv).rows.single.rating, 3.0);
+    });
+
+    test('an export from before the ten stars has its rating out of 5', () {
+      final file = ImportRow.parse('title,status,rating\nCeleste,completed,4.5\nHades,completed,1\n');
+      expect([for (final r in file.rows) r.rating], [9.0, 2.0]);
+    });
+
+    test('a rating is kept to the half star, within 0.5 to 10', () {
+      final file = ImportRow.parse('title,rating_out_of_10\nA,7.4\nB,7.8\nC,0.2\nD,11\nE,6.5\n');
+      expect([for (final r in file.rows) r.rating], [7.5, 8.0, 0.5, 10.0, 6.5]);
     });
   });
 
@@ -81,12 +97,14 @@ void main() {
         'Hades,,backlog,85,\n'
         'Celeste,2018,wanted,,\n'
         ',2020,playing,,\n'
-        'Odd,2020,borrowed,,\n',
+        'Odd,2020,borrowed,,\n'
+        'Tunic,2022,done,3.5,\n',
       );
       expect([for (final r in file.rows) (r.title, r.releaseYear, r.status, r.rating, r.hours)], [
-        ('Hollow Knight', 2017, GameStatus.completed, 4.5, 40.5),
-        ('Hades', null, GameStatus.toPlay, 4.5, null),
+        ('Hollow Knight', 2017, GameStatus.completed, 9.0, 40.5),
+        ('Hades', null, GameStatus.toPlay, 8.5, null),
         ('Celeste', 2018, GameStatus.wishlist, null, null),
+        ('Tunic', 2022, GameStatus.completed, 7.0, null),
       ]);
       expect(file.skipped, ['Line 5: no title.', 'Line 6 (Odd): unknown status "borrowed".']);
     });
@@ -154,10 +172,10 @@ void main() {
       expect(file.source, ImportSource.grouvee);
       expect(file.skipped, isEmpty);
       expect([for (final r in file.rows) (r.title, r.releaseYear, r.status, r.rating, r.hours, r.playedOn)], [
-        ('Hades', 2020, GameStatus.completed, 5.0, 12.0, GamePlatform.pc),
-        ('Celeste', 2018, GameStatus.playing, 4.0, null, GamePlatform.nswitch),
+        ('Hades', 2020, GameStatus.completed, 10.0, 12.0, GamePlatform.pc),
+        ('Celeste', 2018, GameStatus.playing, 8.0, null, GamePlatform.nswitch),
         ('Outer Wilds', null, GameStatus.wishlist, null, null, null),
-        ('Cuphead', 2017, GameStatus.dropped, 3.0, null, null),
+        ('Cuphead', 2017, GameStatus.dropped, 6.0, null, null),
         ('Tunic', 2022, GameStatus.toPlay, null, null, null),
         // A shelf of the member's own is no reason to leave a game out.
         ('Odd', null, GameStatus.toPlay, null, null, null),
@@ -219,9 +237,9 @@ void main() {
     test('updates games already in the library, adds found ones, and lists the rest', () async {
       final run = LibraryImport(
         rows: ImportRow.parse(
-          'title,status,rating,hours_played\n'
-          'Hades,completed,5,12\n'
-          'Celeste,playing,4,3\n'
+          'title,status,rating_out_of_10,hours_played\n'
+          'Hades,completed,9,12\n'
+          'Celeste,playing,8,3\n'
           'Nonexistent Game,to_play,,\n',
         ).rows,
         api: api,
@@ -232,7 +250,7 @@ void main() {
 
       expect(api.searched, ['Celeste', 'Nonexistent Game']); // Hades is in the library
       final hades = stores.library.gameById(gameIdForIgdb(10));
-      expect((hades.status, hades.rating, hades.hoursPlayed), (GameStatus.completed, 5.0, 50.0)); // hours never go down
+      expect((hades.status, hades.rating, hades.hoursPlayed), (GameStatus.completed, 9.0, 50.0)); // hours never go down
       expect(hades.completedAt, isNotNull);
       final celeste = stores.library.gameById(gameIdForIgdb(20));
       expect((celeste.status, celeste.hoursPlayed), (GameStatus.playing, 3.0));

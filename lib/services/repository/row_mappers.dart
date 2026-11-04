@@ -136,7 +136,7 @@ Game _gameFromPublicRow(Map<String, dynamic> row) {
   final catalogGame = _gameFromCatalogRow({...row, Db.id: row[Db.gameId]});
   return catalogGame.copyWith(
     status: gameStatusFromDb(row[Db.status]),
-    rating: _double(row[Db.rating]),
+    rating: _stars(row[Db.rating]),
     hoursPlayed: _double(row[Db.hoursPlayed]),
     playedOn: gamePlatformFromDb(row[Db.playedOn]),
     dateAdded: _date(row[Db.dateAdded]),
@@ -205,7 +205,7 @@ Game _gameFromUserGameRow(Map<String, dynamic> row) {
   assert(row.containsKey(Db.isFavorite));
   return catalogGame.copyWith(
     status: gameStatusFromDb(row[Db.status]),
-    rating: _double(row[Db.rating]),
+    rating: _stars(row[Db.rating]),
     hoursPlayed: _double(row[Db.hoursPlayed]),
     playedOn: gamePlatformFromDb(row[Db.playedOn]),
     purchasePrice: _double(row[Db.purchasePrice]),
@@ -300,6 +300,22 @@ DateTime? _releaseDay(Object? value) {
 /// [d]'s calendar day as a `date` column takes it: "2026-11-14".
 String _day(DateTime d) =>
     '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+/// A rating as the app has it, half a star to ten, from the database's, which is
+/// still the 0 to 5 it started as (the `user_games_rating_range` check,
+/// `game_review_stats` and every function that returns a rating speak it). The
+/// column is `numeric(2,1)`, so half a star (a quarter of the database's scale) is
+/// kept to the tenth: 7.5 stars are 3.8, 0.5 is 0.3; reading back takes the nearest
+/// half star, which gives the same rating. The two functions here are the only
+/// place that knows. 0 is not rated.
+double _stars(Object? value) {
+  final stored = _double(value);
+  final stars = (stored * 4).round() / 2;
+  return stars.clamp(stored > 0 ? 0.5 : 0, 10).toDouble();
+}
+
+/// The database's rating for [stars] (half a star to ten): see [_stars].
+double _ratingToDb(double stars) => (stars.clamp(0, 10) * 5).round() / 10;
 
 double _double(Object? value, {double fallback = 0}) {
   if (value is num) return value.toDouble();

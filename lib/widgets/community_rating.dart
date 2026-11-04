@@ -7,7 +7,7 @@ import 'package:checkpoint/utils/formatters.dart';
 import 'package:checkpoint/widgets/star_rating.dart';
 
 /// How the members rated a game: the average and how many rated it on the left,
-/// one bar per whole star from five down to one on the right, as long as the
+/// one bar per star from ten down to one on the right, as long as the
 /// share of the ratings that gave it. Nothing for a game nobody rated.
 class CommunityRatingSummary extends StatelessWidget {
   const CommunityRatingSummary({super.key, required this.ratings});
@@ -18,7 +18,7 @@ class CommunityRatingSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     if (ratings.ratings == 0) return const SizedBox.shrink();
     final counts = [
-      for (var stars = 5; stars >= 1; stars--) ratings.countForStars(stars),
+      for (var stars = maxRating; stars >= 1; stars--) ratings.countForStars(stars),
     ];
     final most = counts.fold(0, (a, b) => a > b ? a : b);
     final l10n = context.l10n;
@@ -27,11 +27,11 @@ class CommunityRatingSummary extends StatelessWidget {
       children: [
         Semantics(
           label:
-              '${l10n.outOf5Stars(fmtHours(double.parse(ratings.average.toStringAsFixed(1))))}, '
+              '${l10n.outOf10Stars(fmtHours(double.parse(ratings.average.toStringAsFixed(1))))}, '
               '${l10n.ratingsCount(ratings.ratings)}',
           excludeSemantics: true,
           child: SizedBox(
-            width: 92,
+            width: 120,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -44,7 +44,7 @@ class CommunityRatingSummary extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                StarRating(rating: ratings.average, size: 14),
+                StarRating(rating: ratings.average, size: 12),
                 const SizedBox(height: 4),
                 Text(
                   l10n.ratingsCount(ratings.ratings),
@@ -60,7 +60,7 @@ class CommunityRatingSummary extends StatelessWidget {
             child: Column(
               children: [
                 for (var i = 0; i < counts.length; i++)
-                  _Bar(stars: 5 - i, count: counts[i], most: most),
+                  _Bar(stars: maxRating - i, count: counts[i], most: most),
               ],
             ),
           ),
@@ -82,11 +82,11 @@ class _Bar extends StatelessWidget {
   Widget build(BuildContext context) {
     final share = most == 0 ? 0.0 : count / most;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2.5),
+      padding: const EdgeInsets.symmetric(vertical: 1.5),
       child: Row(
         children: [
           SizedBox(
-            width: 14,
+            width: 18,
             child: Text(
               '$stars',
               textAlign: TextAlign.center,
@@ -104,12 +104,12 @@ class _Bar extends StatelessWidget {
               child: Stack(
                 children: [
                   Container(
-                    height: 7,
+                    height: 6,
                     color: context.palette.text.withValues(alpha: 0.08),
                   ),
                   FractionallySizedBox(
                     widthFactor: count == 0 ? 0 : share.clamp(0.04, 1.0),
-                    child: Container(height: 7, color: context.palette.star),
+                    child: Container(height: 6, color: context.palette.star),
                   ),
                 ],
               ),

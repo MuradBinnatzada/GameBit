@@ -2469,8 +2469,8 @@
   "sort": "Sort",
   "filterByPlatform": "Filter by platform",
   "allPlatforms": "All platforms",
-  "ratedOutOf5": "rated {rating} out of 5",
-  "@ratedOutOf5": {
+  "ratedOutOf10": "rated {rating} out of 10",
+  "@ratedOutOf10": {
     "placeholders": {
       "rating": {
         "type": "String"
@@ -2947,7 +2947,6 @@
       }
     }
   },
-  "oneStarOrLess": "1 star or less",
   "starsCount": "{count, plural, =1{{formatted} star} other{{formatted} stars}}",
   "@starsCount": {
     "placeholders": {
@@ -2970,8 +2969,8 @@
   "now": "Now",
   "when": "When",
   "playedJustNow": "Played just now",
-  "outOf5Stars": "{rating} out of 5 stars",
-  "@outOf5Stars": {
+  "outOf10Stars": "{rating} out of 10 stars",
+  "@outOf10Stars": {
     "placeholders": {
       "rating": {
         "type": "String"

@@ -17,7 +17,6 @@ import 'package:checkpoint/utils/navigation.dart';
 import 'package:checkpoint/widgets/empty_state.dart';
 import 'package:checkpoint/widgets/panel.dart';
 import 'package:checkpoint/widgets/platform_widgets.dart';
-import 'package:checkpoint/widgets/star_rating.dart';
 
 import 'support/fakes.dart';
 
@@ -212,7 +211,7 @@ void main() {
       await openWithFriends(
         tester,
         testGameFriends([
-          testFriend('a', GameStatus.completed, rating: 4.5, name: 'Ann'),
+          testFriend('a', GameStatus.completed, rating: 9, name: 'Ann'),
           testFriend('b', GameStatus.completed, name: 'Ben'),
           testFriend('c', GameStatus.playing, name: 'Cy'),
           testFriend('d', GameStatus.wishlist, name: 'Di'),
@@ -231,8 +230,9 @@ void main() {
       }
       // Dropped is not a row.
       expect(find.byTooltip('Fay'), findsNothing);
-      // Only Ann rated it.
-      expect(tester.widget<StarRating>(inPanel(find.byType(StarRating))).rating, 4.5);
+      // Only Ann rated it: one star and the number, under her photo.
+      expect(inPanel(find.byIcon(Icons.star_rounded)), findsOneWidget);
+      expect(inPanel(find.text('9')), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

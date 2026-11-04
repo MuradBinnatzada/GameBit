@@ -8,12 +8,11 @@ import 'package:checkpoint/widgets/star_rating.dart';
 
 /// The ratings chart of a profile: bars that stay quiet until tapped.
 void main() {
-  // Two games at half a star and one at a star (the first bar holds all three),
-  // two at 4.5 and three at 5.
+  // Three games at one star, two at nine and three at ten.
   final stats = LibraryStats(
-    ratingCounts: {0.5: 2, 1: 1, 4.5: 2, 5: 3},
+    ratingCounts: {1: 3, 9: 2, 10: 3},
     ratedCount: 8,
-    averageRating: 3.4,
+    averageRating: 6.8,
   );
 
   Future<void> show(WidgetTester tester, LibraryStats stats) async {
@@ -34,7 +33,7 @@ void main() {
       )
       .at(i);
 
-  testWidgets('counts how the ratings spread: 9 bars from 1 star to 5', (
+  testWidgets('counts how the ratings spread: 10 bars from 1 star to 10', (
     tester,
   ) async {
     await show(tester, stats);
@@ -44,23 +43,22 @@ void main() {
         of: find.byType(RatingsPanel),
         matching: find.byType(GestureDetector),
       ),
-      findsNWidgets(9),
+      findsNWidgets(10),
     );
     expect(RatingsPanel.bars.first, 1);
-    expect(RatingsPanel.bars.last, 5);
-    expect(RatingsPanel.countFor(stats, 1), 3); // 0.5 and 1
-    expect(RatingsPanel.countFor(stats, 4.5), 2);
+    expect(RatingsPanel.bars.last, 10);
+    expect(RatingsPanel.countFor(stats, 1), 3);
+    expect(RatingsPanel.countFor(stats, 9), 2);
     expect(RatingsPanel.countFor(stats, 3), 0);
   });
 
-  testWidgets('the axis reads 1 to 5, and the "8 rated" total stays', (
+  testWidgets('the axis reads 1 to 10, and the "8 rated" total stays', (
     tester,
   ) async {
     await show(tester, stats);
 
     expect(find.text('1'), findsOneWidget);
-    expect(find.text('5'), findsOneWidget);
-    expect(find.text('½'), findsNothing);
+    expect(find.text('10'), findsOneWidget);
     expect(find.text('8 rated'), findsOneWidget);
   });
 
@@ -68,7 +66,7 @@ void main() {
     await show(tester, stats);
 
     expect(find.textContaining('game'), findsNothing);
-    // The numbers that used to sit over the bars are gone.
+    // No numbers over the bars.
     expect(find.text('3'), findsNothing);
     expect(find.text('2'), findsNothing);
     // Only the average's stars.
@@ -80,34 +78,32 @@ void main() {
   ) async {
     await show(tester, stats);
 
-    await tester.tap(bar(8)); // 5 stars
+    await tester.tap(bar(9)); // 10 stars
     await tester.pump();
 
     expect(find.text('3 games'), findsOneWidget);
-    expect(find.byType(StarRating), findsNWidgets(2)); // average + the bubble
-    final bubbleStars = tester.widget<StarRating>(find.byType(StarRating).last);
-    expect(bubbleStars.rating, 5);
+    // The bubble is the number and one star, not another row of ten.
+    expect(find.byType(StarRating), findsOneWidget);
+    expect(find.text('10'), findsNWidgets(2)); // the axis and the bubble
   });
 
-  testWidgets('a half-star bar shows half stars; one game is "1 game"', (
-    tester,
-  ) async {
+  testWidgets('one game is "1 game"', (tester) async {
     await show(
       tester,
-      LibraryStats(ratingCounts: {3.5: 1}, ratedCount: 1, averageRating: 3.5),
+      LibraryStats(ratingCounts: {7: 1}, ratedCount: 1, averageRating: 7),
     );
 
-    await tester.tap(bar(5)); // 3.5 stars
+    await tester.tap(bar(6)); // 7 stars
     await tester.pump();
 
     expect(find.text('1 game'), findsOneWidget);
-    expect(tester.widget<StarRating>(find.byType(StarRating).last).rating, 3.5);
+    expect(find.text('7'), findsOneWidget);
   });
 
   testWidgets('a bar nobody picked says 0 games', (tester) async {
     await show(tester, stats);
 
-    await tester.tap(bar(4)); // 3 stars
+    await tester.tap(bar(2)); // 3 stars
     await tester.pump();
 
     expect(find.text('0 games'), findsOneWidget);
@@ -118,29 +114,27 @@ void main() {
     (tester) async {
       await show(tester, stats);
 
-      await tester.tap(bar(8));
+      await tester.tap(bar(9));
       await tester.pump();
-      await tester.tap(bar(7)); // 4.5 stars
+      await tester.tap(bar(8)); // 9 stars
       await tester.pump();
       expect(find.text('3 games'), findsNothing);
       expect(find.text('2 games'), findsOneWidget);
 
-      await tester.tap(bar(7));
+      await tester.tap(bar(8));
       await tester.pump();
       expect(find.textContaining('game'), findsNothing);
     },
   );
 
-  testWidgets('the first bar holds the half-star ratings and says so', (
-    tester,
-  ) async {
+  testWidgets('the first bar is the games with one star', (tester) async {
     await show(tester, stats);
 
     await tester.tap(bar(0));
     await tester.pump();
 
     expect(find.text('3 games'), findsOneWidget);
-    expect(find.text('≤'), findsOneWidget);
+    expect(find.text('≤'), findsNothing);
   });
 
   testWidgets('a member who rated nothing sees no chart', (tester) async {
@@ -153,17 +147,17 @@ void main() {
   testWidgets('the bubble stays inside the chart for the bars at either edge', (
     tester,
   ) async {
-    // A narrow phone: the chart is about 200 px wide, the bubble over half of it.
+    // A narrow phone: the chart is about 180 px wide, the bubble a good part of it.
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await show(tester, stats);
     final chart = tester.getRect(find.byType(RatingsPanel));
 
-    for (final i in [0, 8]) {
+    for (final i in [0, 9]) {
       await tester.tap(bar(i));
       await tester.pump();
-      final bubble = tester.getRect(find.byType(StarRating).last);
+      final bubble = tester.getRect(find.byType(DecoratedBox).last);
       expect(bubble.left, greaterThanOrEqualTo(chart.left));
       expect(bubble.right, lessThanOrEqualTo(chart.right));
       expect(tester.takeException(), isNull);

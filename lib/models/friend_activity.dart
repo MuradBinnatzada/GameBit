@@ -33,6 +33,6 @@ class FriendActivity {
   /// The session's hours; 0 for the other kinds.
   final double hours;
 
-  /// Out of 5, in halves; 0 when they did not rate it (always for a session).
+  /// Out of 10 stars, in halves; 0 when they did not rate it (always for a session).
   final double rating;
 }

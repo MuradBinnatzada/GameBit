@@ -31,39 +31,40 @@ List<GameReview> reviewsOf(int count, {bool Function(int i)? following}) => [
 
 void main() {
   group('CommunityRatings', () {
-    test('a whole star holds the half star under it too', () {
-      // 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5
+    test('counts the members who gave each of the ten stars', () {
+      // 1, 2, 3 ... 10 stars
       const ratings = CommunityRatings(
         ratings: 55,
-        average: 3.2,
-        halfStars: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        average: 6.4,
+        starCounts: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
       );
 
-      expect(ratings.countForStars(1), 3);
-      expect(ratings.countForStars(2), 7);
-      expect(ratings.countForStars(3), 11);
-      expect(ratings.countForStars(4), 15);
-      expect(ratings.countForStars(5), 19);
+      expect(ratings.countForStars(1), 1);
+      expect(ratings.countForStars(5), 5);
+      expect(ratings.countForStars(10), 10);
+      expect(ratings.countForStars(0), 0);
+      expect(ratings.countForStars(11), 0);
     });
 
     test('a game nobody rated has no stars to count', () {
       expect(const CommunityRatings().isEmpty, isTrue);
-      expect(const CommunityRatings().countForStars(5), 0);
+      expect(const CommunityRatings().countForStars(10), 0);
       expect(const CommunityRatings(reviews: 1).isEmpty, isFalse);
     });
 
     test('reads what game_review_stats answers, and nothing odd', () {
       final ratings = CommunityRatings.fromRow({
         'ratings': 12,
-        'average': 4.25,
+        'average': 4.25, // the database's 0 to 5
         'reviews': 3,
-        'half_stars': [0, 0, 0, 0, 0, 0, 0, 3, 4, 5],
+        'half_stars': [0, 0, 0, 0, 0, 0, 0, 3, 4, 5], // 1 star to 10
       })!;
 
       expect(ratings.ratings, 12);
-      expect(ratings.average, 4.25);
+      expect(ratings.average, 8.5); // out of 10 stars
       expect(ratings.reviews, 3);
-      expect(ratings.countForStars(5), 9);
+      expect(ratings.countForStars(10), 5);
+      expect(ratings.countForStars(8), 3);
 
       final odd = CommunityRatings.fromRow({
         'ratings': -1,
@@ -72,9 +73,9 @@ void main() {
         'half_stars': 'no',
       })!;
       expect(odd.ratings, 0);
-      expect(odd.average, 5);
+      expect(odd.average, 10);
       expect(odd.reviews, 0);
-      expect(odd.halfStars, isEmpty);
+      expect(odd.starCounts, isEmpty);
       expect(CommunityRatings.fromRow('nope'), isNull);
     });
   });

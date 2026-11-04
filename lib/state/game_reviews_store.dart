@@ -358,7 +358,7 @@ class GameReviewsStore extends AccountScopedStore {
           ratings: ratings.ratings,
           average: ratings.average,
           reviews: ratings.reviews > 0 ? ratings.reviews - 1 : 0,
-          halfStars: ratings.halfStars,
+          starCounts: ratings.starCounts,
         ),
       ),
     );

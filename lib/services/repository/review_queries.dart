@@ -33,7 +33,7 @@ mixin _ReviewQueries on _RepositoryBase {
           member: _socialUserFromProfile(row),
           text: text,
           status: gameStatusFromDb(row[Db.status]),
-          rating: _double(row[Db.rating]),
+          rating: _stars(row[Db.rating]),
           hours: _double(row[Db.hoursPlayed]),
           writtenAt: _date(row[Db.reviewedAt]),
           isFollowing: row['is_following'] == true,

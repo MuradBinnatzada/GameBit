@@ -7,10 +7,10 @@ import 'package:checkpoint/state/game_friends_store.dart';
 import 'package:checkpoint/state/load_status.dart';
 import 'package:checkpoint/state/store_scope.dart';
 import 'package:checkpoint/theme/palette.dart';
+import 'package:checkpoint/utils/formatters.dart';
 import 'package:checkpoint/utils/navigation.dart';
 import 'package:checkpoint/widgets/panel.dart';
 import 'package:checkpoint/widgets/profile_avatar.dart';
-import 'package:checkpoint/widgets/star_rating.dart';
 
 /// Which of the members you follow completed the game, are playing it or want to
 /// play it (To Play or Wishlist), with their photos (each opens their profile)
@@ -155,8 +155,9 @@ class _FriendGroupRow extends StatelessWidget {
   }
 }
 
-/// A friend's photo, which opens their profile, over the stars they gave (blank
-/// when they did not rate the game).
+/// A friend's photo, which opens their profile, over the rating they gave (blank
+/// when they did not rate the game): ten stars would be wider than the photo, so
+/// it is one star and the number.
 class _FriendAvatar extends StatelessWidget {
   const _FriendAvatar({
     required this.friend,
@@ -172,7 +173,7 @@ class _FriendAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final member = friend.member;
     return SizedBox(
-      // Wide enough for five stars under the photo.
+      // As wide as it was for five stars: room for "10" and a star under the photo.
       width: starSize * 5 + 2,
       child: Column(
         children: [
@@ -196,7 +197,26 @@ class _FriendAvatar extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           if (friend.rating > 0)
-            StarRating(rating: friend.rating, size: starSize)
+            Semantics(
+              label: context.l10n.outOf10Stars(fmtHours(friend.rating)),
+              excludeSemantics: true,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.star_rounded, size: starSize + 2, color: context.palette.star),
+                  const SizedBox(width: 1),
+                  Text(
+                    fmtHours(friend.rating),
+                    style: TextStyle(
+                      color: context.palette.muted,
+                      fontSize: starSize + 1,
+                      fontWeight: FontWeight.w700,
+                      height: 1,
+                    ),
+                  ),
+                ],
+              ),
+            )
           else
             SizedBox(height: starSize),
         ],

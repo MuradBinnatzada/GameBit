@@ -8,9 +8,11 @@ import 'package:checkpoint/models/log_entry.dart';
 import 'package:checkpoint/utils/csv.dart';
 
 /// The columns of an exported library, in order. An import reads the same
-/// names (and a few others: see [ImportRow.parse]).
+/// names (and a few others: see [ImportRow.parse]). The rating is named for its
+/// scale: a plain `rating` column of another tracker's file may be out of 5, 10
+/// or 100, and an export from before the ten stars had one out of 5.
 const libraryCsvColumns = [
-  'title', 'igdb_id', 'status', 'rating', 'hours_played', 'played_on',
+  'title', 'igdb_id', 'status', 'rating_out_of_10', 'hours_played', 'played_on',
   'date_added', 'completed_at', 'favorite', 'review', 'release_year',
   'platforms', 'genres',
 ];
@@ -78,7 +80,7 @@ class ImportRow {
   final int? releaseYear;
   final GameStatus status;
 
-  /// Out of 5, in halves; null when the file has none.
+  /// Out of 10, in halves; null when the file has none.
   final double? rating;
   final double? hours;
   final GamePlatform? playedOn;
@@ -110,6 +112,7 @@ class ImportRow {
     final igdb = col(['igdbid', 'igdb']);
     final year = col(['releaseyear', 'year', 'released', 'releasedate']);
     final status = col(['status', 'state', 'list', 'shelf']);
+    final ratingOutOf10 = col(['ratingoutof10']);
     final rating = col(['rating', 'score', 'stars', 'myrating']);
     final hours = col(['hoursplayed', 'hours', 'playtime', 'timeplayed', 'playtimehours']);
     final platform = col(['playedon', 'platform', 'console']);
@@ -160,7 +163,7 @@ class ImportRow {
         igdbId: int.tryParse(cell(row, igdb) ?? ''),
         releaseYear: _year(cell(row, year)),
         status: readStatus,
-        rating: _rating(cell(row, rating)),
+        rating: ratingOutOf10 != null ? _ratingOutOf10(cell(row, ratingOutOf10)) : _rating(cell(row, rating)),
         hours: shelves != null ? _grouveeHours(cell(row, dates)) : _hours(cell(row, hours)),
         playedOn: shelves != null ? _grouveePlatform(cell(row, platforms)) : gamePlatformFromDb(cell(row, platform)),
         review: reviewText,
@@ -248,13 +251,24 @@ class ImportRow {
     _ => null,
   };
 
-  /// Out of 5 in halves; a figure over 5 is read as out of 10, over 10 as out
-  /// of 100. Null when there is none (or it is 0).
-  static double? _rating(String? text) {
+  static double? _number(String? text) {
     final value = double.tryParse((text ?? '').replaceAll(',', '.').replaceAll(RegExp(r'[^0-9.]'), ''));
-    if (value == null || value <= 0) return null;
-    final outOf5 = value <= 5 ? value : (value <= 10 ? value / 2 : (value <= 100 ? value / 20 : 5.0));
-    return ((outOf5 * 2).round() / 2).clamp(0.5, 5.0).toDouble();
+    return value == null || value <= 0 ? null : value;
+  }
+
+  /// A rating known to be out of 10, as Gamebit's own export has it, to the half
+  /// star. Null when there is none (or it is 0).
+  static double? _ratingOutOf10(String? text) => _toHalf(_number(text));
+
+  static double? _toHalf(num? outOf10) => outOf10 == null ? null : ((outOf10 * 2).round() / 2).clamp(0.5, 10.0).toDouble();
+
+  /// Out of 10 to the half star, from a scale that is not named: a figure up to 5
+  /// is read as out of 5, up to 10 as out of 10, up to 100 as out of 100. Null
+  /// when there is none (or it is 0).
+  static double? _rating(String? text) {
+    final value = _number(text);
+    if (value == null) return null;
+    return _toHalf(value <= 5 ? value * 2 : (value <= 10 ? value : (value <= 100 ? value / 10 : 10.0)));
   }
 
   /// Hours as a number ("12.5", "12,5") or "h:mm"; within the limit.

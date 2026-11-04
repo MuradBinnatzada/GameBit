@@ -93,30 +93,37 @@ void main() {
   });
 
   group('ratings', () {
-    test('are counted per half-star step; unrated games are left out', () {
+    test('are counted per star; unrated games are left out', () {
       final stats = LibraryStats.of([
-        g('a', rating: 4.5),
-        g('b', rating: 4.5),
-        g('c', rating: 0.5),
-        g('d', rating: 5),
+        g('a', rating: 9),
+        g('b', rating: 9),
+        g('c', rating: 1),
+        g('d', rating: 10),
         g('e', rating: 0), // unrated
       ]);
 
       expect(stats.ratedCount, 4);
-      expect(stats.ratingCounts, {4.5: 2, 0.5: 1, 5.0: 1});
-      expect(stats.averageRating, closeTo((4.5 + 4.5 + 0.5 + 5) / 4, 1e-9));
+      expect(stats.ratingCounts, {9: 2, 1: 1, 10: 1});
+      expect(stats.averageRating, closeTo((9 + 9 + 1 + 10) / 4, 1e-9));
+    });
+
+    test('a half star counts in the bar above it, and the average keeps the half', () {
+      final stats = LibraryStats.of([g('a', rating: 7.5), g('b', rating: 8), g('c', rating: 7), g('d', rating: 0.5)]);
+
+      expect(stats.ratingCounts, {8: 2, 7: 1, 1: 1});
+      expect(stats.averageRating, closeTo((7.5 + 8 + 7 + 0.5) / 4, 1e-9));
     });
 
     test('a stray in-between value lands in the nearest bar', () {
-      final stats = LibraryStats.of([g('a', rating: 3.7), g('b', rating: 12)]);
+      final stats = LibraryStats.of([g('a', rating: 3.7), g('b', rating: 12), g('c', rating: 0.4)]);
 
-      expect(stats.ratingCounts, {3.5: 1, 5.0: 1});
+      expect(stats.ratingCounts, {4: 1, 10: 1, 1: 1});
     });
 
-    test('every step from half a star to five has a place', () {
+    test('every star from one to ten has a place', () {
       expect(LibraryStats.ratingSteps, hasLength(10));
-      expect(LibraryStats.ratingSteps.first, 0.5);
-      expect(LibraryStats.ratingSteps.last, 5);
+      expect(LibraryStats.ratingSteps.first, 1);
+      expect(LibraryStats.ratingSteps.last, 10);
     });
   });
 }

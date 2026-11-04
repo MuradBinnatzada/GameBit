@@ -410,7 +410,7 @@ class Game {
 
   // user state
   final GameStatus? status;
-  final double rating; // 0 = unrated, 0.5 steps up to 5
+  final double rating; // 0 = unrated, half-star steps up to 10
   final double hoursPlayed;
   final GamePlatform? playedOn;
   final double purchasePrice; // 0 = unknown

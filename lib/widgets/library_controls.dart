@@ -308,7 +308,7 @@ class _PosterTile extends StatelessWidget {
     // nothing, and the badges alone would be read as "4.5, 12h".
     final label = [
       game.title,
-      if (game.rating > 0) context.l10n.ratedOutOf5(fmtHours(game.rating)),
+      if (game.rating > 0) context.l10n.ratedOutOf10(fmtHours(game.rating)),
       if (game.hoursPlayed > 0) context.l10n.hoursPlayedLabel(game.hoursPlayed, fmtHours(game.hoursPlayed)),
       if (game.isPerfected) game.perfectMark.title,
     ].join(', ');
@@ -484,7 +484,7 @@ class _LibraryListTile extends StatelessWidget {
                   Row(
                     children: [
                       game.rating > 0
-                          ? StarRating(rating: game.rating, size: 15)
+                          ? StarRating(rating: game.rating, size: 13)
                           : Text(
                               context.l10n.notRated,
                               style: TextStyle(

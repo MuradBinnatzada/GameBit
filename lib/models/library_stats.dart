@@ -18,23 +18,12 @@ class LibraryStats {
     this.averageRating = 0,
   });
 
-  /// Every rating a game can have, lowest first (half-star steps).
-  static const List<double> ratingSteps = [
-    0.5,
-    1,
-    1.5,
-    2,
-    2.5,
-    3,
-    3.5,
-    4,
-    4.5,
-    5,
-  ];
+  /// The bars of the chart, lowest first: one to ten stars.
+  static const List<int> ratingSteps = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
   factory LibraryStats.of(Iterable<Game> library) {
     final byStatus = <GameStatus, int>{};
-    final ratingCounts = <double, int>{};
+    final ratingCounts = <int, int>{};
     var games = 0;
     var totalHours = 0.0;
     var ratingSum = 0.0;
@@ -52,9 +41,9 @@ class LibraryStats {
       if (g.rating > 0) {
         ratedCount++;
         ratingSum += g.rating;
-        // Ratings are stored in half-star steps; round so a stray value still
-        // lands in a bar.
-        final step = ((g.rating * 2).round() / 2).clamp(0.5, 5.0).toDouble();
+        // A bar holds the half star under it too (a 7.5 is in the 8 bar, as in
+        // the community rating); a stray value still lands in a bar.
+        final step = g.rating.ceil().clamp(1, 10);
         ratingCounts[step] = (ratingCounts[step] ?? 0) + 1;
       }
     }
@@ -96,8 +85,9 @@ class LibraryStats {
   final double totalHours;
   final Map<GamePlatform, double> hoursByPlatform;
 
-  /// Games per rating, keyed by [ratingSteps]. Unrated games are not counted.
-  final Map<double, int> ratingCounts;
+  /// Games per bar of [ratingSteps]: a bar holds its star and the half star under
+  /// it. Unrated games are not counted.
+  final Map<int, int> ratingCounts;
   final int ratedCount;
 
   /// 0 when nothing is rated.

@@ -257,7 +257,7 @@ mixin _LibraryQueries on _RepositoryBase {
       Db.userId: userId,
       Db.gameId: gameId,
       Db.status: gameStatusToDb(status),
-      Db.rating: rating,
+      Db.rating: _ratingToDb(rating),
       Db.hoursPlayed: hoursPlayed,
       Db.playedOn: playedOn == null ? null : gamePlatformToDb(playedOn),
       Db.purchasePrice: purchasePrice,

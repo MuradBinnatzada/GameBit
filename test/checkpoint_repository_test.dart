@@ -186,13 +186,23 @@ void main() {
       expect(game.coverUrl, 'https://images.igdb.com/hades.jpg');
       // The user's own fields.
       expect(game.status, GameStatus.playing);
-      expect(game.rating, 4.5);
+      expect(game.rating, 9); // the database's 4.5 is nine stars
       expect(game.hoursPlayed, 12.5);
       expect(game.playedOn, GamePlatform.ps5);
       expect(game.purchasePrice, 24.99);
       expect(game.isFavorite, isTrue);
       expect(game.dateAdded!.toUtc(), DateTime.utc(2026, 3, 1, 10));
       expect(game.inLibrary, isTrue);
+    });
+
+    test('reads a rating as the database keeps it, to the tenth, back to the half star', () async {
+      // Half a star is a quarter of the 0 to 5 scale: 0.5 stars is stored as 0.3, 7.5 as 3.8.
+      final stored = [0, 0.3, 0.5, 0.8, 1.3, 3.3, 3.5, 3.8, 4.5, 4.8, 5];
+      api.reply([for (var i = 0; i < stored.length; i++) {...userGameRow('g$i'), 'rating': stored[i]}]);
+
+      final games = await repo.fetchUserGames('u1');
+
+      expect([for (final g in games) g.rating], [0, 0.5, 1, 1.5, 2.5, 6.5, 7, 7.5, 9, 9.5, 10]);
     });
 
     test('reads whether the member hid the game from others, and asks for the column', () async {
@@ -1041,7 +1051,7 @@ void main() {
       expect(game.id, 'g1');
       expect(game.title, 'Hades');
       expect(game.status, GameStatus.completed);
-      expect(game.rating, 4.5);
+      expect(game.rating, 9);
       expect(game.hoursPlayed, 31.5);
       expect(game.playedOn, GamePlatform.pc);
       expect(game.isFavorite, isTrue);
@@ -1078,7 +1088,7 @@ void main() {
       expect(stats.totalHours, 33);
       expect(stats.hoursByPlatform, {GamePlatform.ps5: 33});
       expect(stats.ratedCount, 1);
-      expect(stats.ratingCounts, {5.0: 1});
+      expect(stats.ratingCounts, {10: 1});
     });
 
     test('library stats reach every row of a library bigger than a page', () async {
@@ -1115,7 +1125,7 @@ void main() {
       expect(query['select'], isNot(contains('purchase_price')));
       expect(query['select'], isNot(contains('achievements')));
       expect(games.map((g) => g.title), ['Newer', 'Hades']);
-      expect(games.first.rating, 4.5);
+      expect(games.first.rating, 9);
     });
 
     test('another member\'s library shows the games they marked perfected', () async {
@@ -1273,7 +1283,7 @@ void main() {
       expect(zed.member.handle, '@zed');
       expect(zed.member.avatarUrl, 'https://example.com/zed.jpg');
       expect(zed.status, GameStatus.completed);
-      expect(zed.rating, 4.5);
+      expect(zed.rating, 9);
       expect(zed.dateAdded, DateTime.utc(2026, 3, 1, 10).toLocal());
       final amy = friends.friends.last;
       expect(amy.member.name, 'amy'); // no display name: the handle
@@ -1404,11 +1414,32 @@ void main() {
       expect(api.last.url.queryParameters['on_conflict'], 'user_id,game_id');
       final row = api.bodyOf(api.last) as Map<String, dynamic>;
       expect(row['status'], 'to_play');
+      expect(row['rating'], 1.5); // three stars of ten, as the database rates (0 to 5)
       expect(row['played_on'], 'retro'); // how Emulator is stored
       expect(row['date_added'], '2026-07-01T09:00:00.000Z');
       expect(row['is_favorite'], isFalse);
       expect(row.containsKey('custom_backdrop_url'), isTrue);
       expect(row['custom_backdrop_url'], isNull); // the blurred cover
+    });
+
+    test('upsertUserGame writes a rating as the database has it: ten stars are 0 to 5', () async {
+      // Half a star is a quarter of the database's scale, kept to the tenth.
+      for (final (stars, stored) in [
+        (0.0, 0.0), (0.5, 0.3), (1.0, 0.5), (6.5, 3.3), (7.0, 3.5), (7.5, 3.8), (9.0, 4.5), (9.5, 4.8), (10.0, 5.0),
+        (12.0, 5.0), (-3.0, 0.0),
+      ]) {
+        await repo.upsertUserGame(
+          userId: 'u1',
+          gameId: 'g1',
+          status: GameStatus.completed,
+          rating: stars,
+          hoursPlayed: 0,
+          playedOn: null,
+          purchasePrice: 0,
+          isFavorite: false,
+        );
+        expect((api.bodyOf(api.last) as Map<String, dynamic>)['rating'], stored, reason: '$stars stars');
+      }
     });
 
     test('upsertUserGame sends the chosen backdrop', () async {

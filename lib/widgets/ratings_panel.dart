@@ -4,12 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:checkpoint/l10n/l10n.dart';
 import 'package:checkpoint/models/library_stats.dart';
 import 'package:checkpoint/theme/palette.dart';
-import 'package:checkpoint/utils/formatters.dart';
 import 'package:checkpoint/widgets/panel.dart';
 import 'package:checkpoint/widgets/star_rating.dart';
 
 /// How a member rates their games: the average on the left and, on the right, one
-/// bar per rating from one star to five, as tall as the number of games given
+/// bar per rating from one star to ten, as tall as the number of games given
 /// that rating. The counts stay hidden until a bar is tapped; then it lights up
 /// and a bubble over it shows the stars and how many games have them.
 class RatingsPanel extends StatefulWidget {
@@ -22,16 +21,12 @@ class RatingsPanel extends StatefulWidget {
   /// Room above the bars for the bubble.
   static const double _bubbleHeight = 26;
 
-  /// The bars, lowest first: half-star steps from one star to five. A rating of
-  /// half a star is rare, so it shares the first bar instead of getting a sliver
-  /// of its own (the axis starts at 1).
-  static const List<double> bars = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
+  /// The bars, lowest first: one for each star from one to ten, holding the half
+  /// star under it too.
+  static const List<int> bars = LibraryStats.ratingSteps;
 
-  /// Games with the rating of [bar]; the first bar also holds the half-star ones.
-  static int countFor(LibraryStats stats, double bar) {
-    final counts = stats.ratingCounts;
-    return (counts[bar] ?? 0) + (bar == bars.first ? (counts[0.5] ?? 0) : 0);
-  }
+  /// Games in [bar]: its star and the half star under it.
+  static int countFor(LibraryStats stats, int bar) => stats.ratingCounts[bar] ?? 0;
 
   @override
   State<RatingsPanel> createState() => _RatingsPanelState();
@@ -39,9 +34,9 @@ class RatingsPanel extends StatefulWidget {
 
 class _RatingsPanelState extends State<RatingsPanel> {
   /// The bar that was tapped, if any.
-  double? _selected;
+  int? _selected;
 
-  void _tap(double bar) {
+  void _tap(int bar) {
     HapticFeedback.selectionClick();
     setState(() => _selected = _selected == bar ? null : bar);
   }
@@ -70,7 +65,7 @@ class _RatingsPanelState extends State<RatingsPanel> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 84,
+            width: 104,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -85,7 +80,7 @@ class _RatingsPanelState extends State<RatingsPanel> {
                 const SizedBox(height: 4),
                 StarRating(
                   rating: (stats.averageRating * 2).round() / 2,
-                  size: 13,
+                  size: 10,
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -151,7 +146,7 @@ class _RatingsPanelState extends State<RatingsPanel> {
                 const SizedBox(height: 6),
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [_AxisLabel('1'), _AxisLabel('5')],
+                  children: [_AxisLabel('1'), _AxisLabel('10')],
                 ),
               ],
             ),
@@ -162,7 +157,7 @@ class _RatingsPanelState extends State<RatingsPanel> {
   }
 }
 
-/// "1 ★" / "5 ★" under the ends of the chart. The star is an icon: the ★
+/// "1 ★" / "10 ★" under the ends of the chart. The star is an icon: the ★
 /// character is missing from some fonts.
 class _AxisLabel extends StatelessWidget {
   const _AxisLabel(this.text);
@@ -185,12 +180,11 @@ class _AxisLabel extends StatelessWidget {
 class _Bubble extends StatelessWidget {
   const _Bubble({required this.rating, required this.count});
 
-  final double rating;
+  final int rating;
   final int count;
 
   @override
   Widget build(BuildContext context) {
-    final orLess = rating == RatingsPanel.bars.first;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: context.palette.surfaceHigh,
@@ -202,16 +196,12 @@ class _Bubble extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Only the first bar spans two ratings (½ and 1).
-            if (orLess)
-              Padding(
-                padding: EdgeInsetsDirectional.only(end: 3),
-                child: Text(
-                  '≤',
-                  style: TextStyle(color: context.palette.muted, fontSize: 12),
-                ),
-              ),
-            StarRating(rating: rating, size: 11),
+            Text(
+              '$rating',
+              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(width: 1),
+            Icon(Icons.star_rounded, size: 12, color: context.palette.star),
             const SizedBox(width: 6),
             Text(
               context.l10n.gamesCount(count),
@@ -236,7 +226,7 @@ class _Bar extends StatelessWidget {
     required this.onTap,
   });
 
-  final double rating;
+  final int rating;
   final int count;
   final int tallest;
   final bool selected;
@@ -255,9 +245,7 @@ class _Bar extends StatelessWidget {
     } else {
       color = context.palette.star.withValues(alpha: 0.35 + 0.65 * count / tallest);
     }
-    final stars = rating == RatingsPanel.bars.first
-        ? context.l10n.oneStarOrLess
-        : context.l10n.starsCount(rating, fmtHours(rating));
+    final stars = context.l10n.starsCount(rating, '$rating');
     return Semantics(
       button: true,
       selected: selected,

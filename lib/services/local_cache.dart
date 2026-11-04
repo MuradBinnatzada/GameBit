@@ -56,10 +56,14 @@ class LocalCache {
 
   final Duration slowAfter;
 
-  /// Bump when the JSON written below changes shape. Entries with another version
-  /// read as missing and are deleted.
-  static const _version = 1;
-  static const _prefix = 'cache.v$_version';
+  /// Bump when the JSON written below changes shape (or scale: 2 is when a rating
+  /// became one to ten stars, from 0 to 5). Entries with another version read as
+  /// missing and are deleted.
+  static const _version = 2;
+
+  /// Not tied to [_version]: a bump would leave the entries of the old keys on the
+  /// device for good, out of reach of [clearAccount].
+  static const _prefix = 'cache.v1';
 
   static String _libraryKey(String userId) => '$_prefix.library.$userId';
   static String _logsKey(String userId) => '$_prefix.logs.$userId';

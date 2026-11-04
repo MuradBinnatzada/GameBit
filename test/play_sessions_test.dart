@@ -103,9 +103,9 @@ void main() {
       expect(game('a').hoursPlayed, 100000);
     });
 
-    test('a rating out of range is saved within 0 to 5', () async {
-      await library.setRating('a', 9);
-      expect(game('a').rating, 5);
+    test('a rating out of range is saved within 0 to 10', () async {
+      await library.setRating('a', 12);
+      expect(game('a').rating, 10);
       await library.setRating('a', -1);
       expect(game('a').rating, 0);
     });

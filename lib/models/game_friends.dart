@@ -17,7 +17,7 @@ class FriendWithGame {
   final SocialUser member;
   final GameStatus status;
 
-  /// Out of 5, in halves; 0 when they did not rate it.
+  /// Out of 10 stars, in halves; 0 when they did not rate it.
   final double rating;
   final DateTime? dateAdded;
 }

@@ -160,6 +160,18 @@ void main() {
     expect(prefs.containsKey(key), isFalse);
   });
 
+  test('a library saved before the ten stars (ratings out of 5) reads as null and is deleted', () async {
+    final prefs = await SharedPreferences.getInstance();
+    const key = 'cache.v1.library.u1';
+    await cache.writeLibrary('u1', [testGame('a')]);
+    final entry = jsonDecode(prefs.getString(key)!) as Map<String, dynamic>;
+    entry['v'] = 1;
+    await prefs.setString(key, jsonEncode(entry));
+
+    expect(await cache.readLibrary('u1'), isNull);
+    expect(prefs.containsKey(key), isFalse);
+  });
+
   test('clearAccount deletes that account only', () async {
     await cache.writeLibrary('u1', [testGame('a')]);
     await cache.writeLogs('u1', [testLog('l1', 'a')]);

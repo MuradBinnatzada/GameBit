@@ -475,10 +475,10 @@ class _RatingPanel extends StatelessWidget {
           ? TextButton(onPressed: () => context.read<LibraryStore>().setRating(game.id, 0), child: Text(context.l10n.clear))
           : null,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        StarRating(rating: game.rating, size: 44, onChanged: (v) => context.read<LibraryStore>().setRating(game.id, v)),
+        StarRating(rating: game.rating, size: 32, onChanged: (v) => context.read<LibraryStore>().setRating(game.id, v)),
         const SizedBox(height: 8),
         Text(
-          game.rating > 0 ? '${fmtHours(game.rating)} / 5' : context.l10n.ratingHint,
+          game.rating > 0 ? '${fmtHours(game.rating)} / 10' : context.l10n.ratingHint,
           style: TextStyle(color: game.rating > 0 ? context.palette.star : context.palette.muted, fontWeight: FontWeight.w600, fontSize: 13),
         ),
         if (context.watch<AuthStore>().isLoggedIn) ...[

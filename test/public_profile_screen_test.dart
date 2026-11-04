@@ -513,7 +513,7 @@ void main() {
         expect(find.byType(GameDetailScreen), findsOneWidget);
         expect(find.text('Game not found'), findsNothing);
         expect(find.text('Not in your library'), findsOneWidget);
-        expect(find.text('4 / 5'), findsNothing); // their rating is theirs
+        expect(find.text('4 / 10'), findsNothing); // their rating is theirs
       },
     );
 
