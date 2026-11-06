@@ -3281,5 +3281,8 @@
   "privacyTrophiesOffline": "Could not reach the server, so your trophies setting was not changed.",
   "trophiesNotLoaded": "This game's trophy list has not been read from PlayStation yet.",
   "trophiesOutOfDate": "You earned trophies since this list was read.",
-  "trophiesLoadFromPlayStation": "Load from PlayStation"
+  "trophiesLoadFromPlayStation": "Load from PlayStation",
+  "psnSyncButton": "Sync PlayStation",
+  "playStation": "PlayStation",
+  "playStationSynced": "Synced from PlayStation"
 }

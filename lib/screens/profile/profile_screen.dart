@@ -154,6 +154,7 @@ class ProfileScreen extends StatelessWidget {
               showAchievements: profileStore.steamConnected,
               // Your own trophies show whatever the privacy setting says.
               showTrophies: true,
+              playStation: context.watch<PublicTrophiesStore>().psnSyncedOf(userId),
               milestones: MilestonesSection(
                 earned: milestones.earned,
                 progress: milestones.progress,

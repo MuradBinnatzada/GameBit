@@ -444,6 +444,15 @@ class FakeRepository implements CheckpointRepository {
   final Map<String, TrophyMeta> savedTrophyMeta = {};
   bool trophySaveRefused = false;
 
+  /// Members `public_profiles.psn_synced` is true for.
+  final Set<String> psnSynced = {};
+
+  @override
+  Future<bool> fetchPsnSynced(String userId) async {
+    _checkOnline();
+    return psnSynced.contains(userId);
+  }
+
   @override
   Future<TrophyMeta?> fetchTrophyMeta(String userId, String gameId) async {
     _checkOnline();

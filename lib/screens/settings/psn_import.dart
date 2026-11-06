@@ -28,11 +28,18 @@ import 'package:checkpoint/theme/palette.dart';
 /// row in `data_section.dart`, the trophy screens (`game_trophies_dialog.dart`,
 /// `trophies_section.dart`) and the strings that start with `psn` or `trophy`.
 bool psnImportAvailable({String clientBasic = AppConfig.psnClientBasic, bool? web, TargetPlatform? platform}) {
+  final forced = debugPsnImportAvailable;
+  if (forced != null) return forced;
   if (clientBasic.trim().isEmpty) return false;
   if (web ?? kIsWeb) return false;
   final target = platform ?? defaultTargetPlatform;
   return target == TargetPlatform.android || target == TargetPlatform.iOS;
 }
+
+/// Tests set this to switch the import on or off whatever the build and the
+/// device are. Null in the app.
+@visibleForTesting
+bool? debugPsnImportAvailable;
 
 /// Shows Sony's sign-in page ([signInUri]) and calls [onRedirect] with the link
 /// it ends at ([PsnClient.redirectUri]); [onFailed] when the page could not load.

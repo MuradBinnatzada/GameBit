@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:checkpoint/l10n/l10n.dart';
 import 'package:checkpoint/screens/profile/edit_profile_screen.dart';
 import 'package:checkpoint/screens/settings/clear_library_panel.dart';
 import 'package:checkpoint/screens/settings/connect_account.dart';
+import 'package:checkpoint/screens/settings/data_section.dart';
 import 'package:checkpoint/screens/settings/delete_account_panel.dart';
+import 'package:checkpoint/screens/settings/psn_import.dart';
 import 'package:checkpoint/screens/settings/sync_library.dart';
 import 'package:checkpoint/state/auth_store.dart';
 import 'package:checkpoint/state/profile_store.dart';
@@ -101,8 +104,18 @@ class AccountSection extends StatelessWidget {
           services: profileStore.connectedServices,
           names: profileStore.accountNames,
           editor: accountEditorFor(context),
-          footer: profileStore.steamConnected
-              ? const SyncLibraryButton()
+          footer: profileStore.steamConnected || psnImportAvailable()
+              ? Column(
+                  children: [
+                    if (profileStore.steamConnected) const SyncLibraryButton(),
+                    // Under Steam's: the unofficial PlayStation import, on phones
+                    // whose build has it.
+                    if (psnImportAvailable()) ...[
+                      if (profileStore.steamConnected) const SizedBox(height: 10),
+                      const _PlayStationSyncButton(),
+                    ],
+                  ],
+                )
               : null,
         ),
         const SizedBox(height: 14),
@@ -121,6 +134,25 @@ class AccountSection extends StatelessWidget {
         const SizedBox(height: 14),
         DeleteAccountPanel(onDeletingChanged: onDeletingChanged),
       ],
+    );
+  }
+}
+
+/// "Sync PlayStation", under the Steam sync: reads the member's games, hours and
+/// trophies from PlayStation on their phone and opens the import to review (see
+/// `importFromPlayStation`). Once a day; the dialog before it says what it is.
+class _PlayStationSyncButton extends StatelessWidget {
+  const _PlayStationSyncButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton.tonalIcon(
+        onPressed: () => importFromPlayStation(context),
+        icon: const FaIcon(FontAwesomeIcons.playstation, size: 18),
+        label: Text(context.l10n.psnSyncButton),
+      ),
     );
   }
 }

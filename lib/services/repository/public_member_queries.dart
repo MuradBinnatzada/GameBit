@@ -11,6 +11,7 @@ mixin _PublicMemberQueries on _RepositoryBase {
     Db.joinedAt,
     Db.showSteamAchievements,
     Db.showTrophies,
+    Db.psnSynced,
     Db.avatarFrame,
     Db.titleMilestone,
     Db.showcasedMilestones,

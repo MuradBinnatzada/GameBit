@@ -141,6 +141,11 @@ abstract final class Db {
   /// The same for the member's PlayStation trophies (Settings > Privacy).
   static const showTrophies = 'show_trophies';
 
+  /// `public_profiles` only: whether the member has synced PlayStation (and
+  /// shares their trophies, or is the one asking). An unverified icon, see
+  /// 20261106220000_playstation_synced_flag.sql.
+  static const psnSynced = 'psn_synced';
+
   /// What the member shows off: a frame id, the milestone whose title shows
   /// under their name, and up to three milestones. Written on your own
   /// `profiles` row (a trigger refuses what you haven't unlocked), readable in

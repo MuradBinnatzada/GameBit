@@ -1188,6 +1188,49 @@ void main() {
       expect(find.text('3 / 4 · 75%'), findsOneWidget);
     });
 
+    Finder psIcon() => find.byTooltip('PlayStation\nSynced from PlayStation');
+
+    testWidgets('a member who synced PlayStation has the small icon beside the others, with no link', (tester) async {
+      repo.members['m1'] = const PublicProfile(
+        id: 'm1',
+        name: 'Member One',
+        handle: '@member_one',
+        steamConnected: true,
+        psnSynced: true,
+      );
+      await openProfile(tester);
+      expect(psIcon(), findsOneWidget);
+      // Beside the Steam icon, in the same row, and nothing opens from it.
+      final steam = tester.getTopLeft(find.byTooltip(RegExp('Steam')).first);
+      final ps = tester.getTopLeft(psIcon());
+      expect(ps.dy, steam.dy);
+      expect(ps.dx, greaterThan(steam.dx));
+      expect(find.descendant(of: psIcon(), matching: find.byType(InkWell)), findsNothing);
+      expect(find.textContaining('Verified'), findsNothing);
+    });
+
+    testWidgets('no icon for a member who has not synced', (tester) async {
+      await openProfile(tester);
+      expect(psIcon(), findsNothing);
+    });
+
+    testWidgets('a member with no Steam but a sync has the icon alone', (tester) async {
+      repo.members['m1'] = const PublicProfile(id: 'm1', name: 'Member One', handle: '@member_one', psnSynced: true);
+      await openProfile(tester);
+      expect(psIcon(), findsOneWidget);
+    });
+
+    testWidgets('your own profile has it once you synced', (tester) async {
+      repo.psnSynced.add('u1');
+      await open(tester, const Scaffold(body: ProfileScreen()));
+      expect(psIcon(), findsOneWidget);
+    });
+
+    testWidgets('your own profile has none before you sync', (tester) async {
+      await open(tester, const Scaffold(body: ProfileScreen()));
+      expect(psIcon(), findsNothing);
+    });
+
     testWidgets('a failed read is said on your own profile, and nowhere else', (tester) async {
       repo.failTrophyReads = true;
       await openProfile(tester);

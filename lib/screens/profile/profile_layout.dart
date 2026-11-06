@@ -164,6 +164,7 @@ class ProfileLayout extends StatelessWidget {
     required this.links,
     required this.showAchievements,
     this.showTrophies = false,
+    this.playStation = false,
     this.milestones,
     this.notice,
     this.bio,
@@ -211,6 +212,10 @@ class ProfileLayout extends StatelessWidget {
   /// leaves itself out while there is nothing to show.
   final bool showTrophies;
 
+  /// The member has synced PlayStation: a small icon among the account icons, with
+  /// no link. See [ConnectedAccountIcons].
+  final bool playStation;
+
   /// The Milestones card ([MilestonesSection]), just above the achievements.
   final Widget? milestones;
 
@@ -244,8 +249,8 @@ class ProfileLayout extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 14),
-        if (services.isNotEmpty) ...[
-          ConnectedAccountIcons(services: services, names: accountNames),
+        if (services.isNotEmpty || playStation) ...[
+          ConnectedAccountIcons(services: services, names: accountNames, playStation: playStation),
           const SizedBox(height: 14),
         ],
         if (hasBio) ...[

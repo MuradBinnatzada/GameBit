@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import 'package:checkpoint/models/trophy.dart';
@@ -49,6 +51,7 @@ class PublicTrophiesStore extends AccountScopedStore {
   final LruCache<String, TrophySummaryView> _summaries;
   final LruCache<(String, String), GameTrophiesView> _games;
   final Map<(String, String), TrophyMeta?> _metas = {};
+  final Map<String, bool> _synced = {};
   final Map<Object, Future<void>> _loading = {};
 
   @override
@@ -56,7 +59,26 @@ class PublicTrophiesStore extends AccountScopedStore {
     _summaries.clear();
     _games.clear();
     _metas.clear();
+    _synced.clear();
     _loading.clear();
+  }
+
+  /// Whether [userId] shows the PlayStation icon, once [loadPsnSynced] has read it
+  /// (their own profile's page does; another member's comes with their profile).
+  bool psnSyncedOf(String userId) => _synced[userId] ?? false;
+
+  Future<void> loadPsnSynced(String userId) async {
+    final epoch = this.epoch;
+    try {
+      final synced = await _repository.fetchPsnSynced(userId);
+      if (isStale(epoch)) return;
+      if (_synced[userId] == synced) return;
+      _synced[userId] = synced;
+    } catch (e, st) {
+      debugPrint('Loading the PlayStation icon of $userId failed: $e\n$st');
+      return;
+    }
+    notifyIfAlive();
   }
 
   /// The trophy set and counts the signed-in member's last sync stored for their
@@ -89,6 +111,7 @@ class PublicTrophiesStore extends AccountScopedStore {
   void refreshAfterSync(String userId) {
     _games.removeWhere((key) => key.$1 == userId);
     _metas.removeWhere((key, _) => key.$1 == userId);
+    unawaited(loadPsnSynced(userId));
     if (_summaries[userId] != null) loadSummary(userId, force: true);
     notifyIfAlive();
   }

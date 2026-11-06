@@ -46,6 +46,14 @@ mixin _TrophyQueries on _RepositoryBase {
     return TrophyMeta.fromJson(row?[Db.trophyMeta]);
   }
 
+  /// Whether [userId] shows the PlayStation icon on their profile (see
+  /// [PublicProfile.psnSynced]); for the signed-in member's own profile, whether
+  /// they have synced.
+  Future<bool> fetchPsnSynced(String userId) async {
+    final row = await _client.from(Db.publicProfiles).select(Db.psnSynced).eq(Db.id, userId).maybeSingle();
+    return row?[Db.psnSynced] == true;
+  }
+
   /// [userId]'s trophies for [gameId] (their own always; another member's when
   /// they share them), or null when none are stored.
   Future<List<Trophy>?> fetchGameTrophies(String userId, String gameId) async {

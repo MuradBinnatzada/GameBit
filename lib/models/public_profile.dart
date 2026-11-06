@@ -16,6 +16,7 @@ class PublicProfile {
     this.steamConnected = false,
     this.showSteamAchievements = true,
     this.showTrophies = true,
+    this.psnSynced = false,
     this.bio,
     this.steamId,
     this.joined,
@@ -39,6 +40,11 @@ class PublicProfile {
   /// (`show_trophies`, Settings > Privacy). When false the server hands out none
   /// of them, and the profile leaves the Trophies card out.
   final bool showTrophies;
+
+  /// They have synced PlayStation and let others see their trophies: the small
+  /// PlayStation icon beside Steam. Not a verified account (the server cannot check
+  /// a PlayStation sign-in made on the member's phone).
+  final bool psnSynced;
 
   /// Null when they wrote none.
   final String? bio;

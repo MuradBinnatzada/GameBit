@@ -59,7 +59,10 @@ class _TrophiesSectionState extends State<TrophiesSection> {
   /// them. Another member's are held until the account changes.
   void _load({bool force = false}) {
     if (!mounted) return;
-    unawaited(context.read<PublicTrophiesStore>().loadSummary(widget.userId, force: force || _own));
+    final store = context.read<PublicTrophiesStore>();
+    unawaited(store.loadSummary(widget.userId, force: force || _own));
+    // Your own profile's PlayStation icon is read here too: it is the same page.
+    if (_own) unawaited(store.loadPsnSynced(widget.userId));
   }
 
   @override

@@ -1534,5 +1534,8 @@
   "privacyTrophiesOffline": "Не удалось связаться с сервером, поэтому настройка трофеев не изменилась.",
   "trophiesNotLoaded": "Список трофеев этой игры ещё не прочитан из PlayStation.",
   "trophiesOutOfDate": "С тех пор, как этот список был прочитан, вы получили новые трофеи.",
-  "trophiesLoadFromPlayStation": "Загрузить из PlayStation"
+  "trophiesLoadFromPlayStation": "Загрузить из PlayStation",
+  "psnSyncButton": "Синхронизировать PlayStation",
+  "playStation": "PlayStation",
+  "playStationSynced": "Синхронизировано с PlayStation"
 }

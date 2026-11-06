@@ -116,6 +116,7 @@ PublicProfile _publicProfileFromRow(Map<String, dynamic> row) {
     // Only an explicit "no" hides them, as the column's default is "yes".
     showSteamAchievements: row[Db.showSteamAchievements] != false,
     showTrophies: row[Db.showTrophies] != false,
+    psnSynced: row[Db.psnSynced] == true,
     bio: _firstText([row[Db.bio]]),
     steamId: _firstText([row[Db.steamId]]),
     joined: _date(row[Db.joinedAt]),

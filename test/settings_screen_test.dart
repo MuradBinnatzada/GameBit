@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'
@@ -11,6 +12,7 @@ import 'package:checkpoint/models/achievement_summary.dart';
 import 'package:checkpoint/models/connected_service.dart';
 import 'package:checkpoint/screens/profile/edit_profile_screen.dart';
 import 'package:checkpoint/screens/settings/privacy_section.dart';
+import 'package:checkpoint/screens/settings/psn_import.dart';
 import 'package:checkpoint/screens/settings/settings_screen.dart';
 import 'package:checkpoint/state/app_stores.dart';
 import 'package:checkpoint/state/library_store.dart';
@@ -258,6 +260,46 @@ void main() {
       expect(repo.writes, contains('clear-library'));
       expect(stores.library.libraryGames, isEmpty);
       expect(find.text('Your library was cleared'), findsOneWidget);
+    });
+
+    testWidgets('Sync PlayStation sits under Sync Library, and opens the notice first', (tester) async {
+      debugPsnImportAvailable = true;
+      addTearDown(() => debugPsnImportAvailable = null);
+      FlutterSecureStorage.setMockInitialValues({});
+      repo.steamId = '76561198000000000';
+      await open(tester, size: tall);
+
+      expect(find.text('Sync Library'), findsOneWidget);
+      expect(find.text('Sync PlayStation'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Sync PlayStation')).dy,
+        greaterThan(tester.getTopLeft(find.text('Sync Library')).dy),
+      );
+
+      await tester.ensureVisible(find.text('Sync PlayStation'));
+      await tester.tap(find.text('Sync PlayStation'));
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+      await tester.pumpAndSettle();
+      // The first time: what this unofficial import means, before any sign-in.
+      expect(find.text('Import from PlayStation'), findsOneWidget);
+      expect(find.text('I understand, sign in'), findsOneWidget);
+    });
+
+    testWidgets('Sync PlayStation is there without Steam, and is not there when the build has no PlayStation', (tester) async {
+      debugPsnImportAvailable = true;
+      addTearDown(() => debugPsnImportAvailable = null);
+      await open(tester, size: tall);
+      expect(find.text('Sync Library'), findsNothing);
+      expect(find.text('Sync PlayStation'), findsOneWidget);
+    });
+
+    testWidgets('no Sync PlayStation where the import is not offered', (tester) async {
+      debugPsnImportAvailable = false;
+      addTearDown(() => debugPsnImportAvailable = null);
+      repo.steamId = '76561198000000000';
+      await open(tester, size: tall);
+      expect(find.text('Sync Library'), findsOneWidget);
+      expect(find.text('Sync PlayStation'), findsNothing);
     });
 
     testWidgets('Clear library waits for a running sync without spinning itself', (tester) async {
