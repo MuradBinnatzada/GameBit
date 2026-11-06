@@ -1068,7 +1068,7 @@ void gameOnDemandTests() {
           : json({'trophies': [titleTrophy(0, 'bronze', 'First')]});
     }
 
-    Future<List<Trophy>?> run(WidgetTester tester, PsnClient client, {bool signedIn = true, bool tapContinue = false}) async {
+    Future<List<Trophy>?> run(WidgetTester tester, PsnClient client, {bool signedIn = true}) async {
       List<Trophy>? result;
       var returned = false;
       await tester.runAsync(stores.initialize);
@@ -1104,11 +1104,7 @@ void gameOnDemandTests() {
       await tester.tap(find.text('load'));
       await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
       await tester.pumpAndSettle();
-      if (tapContinue) {
-        await tester.tap(find.text('I understand, sign in'));
-        await tester.pumpAndSettle();
-      }
-      if (!returned && !tapContinue && signedIn) await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+      if (!returned && signedIn) await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
       await tester.pumpAndSettle();
       return result;
     }
@@ -1126,11 +1122,12 @@ void gameOnDemandTests() {
       expect(client.traffic.statuses, {200: 3});
     });
 
-    testWidgets('with no saved sign-in it says what this is first, then opens Sony\'s page', (tester) async {
+    testWidgets('with no saved sign-in it opens Sony\'s page at once, with no notice first', (tester) async {
       final client = clientWith(sony);
-      final list = await run(tester, client, signedIn: false, tapContinue: true);
+      final list = await run(tester, client, signedIn: false);
       expect(list, isNull); // still on Sony's page: nobody signed in
       expect(find.text('Sony page'), findsOneWidget);
+      expect(find.text('Import from PlayStation'), findsNothing);
       expect(client.traffic.requests, 0);
     });
 
@@ -1203,16 +1200,15 @@ void gameOnDemandTests() {
       return result;
     }
 
-    testWidgets('says what this is, opens Sony\'s page, keeps the sign-in and reads nothing', (tester) async {
+    testWidgets('opens Sony\'s page at once, keeps the sign-in and reads nothing', (tester) async {
       var requests = <String>[];
       final client = clientWith((r) {
         requests.add(r.url.host);
         return json({'access_token': 'tok', 'refresh_token': 'kept', 'refresh_token_expires_in': 5184000});
       });
       final result = await run(tester, client, onSonyPage: () async {
-        expect(find.text('Import from PlayStation'), findsOneWidget);
-        await tester.tap(find.text('I understand, sign in'));
-        await tester.pumpAndSettle();
+        // No notice or question comes first.
+        expect(find.text('Import from PlayStation'), findsNothing);
         expect(find.text('Sony page'), findsOneWidget);
         redirect('com.scee.psxandroid.scecompcall://redirect/?code=v3.abc');
       });
@@ -1223,21 +1219,9 @@ void gameOnDemandTests() {
       expect(await tester.runAsync(() => device.lastSync('u1')), isNull);
     });
 
-    testWidgets('backing out at the notice connects nothing', (tester) async {
-      final client = clientWith((_) => json({}));
-      final result = await run(tester, client, onSonyPage: () async {
-        await tester.tap(find.text('Cancel'));
-        await tester.pumpAndSettle();
-      });
-      expect(result, isFalse);
-      expect(await tester.runAsync(() => device.savedSignIn('u1')), isNull);
-    });
-
     testWidgets('a sign-in Sony refuses connects nothing', (tester) async {
       final client = clientWith((_) => json({'error': 'invalid_grant'}, 400));
       await run(tester, client, onSonyPage: () async {
-        await tester.tap(find.text('I understand, sign in'));
-        await tester.pumpAndSettle();
         redirect('com.scee.psxandroid.scecompcall://redirect/?code=bad');
       });
       expect(find.text('PlayStation did not accept the sign-in. Try again.'), findsOneWidget);

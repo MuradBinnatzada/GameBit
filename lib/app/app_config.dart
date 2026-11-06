@@ -58,13 +58,16 @@ abstract final class AppConfig {
     defaultValue: 'muradbinnetzade14@gmail.com',
   );
 
-  /// The sign-in client of the unofficial PlayStation import, as the `Basic`
-  /// credential (`client id:secret` in base64) that PlayStation's own phone app
-  /// and the open-source PSN libraries use. Empty: the build has no PlayStation
-  /// import, and Settings does not offer it. It is not kept in the source: pass
-  /// `--dart-define=PSN_CLIENT_BASIC=<credential>` to a build that should have it
+  /// The sign-in client of the PlayStation import, as the `Basic` credential
+  /// (`client id:secret` in base64) of PlayStation's own phone app, which the
+  /// open-source PSN libraries publish (`psn-api`). Empty: the build has no
+  /// PlayStation import, and Settings does not offer it. Set it as the default
+  /// below, or for one build with `--dart-define=PSN_CLIENT_BASIC=<credential>`
   /// (README, "PlayStation import").
-  static const psnClientBasic = String.fromEnvironment('PSN_CLIENT_BASIC');
+  static const psnClientBasic = String.fromEnvironment(
+    'PSN_CLIENT_BASIC',
+    defaultValue: 'MDk1MTUxNTktNzIzNy00MzcwLTliNDAtMzgwNmU2N2MwODkxOnVjUGprYTV0bnRCMktxc1A=',
+  );
 
   static const _psnSyncHours = int.fromEnvironment('PSN_SYNC_COOLDOWN_HOURS', defaultValue: -1);
 

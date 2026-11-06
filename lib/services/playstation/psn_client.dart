@@ -138,8 +138,8 @@ class PsnTrophyTitle {
 /// so it can be taken out whole.
 ///
 /// The client is the `Basic` credential of that app (`client id:secret` in
-/// base64), given to the build with `--dart-define=PSN_CLIENT_BASIC=...` (see
-/// `AppConfig.psnClientBasic`); it is not kept in the source.
+/// base64), set in `AppConfig.psnClientBasic` (a default, or
+/// `--dart-define=PSN_CLIENT_BASIC=...` for one build).
 class PsnClient {
   PsnClient({
     required String clientBasic,

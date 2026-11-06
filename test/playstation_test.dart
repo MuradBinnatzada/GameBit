@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:checkpoint/app/app_config.dart';
 import 'package:checkpoint/l10n/l10n.dart';
 import 'package:checkpoint/models/game.dart';
 import 'package:checkpoint/models/library_csv.dart';
@@ -470,9 +471,10 @@ void main() {
       }
     });
 
-    test('a build without the define has none', () {
-      // The test run passes no --dart-define=PSN_CLIENT_BASIC.
-      expect(psnImportAvailable(web: false, platform: TargetPlatform.android), isFalse);
+    test('a build is offered it exactly when it has a client', () {
+      // Whether it has one depends on how the tests are run (--dart-define=PSN_CLIENT_BASIC,
+      // or a default in AppConfig), so this follows the build.
+      expect(psnImportAvailable(web: false, platform: TargetPlatform.android), AppConfig.psnClientBasic.trim().isNotEmpty);
     });
   });
 

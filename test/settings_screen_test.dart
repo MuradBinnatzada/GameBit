@@ -319,20 +319,6 @@ void main() {
         expect(find.text('Sync PlayStation'), findsOneWidget);
       });
 
-      testWidgets('Connect says what this unofficial import is before anything else, and backing out changes nothing', (tester) async {
-        await open(tester, size: tall);
-        await tester.ensureVisible(find.widgetWithText(TextButton, 'Connect').last);
-        await tester.tap(find.widgetWithText(TextButton, 'Connect').last);
-        await tester.pumpAndSettle();
-        expect(find.text('Import from PlayStation'), findsOneWidget);
-        expect(find.text('I understand, sign in'), findsOneWidget);
-
-        await tester.tap(find.text('Cancel'));
-        await tester.pumpAndSettle();
-        expect(find.text('Not connected'), findsWidgets);
-        expect(find.text('Sync PlayStation'), findsNothing);
-      });
-
       testWidgets('Disconnect asks, then forgets the sign-in on the phone', (tester) async {
         await connected(tester);
         await open(tester, size: tall);
@@ -458,6 +444,9 @@ void main() {
     testWidgets('lists Steam, the one service that is proved, with Connect on it', (
       tester,
     ) async {
+      // Whatever the build has: this is about the services, not PlayStation's import.
+      debugPsnImportAvailable = false;
+      addTearDown(() => debugPsnImportAvailable = null);
       await open(tester, size: tall);
 
       expect(ConnectedService.values, [ConnectedService.steam]);
