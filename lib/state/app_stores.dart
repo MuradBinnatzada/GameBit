@@ -10,6 +10,7 @@ import 'package:checkpoint/services/checkpoint_repository.dart';
 import 'package:checkpoint/services/connectivity_service.dart';
 import 'package:checkpoint/services/discussion_api_service.dart';
 import 'package:checkpoint/services/game_api_service.dart';
+import 'package:checkpoint/services/game_price_api_service.dart';
 import 'package:checkpoint/services/news_api_service.dart';
 import 'package:checkpoint/services/playstation/psn_device.dart';
 import 'package:checkpoint/services/local_cache.dart';
@@ -44,6 +45,7 @@ import 'package:checkpoint/state/release_reminders_store.dart';
 import 'package:checkpoint/state/search_store.dart';
 import 'package:checkpoint/state/shared_link_store.dart';
 import 'package:checkpoint/state/social_graph_store.dart';
+import 'package:checkpoint/state/wishlist_prices_store.dart';
 
 /// The app's stores and how they depend on each other. Dependencies point one
 /// way, with no cycles:
@@ -115,6 +117,10 @@ import 'package:checkpoint/state/social_graph_store.dart';
 ///  * [NewsStore] holds the News screen's articles (the outlets' latest, and
 ///    Steam's news for the member's games). It follows [AuthStore] only; the
 ///    screen reads [LibraryStore] to say which games to ask about;
+///  * [WishlistPricesStore] holds the best current price of each wishlist game
+///    (the `game-prices` Edge Function, IsThereAnyDeal). It reads
+///    [LibraryStore] for the wishlist and follows [AuthStore] so a sign-out
+///    drops it; nothing depends on it but the screens that show prices;
 ///  * [MilestonesStore] holds the signed-in member's own milestones. It reads
 ///    [LibraryStore], [ListsStore], [ProfileStore] and [AuthStore] to tell how
 ///    far they are and when to have the server award new ones; nothing depends
@@ -127,6 +133,7 @@ class AppStores {
     LocalCache? cache,
     GameApiService? apiService,
     NewsApiService? newsApi,
+    GamePriceApiService? priceApi,
     DiscussionApiService? discussionApi,
     AdminApiService? adminApi,
     ConnectivityService? connectivity,
@@ -228,6 +235,11 @@ class AppStores {
       onOpenGame: (igdbId) => links.open(GameLink(igdbId)),
     );
     onboarding = OnboardingStore(auth: auth, library: library);
+    wishlistPrices = WishlistPricesStore(
+      auth: auth,
+      library: library,
+      api: priceApi,
+    );
     milestones = MilestonesStore(
       repository: repository,
       auth: auth,
@@ -275,6 +287,7 @@ class AppStores {
   late final ReleaseAlertsStore releaseAlerts;
   late final ReleaseRemindersStore releaseReminders;
   late final OnboardingStore onboarding;
+  late final WishlistPricesStore wishlistPrices;
   late final MilestonesStore milestones;
 
   /// A member was blocked or unblocked: what the stores hold about members is
@@ -315,6 +328,7 @@ class AppStores {
     libraryAttributes.initialize();
     lists.initialize();
     milestones.initialize();
+    wishlistPrices.initialize();
     await Future.wait([
       profile.initialize(),
       library.initialize(),
@@ -326,6 +340,7 @@ class AppStores {
   }
 
   void dispose() {
+    wishlistPrices.dispose();
     milestones.dispose();
     links.dispose();
     releaseReminders.dispose();

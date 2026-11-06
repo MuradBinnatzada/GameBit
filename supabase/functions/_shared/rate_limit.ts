@@ -20,6 +20,9 @@ export const RATE_LIMITS = {
   igdb: { bucket: 'igdb-handler', maxHits: 200, windowSeconds: 60 },
   // The news screen: a list and a page or two of it a minute at most.
   news: { bucket: 'game-news', maxHits: 60, windowSeconds: 60 },
+  // Wishlist prices (game-prices): a call when the app opens or the wishlist
+  // changes. ITAD allows 1000 requests in 5 minutes for the whole project.
+  gamePrices: { bucket: 'game-prices', maxHits: 30, windowSeconds: 600 },
   // Discussions: a few new threads an hour, and a reply every half minute or so
   // (a burst of 20, then the window rolls over). Counted before the word filter, so
   // refused posts count too.

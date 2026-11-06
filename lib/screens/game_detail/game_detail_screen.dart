@@ -12,6 +12,7 @@ import 'package:checkpoint/screens/game_detail/completion_time_field.dart';
 import 'package:checkpoint/screens/game_detail/discussions_panel.dart';
 import 'package:checkpoint/screens/game_detail/friends_panel.dart';
 import 'package:checkpoint/screens/game_detail/igdb_sections.dart';
+import 'package:checkpoint/screens/game_detail/price_panel.dart';
 import 'package:checkpoint/screens/game_detail/reviews_panel.dart';
 import 'package:checkpoint/screens/game_detail/sessions_screen.dart';
 import 'package:checkpoint/screens/profile/game_achievements_dialog.dart';
@@ -217,6 +218,7 @@ class GameDetailScreen extends StatelessWidget {
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(20, 4, 20, bottom + 32),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    PricePanel(game: game),
                     _ProgressPanel(game: game),
                     const SizedBox(height: 14),
                     _RatingPanel(game: game),

@@ -1614,6 +1614,43 @@
   "popularRightNow": "Popular Right Now",
   "recentlyAdded": "Recently Added",
   "wishlistReleases": "Wishlist Releases",
+  "wishlistDeals": "Wishlist Deals",
+  "priceTitle": "Price",
+  "priceLowestEver": "Lowest price ever",
+  "priceLowestEverWas": "Lowest ever: {price}",
+  "@priceLowestEverWas": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "priceAtStore": "at {store}",
+  "@priceAtStore": {
+    "placeholders": {
+      "store": {
+        "type": "String"
+      }
+    }
+  },
+  "priceSaleEnds": "Sale ends {date}",
+  "@priceSaleEnds": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "priceViewDeal": "See it at {store}",
+  "@priceViewDeal": {
+    "placeholders": {
+      "store": {
+        "type": "String"
+      }
+    }
+  },
+  "pricesByItad": "Prices from IsThereAnyDeal",
+  "priceOpenFailed": "Couldn't open the store page.",
   "nothingInProgress": "Nothing in progress. Pick something from your To Play list.",
   "hrs": "{hours} hrs",
   "@hrs": {
@@ -1695,7 +1732,7 @@
   "exportLibrary": "Export library",
   "exportSessions": "Export play sessions",
   "import": "Import",
-  "importBody": "Add games from a CSV file: a Gamebit export, or a spreadsheet from another tracker with a \"title\" column, and optionally status, rating, hours, platform and review. Games already in your library are updated; hours never go down.",
+  "importBody": "Add games from a CSV file: a Gamebit export, a Grouvee export, a Backloggd file made with the Backloggd+ browser extension, or a spreadsheet from another tracker with a \"title\" column, and optionally status, rating, hours, platform and review. Games already in your library are updated; hours never go down.",
   "@importBody": {
     "description": "\"title\" is a column name in the file: keep it in English."
   },
@@ -1711,6 +1748,7 @@
   },
   "importLookupNote": "Each game is looked up on IGDB by its title, a few a second.",
   "importGrouveeNote": "Grouvee export recognized: shelves became statuses, and playtime and platforms were taken from it.",
+  "importBackloggdNote": "Backloggd export recognized: Currently Playing, Played, In Backlog and In Wishlist became statuses (Played is Completed), and ratings and hours were taken from it.",
   "importGamesButton": "{count, plural, =1{Import 1 game} other{Import {count} games}}",
   "@importGamesButton": {
     "placeholders": {

@@ -238,6 +238,13 @@ class _ImportScreenState extends State<ImportScreen> {
                 ),
                 const SizedBox(height: 6),
               ],
+              if (file.source == ImportSource.backloggd) ...[
+                Text(
+                  context.l10n.importBackloggdNote,
+                  style: TextStyle(color: context.palette.accent, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 6),
+              ],
               if (file.source == ImportSource.playstation) ...[
                 Text(
                   context.l10n.importPlaystationNote,

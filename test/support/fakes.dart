@@ -14,6 +14,7 @@ import 'package:checkpoint/models/friend_activity.dart';
 import 'package:checkpoint/models/game.dart';
 import 'package:checkpoint/models/game_attributes.dart';
 import 'package:checkpoint/models/game_details.dart';
+import 'package:checkpoint/models/game_price.dart';
 import 'package:checkpoint/models/discussion.dart';
 import 'package:checkpoint/models/game_friends.dart';
 import 'package:checkpoint/models/game_reviews.dart';
@@ -37,6 +38,7 @@ import 'package:checkpoint/services/discussion_failure.dart';
 import 'package:checkpoint/services/checkpoint_repository.dart';
 import 'package:checkpoint/services/connectivity_service.dart';
 import 'package:checkpoint/services/game_api_service.dart';
+import 'package:checkpoint/services/game_price_api_service.dart';
 import 'package:checkpoint/services/release_notifier.dart';
 import 'package:checkpoint/services/steam_link_service.dart';
 import 'package:checkpoint/state/company_store.dart';
@@ -2092,3 +2094,38 @@ class FakeAdminApi extends AdminApiService {
     reportList.removeWhere((r) => r.member.id == memberId);
   }
 }
+
+/// The `game-prices` function, answering from [answers] (a game missing from it
+/// has no price) or failing while [fail] is set. [calls] are the games asked
+/// about, one list per request.
+class FakePriceApi extends GamePriceApiService {
+  FakePriceApi() : super(country: 'DE');
+
+  final Map<String, GamePrice?> answers = {};
+  bool fail = false;
+  final List<List<String>> calls = [];
+
+  @override
+  Future<Map<String, GamePrice?>?> prices(List<String> gameIds) async {
+    calls.add(List.of(gameIds));
+    if (fail) return null;
+    return {for (final id in gameIds) id: answers[id]};
+  }
+}
+
+/// A price in euros: [cut] percent off a regular 40.
+GamePrice testPrice(
+  int cut, {
+  double amount = 20,
+  double? low,
+  String shop = 'Steam',
+  DateTime? expiry,
+}) => GamePrice(
+  shop: shop,
+  price: Money(amount, 'EUR'),
+  regular: const Money(40, 'EUR'),
+  cut: cut,
+  url: Uri.parse('https://store.example/game'),
+  expiry: expiry,
+  historyLow: low == null ? null : Money(low, 'EUR'),
+);

@@ -156,12 +156,29 @@ class ImportRow {
     final shelves = col(['shelves']);
     final dates = col(['dates']);
     final platforms = col(['platforms']);
+    // The Backloggd+ extension's export has no status column either, but one
+    // true/false column per list and a link back to Backloggd, which no other
+    // file has (see [ImportSource.backloggd]).
+    final backloggdUrl = col(['backloggdurl']);
+    final inBacklog = col(['inbacklog']);
+    final inWishlist = col(['inwishlist']);
+    final isBackloggd = shelves == null && (backloggdUrl != null || (inBacklog != null && inWishlist != null));
+    final played = col(['played']);
+    final playing = col(['currentlyplaying']);
+    final totalHours = col(['totalhours']);
+    final totalMinutes = col(['totalminutes']);
+    final playthroughHours = col(['playthroughhours']);
+    final playthroughMinutes = col(['playthroughminutes']);
 
     String? cell(List<String> row, int? i) {
       if (i == null || i >= row.length) return null;
       final text = row[i].trim();
       return text.isEmpty ? null : text;
     }
+
+    // Backloggd's ratings are whole numbers out of 10 (half stars), unless a
+    // figure with a fraction shows the file is in stars out of 5.
+    final backloggdStars = isBackloggd && _hasFraction([for (var r = 1; r < rows.length; r++) cell(rows[r], rating)]);
 
     final parsed = <ImportRow>[];
     final skipped = <String>[];
@@ -180,6 +197,13 @@ class ImportRow {
       final statusText = cell(row, status);
       final readStatus = shelves != null
           ? _grouveeStatus(cell(row, shelves))
+          : isBackloggd
+          ? _backloggdStatus(
+              playing: _yes(cell(row, playing)),
+              played: _yes(cell(row, played)),
+              backlog: _yes(cell(row, inBacklog)),
+              wishlist: _yes(cell(row, inWishlist)),
+            )
           : statusText == null
           ? GameStatus.toPlay
           : _status(statusText);
@@ -197,8 +221,21 @@ class ImportRow {
         igdbId: int.tryParse(cell(row, igdb) ?? ''),
         releaseYear: _year(cell(row, year)),
         status: readStatus,
-        rating: ratingOutOf10 != null ? _ratingOutOf10(cell(row, ratingOutOf10)) : _rating(cell(row, rating)),
-        hours: shelves != null ? _grouveeHours(cell(row, dates)) : _hours(cell(row, hours)),
+        rating: ratingOutOf10 != null
+            ? _ratingOutOf10(cell(row, ratingOutOf10))
+            : isBackloggd
+            ? _backloggdRating(cell(row, rating), stars: backloggdStars)
+            : _rating(cell(row, rating)),
+        hours: shelves != null
+            ? _grouveeHours(cell(row, dates))
+            : isBackloggd
+            ? _backloggdHours(
+                cell(row, totalHours),
+                cell(row, totalMinutes),
+                cell(row, playthroughHours),
+                cell(row, playthroughMinutes),
+              )
+            : _hours(cell(row, hours)),
         playedOn: shelves != null ? _grouveePlatform(cell(row, platforms)) : gamePlatformFromDb(cell(row, platform)),
         review: reviewText,
       ));
@@ -206,7 +243,11 @@ class ImportRow {
     return ImportFile(
       rows: parsed,
       skipped: skipped,
-      source: shelves != null ? ImportSource.grouvee : ImportSource.generic,
+      source: shelves != null
+          ? ImportSource.grouvee
+          : isBackloggd
+          ? ImportSource.backloggd
+          : ImportSource.generic,
     );
   }
 
@@ -232,7 +273,19 @@ class ImportRow {
   /// kept in the backlog rather than left out.
   static GameStatus _grouveeStatus(String? shelves) {
     final decoded = _json(shelves);
-    final Iterable<String> names = decoded is Map<String, dynamic> ? decoded.keys : (shelves ?? '').split(RegExp('[,;|]'));
+    // The shelves as the keys of an object, or (as the tools that read the file
+    // hand them on) a list of objects with a `name`; otherwise a list of names.
+    final Iterable<String> names = switch (decoded) {
+      final Map<String, dynamic> byName => byName.keys,
+      final List<dynamic> list => [
+        for (final shelf in list)
+          if (shelf is Map<String, dynamic>)
+            if (shelf['name'] case final String name) name else ...const <String>[]
+          else if (shelf is String)
+            shelf,
+      ],
+      _ => (shelves ?? '').split(RegExp('[,;|]')),
+    };
     final found = {for (final name in names) ?_status(name)};
     for (final status in _grouveeOrder) {
       if (found.contains(status)) return status;
@@ -271,6 +324,64 @@ class ImportRow {
       }
     }
     return null;
+  }
+
+  /// Whether a cell of a Backloggd file says yes: its `true`/`false` columns.
+  static bool _yes(String? text) => switch (text?.toLowerCase()) {
+    'true' || 'yes' || '1' => true,
+    _ => false,
+  };
+
+  /// What a game on Backloggd's lists is here. A game can be on several; the one
+  /// furthest along wins, as with Grouvee's shelves. Backloggd's Played is the
+  /// list of games the member has played, and its export does not say whether
+  /// each was finished or dropped (a `status` field of its log is always
+  /// "completed"), so Played is Completed. A game on none of the lists is kept
+  /// in the backlog rather than left out.
+  static GameStatus _backloggdStatus({
+    required bool playing,
+    required bool played,
+    required bool backlog,
+    required bool wishlist,
+  }) {
+    if (playing) return GameStatus.playing;
+    if (played) return GameStatus.completed;
+    if (backlog) return GameStatus.toPlay;
+    if (wishlist) return GameStatus.wishlist;
+    return GameStatus.toPlay;
+  }
+
+  /// Whether any of [cells] is a number with a fraction (3.5).
+  static bool _hasFraction(Iterable<String?> cells) {
+    for (final text in cells) {
+      final value = _number(text);
+      if (value != null && value != value.roundToDouble()) return true;
+    }
+    return false;
+  }
+
+  /// A Backloggd rating: out of 10 in whole numbers (a half star is 1), or, in a
+  /// file whose figures have fractions ([stars]), in stars out of 5. A figure
+  /// above 10 is read like any other tracker's unnamed scale.
+  static double? _backloggdRating(String? text, {required bool stars}) {
+    final value = _number(text);
+    if (value == null) return null;
+    if (value > 10) return _rating(text);
+    return _toHalf(stars ? value * 2 : value);
+  }
+
+  /// Hours from Backloggd's totals (`Total Hours` and the minutes beyond them),
+  /// or from the first playthrough's when the totals are empty. Minutes are
+  /// those beyond the whole hours, so a figure of 60 or more is not one.
+  static double? _backloggdHours(String? hours, String? minutes, String? playthroughHours, String? playthroughMinutes) {
+    double total(String? h, String? m) {
+      final minutesValue = _number(m) ?? 0;
+      return (_number(h) ?? 0) + (minutesValue < 60 ? minutesValue / 60 : 0);
+    }
+
+    final all = total(hours, minutes);
+    final value = all > 0 ? all : total(playthroughHours, playthroughMinutes);
+    return value > 0 ? _hours(value.toStringAsFixed(2)) : null;
   }
 
   static String _key(String header) => header.toLowerCase().replaceAll(RegExp('[^a-z0-9]'), '');
@@ -327,6 +438,15 @@ enum ImportSource {
   /// `shelves`, `dates` and `platforms` holding JSON. Read from how the tools
   /// that parse it name the columns; the rating is taken as out of 5.
   grouvee,
+
+  /// The CSV of the Backloggd+ browser extension (Backloggd has no export of
+  /// its own): `Game Name`, one true/false column for each of `Played`,
+  /// `Currently Playing`, `In Backlog` and `In Wishlist`, `Rating`, `Total Hours`
+  /// and `Total Minutes`, `Review` and `Backloggd URL`. The column names are the
+  /// ones the extension's source writes (jolacdev/backloggd-plus, read
+  /// 2026-11-06), not those of a real file: the rating's scale (out of 10 in
+  /// whole numbers) and the minutes' meaning are unverified.
+  backloggd,
 
   /// The member's own PlayStation account, read on their phone by the import
   /// from PlayStation (not a file).

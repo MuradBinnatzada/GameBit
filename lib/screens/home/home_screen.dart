@@ -22,6 +22,7 @@ import 'package:checkpoint/state/profile_store.dart';
 import 'package:checkpoint/state/release_alerts_store.dart';
 import 'package:checkpoint/state/release_reminders_store.dart';
 import 'package:checkpoint/state/store_scope.dart';
+import 'package:checkpoint/state/wishlist_prices_store.dart';
 import 'package:checkpoint/theme/app_theme.dart';
 import 'package:checkpoint/theme/palette.dart';
 import 'package:checkpoint/utils/formatters.dart';
@@ -165,6 +166,7 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             const _ReleasesRow(),
+            const _DealsRow(),
             SectionHeader(context.l10n.recentActivity),
             const _RecentActivityRow(),
             const _FriendsFeedRow(),
@@ -338,6 +340,28 @@ class _ReleasesRow extends StatelessWidget {
       caption: (g) {
         final alert = byId[g.id]!;
         return '${releaseLabel(alert.daysAway)} · ${fmtMonthDay(g.releaseDate!)}';
+      },
+    );
+  }
+}
+
+/// Wishlist deals: the wishlist games that are on sale, the ones at their lowest
+/// price ever first, each captioned "−58% · $24.99". Hidden when there are none.
+class _DealsRow extends StatelessWidget {
+  const _DealsRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final deals = context.watch<WishlistPricesStore>().deals;
+    if (deals.isEmpty) return const SizedBox.shrink();
+    final byId = {for (final d in deals) d.game.id: d.price};
+    return _CarouselSection(
+      title: context.l10n.wishlistDeals,
+      games: [for (final d in deals) d.game],
+      icon: Icons.local_offer_rounded,
+      caption: (g) {
+        final price = byId[g.id]!;
+        return '−${price.cut}% · ${price.price.format()}';
       },
     );
   }

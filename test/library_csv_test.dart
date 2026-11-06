@@ -191,6 +191,15 @@ void main() {
       expect(file.rows.single.status, GameStatus.completed);
     });
 
+    test('shelves given as a list of objects with a name are read too', () {
+      final file = ImportRow.parse(grouvee([
+        [1, 'Hades', '', '', jsonEncode([{'name': 'Played', 'added': '2017-01-31T14:30:39+00:00'}]), '', '', '', ''],
+        [2, 'Celeste', '', '', jsonEncode([{'name': 'Played'}, {'name': 'Playing'}, {'url': 'x'}, 5]), '', '', '', ''],
+        [3, 'Tunic', '', '', jsonEncode(['Wish List']), '', '', '', ''],
+      ]));
+      expect([for (final r in file.rows) r.status], [GameStatus.completed, GameStatus.playing, GameStatus.wishlist]);
+    });
+
     test('a cell that is not the JSON it should be costs the game nothing but that detail', () {
       final file = ImportRow.parse(grouvee([
         [1, 'Hades', '', '', shelves(['Playing']), '', 'not json', 5, '[1,2'],
@@ -216,6 +225,127 @@ void main() {
       expect(find.textContaining('Grouvee export recognized'), findsOneWidget);
 
       await show('title\nHades\n');
+      expect(find.textContaining('Grouvee export recognized'), findsNothing);
+    });
+  });
+
+  group('reading a Backloggd export', () {
+    /// The header the Backloggd+ extension writes (from its source), and one line
+    /// per game from the named columns; the others are empty, as the extension
+    /// leaves them for a game with no playthrough.
+    const header = [
+      'ID', 'Game Name', 'Played', 'Currently Playing', 'In Backlog', 'In Wishlist', 'Liked', 'Rating', 'Mastered',
+      'Start Date', 'Finish Date', 'Total Hours', 'Total Minutes', 'Playthrough Hours', 'Playthrough Minutes',
+      'Playthrough Hours to Finish', 'Playthrough Minutes to Finish', 'Playthrough Hours to Master',
+      'Playthrough Minutes to Master', 'Replay', 'Review', 'Review Contains Spoilers', 'Backloggd URL',
+    ];
+    String backloggd(List<Map<String, Object?>> games, {List<String> columns = header}) => toCsv([
+      columns,
+      for (final g in games) [for (final c in columns) g[c] ?? (c == 'Backloggd URL' ? 'https://backloggd.com/games/x/' : '')],
+    ]);
+    Map<String, Object?> game(String name, {bool played = false, bool playing = false, bool backlog = false, bool wishlist = false, Object? rating = '', Object? hours = 0, Object? minutes = 0, String review = ''}) => {
+      'ID': 1,
+      'Game Name': name,
+      'Played': played,
+      'Currently Playing': playing,
+      'In Backlog': backlog,
+      'In Wishlist': wishlist,
+      'Rating': rating,
+      'Total Hours': hours,
+      'Total Minutes': minutes,
+      'Review': review,
+    };
+
+    test('the lists become statuses, the one furthest along winning', () {
+      final file = ImportRow.parse(backloggd([
+        game('Hades', played: true),
+        game('Celeste', playing: true, played: true),
+        game('Tunic', backlog: true),
+        game('Outer Wilds', wishlist: true),
+        game('Cuphead', played: true, backlog: true),
+        game('Odd'),
+      ]));
+
+      expect(file.source, ImportSource.backloggd);
+      expect(file.skipped, isEmpty);
+      expect([for (final r in file.rows) (r.title, r.status)], [
+        ('Hades', GameStatus.completed),
+        ('Celeste', GameStatus.playing),
+        ('Tunic', GameStatus.toPlay),
+        ('Outer Wilds', GameStatus.wishlist),
+        ('Cuphead', GameStatus.completed),
+        // On none of the lists: kept in the backlog rather than left out.
+        ('Odd', GameStatus.toPlay),
+      ]);
+      // Backloggd's ids are not IGDB's: games are looked up by title.
+      expect(file.rows.every((r) => r.igdbId == null), isTrue);
+    });
+
+    test('ratings are out of 10, so 10 is the top mark', () {
+      final file = ImportRow.parse(backloggd([
+        game('A', played: true, rating: 10),
+        game('B', played: true, rating: 7),
+        game('C', played: true, rating: 1),
+        game('D', played: true, rating: ''),
+        game('E', played: true, rating: 0),
+      ]));
+      expect([for (final r in file.rows) r.rating], [10.0, 7.0, 1.0, null, null]);
+    });
+
+    test('a file with a fractional rating is in stars out of 5', () {
+      final file = ImportRow.parse(backloggd([
+        game('A', played: true, rating: 5),
+        game('B', played: true, rating: 3.5),
+        game('C', played: true, rating: 4),
+      ]));
+      expect([for (final r in file.rows) r.rating], [10.0, 7.0, 8.0]);
+    });
+
+    test('hours are the totals, with the minutes beyond them', () {
+      final file = ImportRow.parse(backloggd([
+        game('A', played: true, hours: 12, minutes: 30),
+        game('B', played: true, hours: 0, minutes: 45),
+        game('C', played: true, hours: 8, minutes: 0),
+        game('D', played: true),
+        // Minutes are those beyond the whole hours: 90 is no such figure.
+        game('E', played: true, hours: 5, minutes: 90),
+      ]));
+      expect([for (final r in file.rows) r.hours], [12.5, 0.75, 8.0, null, 5.0]);
+    });
+
+    test('hours come from the first playthrough when the totals are empty', () {
+      final file = ImportRow.parse(backloggd([
+        {...game('A', played: true), 'Total Hours': '', 'Total Minutes': '', 'Playthrough Hours': 20, 'Playthrough Minutes': 15},
+      ]));
+      expect(file.rows.single.hours, 20.25);
+    });
+
+    test('the review comes along, commas and new lines and all', () {
+      final file = ImportRow.parse(backloggd([game('A', played: true, review: 'Great, really.\nSecond line.')]));
+      expect(file.rows.single.review, 'Great, really.\nSecond line.');
+    });
+
+    test('the lists alone tell it from a spreadsheet when the link is missing', () {
+      final file = ImportRow.parse(backloggd(
+        [game('Hades', played: true)],
+        columns: ['Game Name', 'Played', 'Currently Playing', 'In Backlog', 'In Wishlist', 'Rating'],
+      ));
+      expect(file.source, ImportSource.backloggd);
+      expect(file.rows.single.status, GameStatus.completed);
+    });
+
+    test('a spreadsheet with a Played column of its own is not mistaken for one', () {
+      final file = ImportRow.parse('Name,Played,Rating\nHades,yes,4\n');
+      expect(file.source, ImportSource.generic);
+      expect(file.rows.single.status, GameStatus.toPlay);
+    });
+
+    testWidgets('the import screen says the file was recognized', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(theme: buildTheme(), home: ImportScreen(file: ImportRow.parse(backloggd([game('Hades', played: true)])))),
+      );
+      expect(find.text('1 game to import'), findsOneWidget);
+      expect(find.textContaining('Backloggd export recognized'), findsOneWidget);
       expect(find.textContaining('Grouvee export recognized'), findsNothing);
     });
   });

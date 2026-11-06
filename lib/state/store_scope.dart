@@ -30,6 +30,7 @@ import 'package:checkpoint/state/release_reminders_store.dart';
 import 'package:checkpoint/state/search_store.dart';
 import 'package:checkpoint/state/shared_link_store.dart';
 import 'package:checkpoint/state/social_graph_store.dart';
+import 'package:checkpoint/state/wishlist_prices_store.dart';
 
 /// Makes one store available to the widgets below it. There is one scope per
 /// store, each rebuilding only the widgets that [StoreContext.watch] that store,
@@ -123,7 +124,10 @@ class AppStoresScope extends StatelessWidget {
                                                             store: stores.admin,
                                                             child: StoreScope<PublicTrophiesStore>(
                                                               store: stores.publicTrophies,
-                                                              child: child,
+                                                              child: StoreScope<WishlistPricesStore>(
+                                                                store: stores.wishlistPrices,
+                                                                child: child,
+                                                              ),
                                                             ),
                                                           ),
                                                         ),
