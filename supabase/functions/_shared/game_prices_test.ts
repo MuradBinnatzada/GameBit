@@ -69,6 +69,12 @@ Deno.test('titles are the same when only case, accents, marks and punctuation di
   assertEquals(normalizeTitle('  !!!  '), '')
 })
 
+Deno.test('a trademark sign between words is a space, as the app reads PlayStation names', () => {
+  assertEquals(normalizeTitle('Minecraft: PlayStation®3 Edition'), normalizeTitle('Minecraft: PlayStation 3 Edition'))
+  assertEquals(normalizeTitle('Minecraft: PlayStation®3 Edition'), 'minecraft playstation 3 edition')
+  assertEquals(normalizeTitle('Rocket League®'), 'rocket league')
+})
+
 Deno.test('titles that differ by a word or a number stay different', () => {
   assertEquals(normalizeTitle('Tomb Raider') === normalizeTitle('Rise of the Tomb Raider'), false)
   assertEquals(normalizeTitle('Civilization VI') === normalizeTitle('Civilization V'), false)

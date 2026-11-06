@@ -65,8 +65,10 @@ export function parsePriceRequest(body: unknown): PriceRequest | string {
  */
 export function normalizeTitle(title: string): string {
   return title
-    // Before the Unicode normalization below, which would turn ™ into the letters "TM".
-    .replace(/[™®©]/g, '')
+    // Before the Unicode normalization below, which would turn ™ into the letters
+    // "TM". A space, not nothing, as the app reads Sony's names (`psnGameName`):
+    // "PlayStation®3 Edition" is "PlayStation 3 Edition", not "PlayStation3".
+    .replace(/[™®©℠]/g, ' ')
     .normalize('NFKD')
     .replace(/\p{M}+/gu, '')
     .toLowerCase()
