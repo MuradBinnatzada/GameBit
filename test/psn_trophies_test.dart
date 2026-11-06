@@ -1150,6 +1150,101 @@ void gameOnDemandTests() {
     });
   });
 
+  group('connecting PlayStation', () {
+    late FakeRepository repo;
+    late AppStores stores;
+    late PsnDevice device;
+    late void Function(String url) redirect;
+
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+      FlutterSecureStorage.setMockInitialValues({});
+      repo = FakeRepository();
+      stores = AppStores(repository: repo, authService: FakeAuthService(testUser('u1')), connectivity: FakeConnectivity(), apiService: FakeBrowseApi());
+      device = PsnDevice();
+    });
+
+    Future<bool?> run(WidgetTester tester, PsnClient client, {required Future<void> Function() onSonyPage}) async {
+      bool? result;
+      await tester.runAsync(stores.initialize);
+      addTearDown(stores.dispose);
+      await tester.pumpWidget(
+        AppStoresScope(
+          stores: stores,
+          child: MaterialApp(
+            theme: buildTheme(),
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => TextButton(
+                  onPressed: () async {
+                    result = await connectPlayStation(
+                      context,
+                      device: device,
+                      userId: 'u1',
+                      makeClient: () => client,
+                      signInBuilder: (context, uri, onRedirect, onFailed) {
+                        redirect = onRedirect;
+                        return const Text('Sony page');
+                      },
+                    );
+                  },
+                  child: const Text('connect'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('connect'));
+      await tester.pumpAndSettle();
+      await onSonyPage();
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 150)));
+      await tester.pumpAndSettle();
+      return result;
+    }
+
+    testWidgets('says what this is, opens Sony\'s page, keeps the sign-in and reads nothing', (tester) async {
+      var requests = <String>[];
+      final client = clientWith((r) {
+        requests.add(r.url.host);
+        return json({'access_token': 'tok', 'refresh_token': 'kept', 'refresh_token_expires_in': 5184000});
+      });
+      final result = await run(tester, client, onSonyPage: () async {
+        expect(find.text('Import from PlayStation'), findsOneWidget);
+        await tester.tap(find.text('I understand, sign in'));
+        await tester.pumpAndSettle();
+        expect(find.text('Sony page'), findsOneWidget);
+        redirect('com.scee.psxandroid.scecompcall://redirect/?code=v3.abc');
+      });
+      expect(result, isTrue);
+      expect(await tester.runAsync(() => device.savedSignIn('u1')), 'kept');
+      // The sign-in, and nothing from the member's lists; no sync is counted.
+      expect(requests, ['ca.account.sony.com']);
+      expect(await tester.runAsync(() => device.lastSync('u1')), isNull);
+    });
+
+    testWidgets('backing out at the notice connects nothing', (tester) async {
+      final client = clientWith((_) => json({}));
+      final result = await run(tester, client, onSonyPage: () async {
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
+      });
+      expect(result, isFalse);
+      expect(await tester.runAsync(() => device.savedSignIn('u1')), isNull);
+    });
+
+    testWidgets('a sign-in Sony refuses connects nothing', (tester) async {
+      final client = clientWith((_) => json({'error': 'invalid_grant'}, 400));
+      await run(tester, client, onSonyPage: () async {
+        await tester.tap(find.text('I understand, sign in'));
+        await tester.pumpAndSettle();
+        redirect('com.scee.psxandroid.scecompcall://redirect/?code=bad');
+      });
+      expect(find.text('PlayStation did not accept the sign-in. Try again.'), findsOneWidget);
+      expect(await tester.runAsync(() => device.savedSignIn('u1')), isNull);
+    });
+  });
+
   group('the counts of every game', () {
     test('the overview gives the set and the counts by grade', () async {
       final client = clientWith((_) => json({

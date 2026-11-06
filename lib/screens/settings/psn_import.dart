@@ -142,6 +142,52 @@ Future<_Choice?> _askToContinue(BuildContext context, {required bool signedIn, b
   );
 }
 
+/// Connects PlayStation on this phone: the notice of what this unofficial import
+/// means, then Sony's own sign-in page; the sign-in Sony hands back is kept
+/// encrypted on the phone (see [PsnDevice]). Reads nothing: the Sync button does
+/// that. True when it is connected now; false when they backed out or it failed
+/// (the screen has said why).
+Future<bool> connectPlayStation(
+  BuildContext context, {
+  PsnClient Function()? makeClient,
+  PsnSignInBuilder? signInBuilder,
+  PsnDevice? device,
+  String? userId,
+}) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final language = Localizations.localeOf(context).languageCode == 'ru' ? 'ru-RU' : 'en-US';
+  final account = userId ?? context.read<AuthStore>().user?.id ?? '';
+  final phone = device ?? PsnDevice();
+
+  final choice = await _askToContinue(context, signedIn: false);
+  if (choice != _Choice.go || !context.mounted) return false;
+
+  final PsnClient client;
+  try {
+    client = (makeClient ?? () => PsnClient(clientBasic: AppConfig.psnClientBasic, language: language))();
+  } on PsnException catch (e) {
+    messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    return false;
+  }
+  try {
+    final result = await Navigator.of(context).push<Object?>(
+      MaterialPageRoute(
+        builder: (_) => PsnImportScreen(
+          client: client,
+          signInBuilder: signInBuilder,
+          device: phone,
+          userId: account,
+          // Signed in is all there is to do: the screen keeps the sign-in.
+          work: (tokens) async => true,
+        ),
+      ),
+    );
+    return result == true && await phone.savedSignIn(account) != null;
+  } finally {
+    client.close();
+  }
+}
+
 /// Reads the trophy list of one game from PlayStation when the member opens it and
 /// it was not read by the sync (or is out of date): two requests, with the saved
 /// sign-in when there is one, on Sony's page otherwise (after the same notice as

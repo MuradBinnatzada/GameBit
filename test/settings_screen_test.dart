@@ -13,6 +13,8 @@ import 'package:checkpoint/models/connected_service.dart';
 import 'package:checkpoint/screens/profile/edit_profile_screen.dart';
 import 'package:checkpoint/screens/settings/privacy_section.dart';
 import 'package:checkpoint/screens/settings/psn_import.dart';
+import 'package:checkpoint/services/playstation/psn_client.dart';
+import 'package:checkpoint/services/playstation/psn_device.dart';
 import 'package:checkpoint/screens/settings/settings_screen.dart';
 import 'package:checkpoint/state/app_stores.dart';
 import 'package:checkpoint/state/library_store.dart';
@@ -262,44 +264,117 @@ void main() {
       expect(find.text('Your library was cleared'), findsOneWidget);
     });
 
-    testWidgets('Sync PlayStation sits under Sync Library, and opens the notice first', (tester) async {
-      debugPsnImportAvailable = true;
-      addTearDown(() => debugPsnImportAvailable = null);
-      FlutterSecureStorage.setMockInitialValues({});
-      repo.steamId = '76561198000000000';
-      await open(tester, size: tall);
+    group('PlayStation in the Connect accounts box', () {
+      setUp(() {
+        debugPsnImportAvailable = true;
+        FlutterSecureStorage.setMockInitialValues({});
+        SharedPreferences.setMockInitialValues({});
+      });
+      tearDown(() => debugPsnImportAvailable = null);
 
-      expect(find.text('Sync Library'), findsOneWidget);
-      expect(find.text('Sync PlayStation'), findsOneWidget);
-      expect(
-        tester.getTopLeft(find.text('Sync PlayStation')).dy,
-        greaterThan(tester.getTopLeft(find.text('Sync Library')).dy),
-      );
+      Future<void> connected(WidgetTester tester, {bool synced = false}) async {
+        final device = PsnDevice();
+        await tester.runAsync(() async {
+          await device.saveSignIn('u1', const PsnTokens(accessToken: 'a', refreshToken: 'r'));
+          if (synced) await device.markSynced('u1');
+        });
+      }
 
-      await tester.ensureVisible(find.text('Sync PlayStation'));
-      await tester.tap(find.text('Sync PlayStation'));
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
-      await tester.pumpAndSettle();
-      // The first time: what this unofficial import means, before any sign-in.
-      expect(find.text('Import from PlayStation'), findsOneWidget);
-      expect(find.text('I understand, sign in'), findsOneWidget);
-    });
+      double top(WidgetTester tester, Finder f) => tester.getTopLeft(f.first).dy;
 
-    testWidgets('Sync PlayStation is there without Steam, and is not there when the build has no PlayStation', (tester) async {
-      debugPsnImportAvailable = true;
-      addTearDown(() => debugPsnImportAvailable = null);
-      await open(tester, size: tall);
-      expect(find.text('Sync Library'), findsNothing);
-      expect(find.text('Sync PlayStation'), findsOneWidget);
-    });
+      testWidgets('has its own row under Steam\'s sync, set apart by a line, with Connect and no sync yet', (tester) async {
+        repo.steamId = '76561198000000000';
+        await open(tester, size: tall);
 
-    testWidgets('no Sync PlayStation where the import is not offered', (tester) async {
-      debugPsnImportAvailable = false;
-      addTearDown(() => debugPsnImportAvailable = null);
-      repo.steamId = '76561198000000000';
-      await open(tester, size: tall);
-      expect(find.text('Sync Library'), findsOneWidget);
-      expect(find.text('Sync PlayStation'), findsNothing);
+        expect(find.text('PlayStation'), findsOneWidget);
+        expect(find.text('Not connected'), findsOneWidget);
+        expect(top(tester, find.text('PlayStation')), greaterThan(top(tester, find.text('Sync Library'))));
+        expect(find.widgetWithText(TextButton, 'Connect'), findsOneWidget);
+        expect(find.text('Sync PlayStation'), findsNothing);
+      });
+
+      testWidgets('is there without Steam, as the second row', (tester) async {
+        await open(tester, size: tall);
+        expect(find.text('Sync Library'), findsNothing);
+        expect(find.text('PlayStation'), findsOneWidget);
+        expect(top(tester, find.text('PlayStation')), greaterThan(top(tester, find.text('Steam'))));
+      });
+
+      testWidgets('with a sign-in on the phone it is connected, says when it last synced, and has Sync under it', (tester) async {
+        repo.steamId = '76561198000000000';
+        await connected(tester, synced: true);
+        await open(tester, size: tall);
+
+        expect(find.textContaining('Connected · synced'), findsOneWidget);
+        expect(find.widgetWithText(TextButton, 'Disconnect'), findsNWidgets(2)); // Steam's and PlayStation's
+        expect(find.text('Sync PlayStation'), findsOneWidget);
+        expect(top(tester, find.text('Sync PlayStation')), greaterThan(top(tester, find.text('PlayStation'))));
+        expect(top(tester, find.text('Sync PlayStation')), greaterThan(top(tester, find.text('Sync Library'))));
+      });
+
+      testWidgets('a connected row that never synced just says Connected', (tester) async {
+        await connected(tester);
+        await open(tester, size: tall);
+        expect(find.text('Connected'), findsOneWidget);
+        expect(find.text('Sync PlayStation'), findsOneWidget);
+      });
+
+      testWidgets('Connect says what this unofficial import is before anything else, and backing out changes nothing', (tester) async {
+        await open(tester, size: tall);
+        await tester.ensureVisible(find.widgetWithText(TextButton, 'Connect').last);
+        await tester.tap(find.widgetWithText(TextButton, 'Connect').last);
+        await tester.pumpAndSettle();
+        expect(find.text('Import from PlayStation'), findsOneWidget);
+        expect(find.text('I understand, sign in'), findsOneWidget);
+
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
+        expect(find.text('Not connected'), findsWidgets);
+        expect(find.text('Sync PlayStation'), findsNothing);
+      });
+
+      testWidgets('Disconnect asks, then forgets the sign-in on the phone', (tester) async {
+        await connected(tester);
+        await open(tester, size: tall);
+
+        await tester.tap(find.widgetWithText(TextButton, 'Disconnect'));
+        await tester.pumpAndSettle();
+        expect(find.text('Disconnect PlayStation?'), findsOneWidget);
+        await tester.tap(find.widgetWithText(FilledButton, 'Disconnect'));
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+        await tester.pumpAndSettle();
+
+        expect(find.text('PlayStation sign-in removed from this phone.'), findsOneWidget);
+        expect(find.text('Sync PlayStation'), findsNothing);
+        expect(await tester.runAsync(() => PsnDevice().savedSignIn('u1')), isNull);
+      });
+
+      testWidgets('Sync opens the sync dialog for a signed-in phone', (tester) async {
+        await connected(tester);
+        await open(tester, size: tall);
+        await tester.ensureVisible(find.text('Sync PlayStation'));
+        await tester.tap(find.text('Sync PlayStation'));
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+        await tester.pumpAndSettle();
+        expect(find.text('Sync with PlayStation'), findsOneWidget);
+        expect(find.text('Sync now'), findsOneWidget);
+        expect(find.text('Forget sign-in'), findsOneWidget);
+      });
+
+      testWidgets('is not there where the import is not offered', (tester) async {
+        debugPsnImportAvailable = false;
+        repo.steamId = '76561198000000000';
+        await open(tester, size: tall);
+        expect(find.text('Sync Library'), findsOneWidget);
+        expect(find.text('PlayStation'), findsNothing);
+        expect(find.text('Sync PlayStation'), findsNothing);
+      });
+
+      testWidgets('Your data no longer has an Import from PlayStation row', (tester) async {
+        await open(tester, size: tall, section: SettingsSection.data);
+        expect(find.text('Import from CSV'), findsOneWidget);
+        expect(find.text('Import from PlayStation'), findsNothing);
+      });
     });
 
     testWidgets('Clear library waits for a running sync without spinning itself', (tester) async {

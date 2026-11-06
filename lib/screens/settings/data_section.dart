@@ -133,12 +133,6 @@ class DataSection extends StatelessWidget {
               label: context.l10n.importFromCsv,
               onTap: () => importLibraryFile(context, pick: pickFile),
             ),
-            if (psnImportAvailable())
-              ProfileLink(
-                icon: Icons.sports_esports_rounded,
-                label: context.l10n.psnImportFrom,
-                onTap: () => importFromPlayStation(context),
-              ),
           ],
         ),
       ],
@@ -170,7 +164,7 @@ Future<void> importLibraryFile(
 }
 
 /// Reads the member's PlayStation account (see `psn_import.dart`) and opens the
-/// import of what it holds.
+/// import of what it holds. The Sync button of Settings > Account starts it.
 Future<void> importFromPlayStation(BuildContext context) async {
   final file = await readPlayStationLibrary(context);
   if (file == null || !context.mounted) return;

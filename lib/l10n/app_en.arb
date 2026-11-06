@@ -3162,7 +3162,6 @@
   "adminClear": "Clear",
   "adminContentRemoved": "Removed",
   "adminProfileCleared": "Profile cleared",
-  "psnImportFrom": "Import from PlayStation",
   "psnDisclosureTitle": "Import from PlayStation",
   "psnDisclosureBody": "This import is not made or approved by Sony. PlayStation has no official sign-in for apps like this, so Gamebit uses the same unofficial route as other trophy apps. Sony's terms forbid automated access to PlayStation Network, and Sony can block it or act on your account at any time. You sign in on Sony's own page and Gamebit does not read or keep your password. The sign-in Sony hands back is kept encrypted on this phone only, so the next sync needs no password; you can forget it at any time. Syncing is limited to once a day. The games, play time and trophy lists you import are saved to your Gamebit account, and other players see your trophies only while Show Trophies is on in Privacy.",
   "psnDisclosureContinue": "I understand, sign in",
@@ -3263,11 +3262,11 @@
     }
   },
   "trophiesLoadFailed": "Could not load the trophies. Try again.",
-  "trophiesNoneOwn": "No trophy list for this game yet. Sync with PlayStation in Settings, Data: games you have earned trophies in get their list.",
+  "trophiesNoneOwn": "No trophy list for this game yet. Sync PlayStation in Settings, Account: games you have earned trophies in get their list.",
   "trophiesNoneOther": "No trophies to show for this game.",
   "viewTrophies": "View trophies",
   "refreshTrophies": "Refresh trophies",
-  "noTrophiesOwn": "Sync with PlayStation in Settings, Data, to see your trophies here.",
+  "noTrophiesOwn": "Connect and sync PlayStation in Settings, Account, to see your trophies here.",
   "showTrophies": "Show Trophies",
   "showTrophiesSubtitle": "Allow other players to view your PlayStation trophies on your public profile.",
   "privacyTrophiesText": "Your PlayStation trophies, unless you turn off {setting} above.",
@@ -3284,5 +3283,14 @@
   "trophiesLoadFromPlayStation": "Load from PlayStation",
   "psnSyncButton": "Sync PlayStation",
   "playStation": "PlayStation",
-  "playStationSynced": "Synced from PlayStation"
+  "playStationSynced": "Synced from PlayStation",
+  "psnConnectedSynced": "Connected · synced {when}",
+  "@psnConnectedSynced": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "disconnectPlayStationBody": "This phone forgets your PlayStation sign-in. The games and trophies you already synced stay in your library; sign in again to sync more."
 }
