@@ -24,8 +24,10 @@ import 'package:checkpoint/models/library_stats.dart';
 import 'package:checkpoint/models/log_entry.dart';
 import 'package:checkpoint/models/milestone.dart';
 import 'package:checkpoint/models/public_profile.dart';
+import 'package:checkpoint/models/push.dart';
 import 'package:checkpoint/models/release_reminders.dart';
 import 'package:checkpoint/models/results_page.dart';
+import 'package:checkpoint/models/share_link.dart';
 import 'package:checkpoint/models/studio_filters.dart';
 import 'package:checkpoint/models/social_user.dart';
 import 'package:checkpoint/models/trophy.dart';
@@ -39,6 +41,7 @@ import 'package:checkpoint/services/checkpoint_repository.dart';
 import 'package:checkpoint/services/connectivity_service.dart';
 import 'package:checkpoint/services/game_api_service.dart';
 import 'package:checkpoint/services/game_price_api_service.dart';
+import 'package:checkpoint/services/push_service.dart';
 import 'package:checkpoint/services/release_notifier.dart';
 import 'package:checkpoint/services/steam_link_service.dart';
 import 'package:checkpoint/state/company_store.dart';
@@ -1192,6 +1195,41 @@ class FakeRepository implements CheckpointRepository {
     discussionReports.add((threadId: threadId, postId: postId, reason: reason));
   }
 
+  /// Push notifications: the phones registered on the server (by token), what the
+  /// member wants, and a switch to make the server unreachable.
+  final Map<String, ({String platform, String language, String country})> pushDevices = {};
+  NotificationSettings notificationSettings = const NotificationSettings();
+  bool pushDown = false;
+
+  @override
+  Future<void> registerPushDevice({
+    required String token,
+    required String platform,
+    required String language,
+    required String country,
+  }) async {
+    if (pushDown) throw Exception('push is down');
+    pushDevices[token] = (platform: platform, language: language, country: country);
+  }
+
+  @override
+  Future<void> unregisterPushDevice(String token) async {
+    if (pushDown) throw Exception('push is down');
+    pushDevices.remove(token);
+  }
+
+  @override
+  Future<NotificationSettings> fetchNotificationSettings() async {
+    if (pushDown) throw Exception('push is down');
+    return notificationSettings;
+  }
+
+  @override
+  Future<void> saveNotificationSettings(NotificationSettings settings) async {
+    if (pushDown) throw Exception('push is down');
+    notificationSettings = settings;
+  }
+
   @override
   Future<void> blockMember(String userId) async {
     _discussionWrite();
@@ -2129,3 +2167,57 @@ GamePrice testPrice(
   expiry: expiry,
   historyLow: low == null ? null : Money(low, 'EUR'),
 );
+
+/// The phone's side of push notifications, answering from memory. [calls] says what
+/// the app asked of it, in order.
+class FakePushService implements PushService {
+  bool supported = true;
+
+  /// What [isPermitted] says now, and what asking the system answers.
+  bool permitted = false;
+  bool grant = true;
+
+  /// The phone's token; null is a phone with none.
+  String? tokenValue = 'token-1';
+
+  final List<String> calls = [];
+  final StreamController<String> refreshes = StreamController<String>.broadcast();
+  void Function(LinkTarget target)? opened;
+
+  /// A tap on a notification, as the system reports it.
+  void tap(LinkTarget target) => opened?.call(target);
+
+  @override
+  bool get isSupported => supported;
+
+  @override
+  Future<void> initialize({required void Function(LinkTarget target) onOpen}) async {
+    calls.add('initialize');
+    opened = onOpen;
+  }
+
+  @override
+  Future<PushPermission> requestPermission() async {
+    calls.add('permission');
+    permitted = grant;
+    return grant ? PushPermission.granted : PushPermission.denied;
+  }
+
+  @override
+  Future<bool> isPermitted() async => permitted;
+
+  @override
+  Future<String?> token() async {
+    calls.add('token');
+    return tokenValue;
+  }
+
+  @override
+  Stream<String> get tokenRefreshed => refreshes.stream;
+
+  @override
+  Future<void> deleteToken() async => calls.add('deleteToken');
+
+  @override
+  Future<void> openSystemSettings() async => calls.add('settings');
+}

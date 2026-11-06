@@ -13,6 +13,7 @@ import 'package:checkpoint/services/game_api_service.dart';
 import 'package:checkpoint/services/game_price_api_service.dart';
 import 'package:checkpoint/services/news_api_service.dart';
 import 'package:checkpoint/services/playstation/psn_device.dart';
+import 'package:checkpoint/services/push_service.dart';
 import 'package:checkpoint/services/local_cache.dart';
 import 'package:checkpoint/services/release_notifier.dart';
 import 'package:checkpoint/services/steam_link_service.dart';
@@ -36,6 +37,7 @@ import 'package:checkpoint/state/nav_store.dart';
 import 'package:checkpoint/state/news_store.dart';
 import 'package:checkpoint/state/onboarding_store.dart';
 import 'package:checkpoint/state/profile_store.dart';
+import 'package:checkpoint/state/push_store.dart';
 import 'package:checkpoint/state/public_achievements_store.dart';
 import 'package:checkpoint/state/public_trophies_store.dart';
 import 'package:checkpoint/state/public_library_store.dart';
@@ -121,6 +123,11 @@ import 'package:checkpoint/state/wishlist_prices_store.dart';
 ///    (the `game-prices` Edge Function, IsThereAnyDeal). It reads
 ///    [LibraryStore] for the wishlist and follows [AuthStore] so a sign-out
 ///    drops it; nothing depends on it but the screens that show prices;
+///  * [PushStore] holds whether this phone gets the member's push notifications
+///    and which kinds (the server sends them: price drops of the wishlist,
+///    replies to the member's threads). It follows [AuthStore], which tells it
+///    (a callback set here) to let the phone go before a sign-out; a tapped
+///    notification is opened through [SharedLinkStore] like a link;
 ///  * [MilestonesStore] holds the signed-in member's own milestones. It reads
 ///    [LibraryStore], [ListsStore], [ProfileStore] and [AuthStore] to tell how
 ///    far they are and when to have the server award new ones; nothing depends
@@ -134,6 +141,7 @@ class AppStores {
     GameApiService? apiService,
     NewsApiService? newsApi,
     GamePriceApiService? priceApi,
+    PushService? pushService,
     DiscussionApiService? discussionApi,
     AdminApiService? adminApi,
     ConnectivityService? connectivity,
@@ -146,8 +154,13 @@ class AppStores {
     links = SharedLinkStore(repository: repository, initial: initialLink);
     final network = connectivity ?? ConnectivityService();
     auth = AuthStore(authService)
-      // The saved PlayStation sign-in is the member's, not the phone's.
-      ..onLogOut = (userId) => unawaited(PsnDevice().forget(userId));
+      // The saved PlayStation sign-in is the member's, not the phone's, and neither
+      // are their push notifications: the server lets this phone go while the
+      // session still works.
+      ..onLogOut = (userId) async {
+        unawaited(PsnDevice().forget(userId));
+        await push.unregisterForLogOut(userId);
+      };
     nav = NavStore();
     profile = ProfileStore(
       repository: repository,
@@ -235,6 +248,12 @@ class AppStores {
       onOpenGame: (igdbId) => links.open(GameLink(igdbId)),
     );
     onboarding = OnboardingStore(auth: auth, library: library);
+    push = PushStore(
+      repository: repository,
+      auth: auth,
+      service: pushService ?? FirebasePushService(),
+      onOpen: links.open,
+    );
     wishlistPrices = WishlistPricesStore(
       auth: auth,
       library: library,
@@ -288,6 +307,7 @@ class AppStores {
   late final ReleaseRemindersStore releaseReminders;
   late final OnboardingStore onboarding;
   late final WishlistPricesStore wishlistPrices;
+  late final PushStore push;
   late final MilestonesStore milestones;
 
   /// A member was blocked or unblocked: what the stores hold about members is
@@ -336,10 +356,12 @@ class AppStores {
       releaseAlerts.initialize(),
       onboarding.initialize(),
       releaseReminders.initialize(),
+      push.initialize(),
     ]);
   }
 
   void dispose() {
+    push.dispose();
     wishlistPrices.dispose();
     milestones.dispose();
     links.dispose();

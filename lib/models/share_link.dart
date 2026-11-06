@@ -20,6 +20,7 @@ sealed class LinkTarget {
     return switch (kind) {
       'u' => MemberLink(id),
       'list' => ListLink(id),
+      'thread' => ThreadLink(id),
       _ => null,
     };
   }
@@ -61,6 +62,19 @@ class ListLink extends LinkTarget {
   bool operator ==(Object other) => other is ListLink && other.listId == listId;
   @override
   int get hashCode => listId.hashCode;
+}
+
+/// A discussion thread: what a push notification of a reply opens.
+@immutable
+class ThreadLink extends LinkTarget {
+  const ThreadLink(this.threadId);
+  final String threadId;
+  @override
+  String get path => '/thread/$threadId';
+  @override
+  bool operator ==(Object other) => other is ThreadLink && other.threadId == threadId;
+  @override
+  int get hashCode => threadId.hashCode;
 }
 
 /// Where the web app is served, for links that open it. Set it for the native

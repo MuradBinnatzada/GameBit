@@ -208,20 +208,26 @@ void main() {
       await tester.pump();
     }
 
+    /// The reminders' switch: the section has the push notifications' above it.
+    final reminders = find.descendant(
+      of: find.widgetWithText(SwitchListTile, 'Release day reminders'),
+      matching: find.byType(Switch),
+    );
+
     Future<void> flip(WidgetTester tester) async {
-      await tester.tap(find.byType(Switch));
+      await tester.tap(reminders);
       await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
       await tester.pump();
     }
 
     testWidgets('a switch turns the reminders on and says how many are set', (tester) async {
       await open(tester);
-      expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);
+      expect(tester.widget<Switch>(reminders).value, isFalse);
       expect(find.textContaining('reminders set'), findsNothing);
 
       await flip(tester);
 
-      expect(tester.widget<Switch>(find.byType(Switch)).value, isTrue);
+      expect(tester.widget<Switch>(reminders).value, isTrue);
       expect(find.text('2 reminders set'), findsOneWidget);
       expect(device.scheduled, hasLength(1));
     });
@@ -232,7 +238,7 @@ void main() {
 
       await flip(tester);
 
-      expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);
+      expect(tester.widget<Switch>(reminders).value, isFalse);
       expect(find.textContaining('turned off for Gamebit'), findsOneWidget);
       await tester.tap(find.text('Open device settings'));
       await tester.pump();
@@ -244,7 +250,7 @@ void main() {
       await open(tester);
 
       expect(find.text('Reminders are available in the Android and iOS apps.'), findsOneWidget);
-      expect(tester.widget<Switch>(find.byType(Switch)).onChanged, isNull);
+      expect(tester.widget<Switch>(reminders).onChanged, isNull);
     });
 
     testWidgets('signed out, it asks to log in first', (tester) async {
@@ -254,7 +260,7 @@ void main() {
       await open(tester);
 
       expect(find.text('Log in to set reminders for the games on your wishlist.'), findsOneWidget);
-      expect(tester.widget<Switch>(find.byType(Switch)).onChanged, isNull);
+      expect(tester.widget<Switch>(reminders).onChanged, isNull);
     });
   });
 }

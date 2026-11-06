@@ -9,6 +9,7 @@ import 'package:checkpoint/l10n/l10n.dart';
 import 'package:checkpoint/models/game.dart';
 import 'package:checkpoint/models/share_link.dart';
 import 'package:checkpoint/screens/discussions/discussions_screen.dart';
+import 'package:checkpoint/screens/discussions/thread_screen.dart';
 import 'package:checkpoint/screens/lists/lists_screen.dart';
 import 'package:checkpoint/screens/onboarding/onboarding_screen.dart';
 import 'package:checkpoint/screens/home/home_screen.dart';
@@ -193,6 +194,8 @@ class _AppShellState extends State<AppShell> {
           openProfile(context, userId: userId);
         case ListLink(:final listId):
           openList(context, listId);
+        case ThreadLink(:final threadId):
+          openDiscussionThread(context, threadId);
       }
       _links.clear();
     } finally {

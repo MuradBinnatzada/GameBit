@@ -199,12 +199,20 @@ class AuthStore extends ChangeNotifier {
   Future<void> signInWithApple() => _service.signInWithApple();
 
   /// Told the id of the account a [logOut] is about to sign out, so what the phone
-  /// keeps for it alone (a saved PlayStation sign-in) goes with it.
-  void Function(String userId)? onLogOut;
+  /// keeps for it alone (a saved PlayStation sign-in) goes with it, and what the
+  /// server keeps for this phone (its push token) is let go while the session still
+  /// works. A future it returns is waited for, for a few seconds at most.
+  FutureOr<void> Function(String userId)? onLogOut;
 
   Future<void> logOut() async {
     final leaving = _user?.id;
-    if (leaving != null) onLogOut?.call(leaving);
+    if (leaving != null) {
+      try {
+        await Future<void>.value(onLogOut?.call(leaving)).timeout(const Duration(seconds: 4));
+      } catch (e) {
+        debugPrint('Leaving the account: $e');
+      }
+    }
     if (_sessionPending) {
       // No live session to end: just forget the saved one.
       await _service.discardPersistedSession();

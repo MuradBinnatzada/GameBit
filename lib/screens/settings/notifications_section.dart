@@ -3,13 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:checkpoint/l10n/l10n.dart';
+import 'package:checkpoint/screens/settings/push_panel.dart';
 import 'package:checkpoint/state/release_reminders_store.dart';
 import 'package:checkpoint/state/store_scope.dart';
 import 'package:checkpoint/theme/palette.dart';
 import 'package:checkpoint/widgets/panel.dart';
 
-/// Notifications: the release day reminders for the wishlist (see
-/// [ReleaseRemindersStore]), a switch with what it needs said under it.
+/// Notifications: push notifications from the server (see [PushNotificationsPanel])
+/// and the release day reminders for the wishlist (see [ReleaseRemindersStore]),
+/// each a switch with what it needs said under it.
 class NotificationsSection extends StatefulWidget {
   const NotificationsSection({super.key});
 
@@ -40,6 +42,8 @@ class _NotificationsSectionState extends State<NotificationsSection> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
       children: [
+        const PushNotificationsPanel(),
+        const SizedBox(height: 14),
         Panel(
           title: l10n.releaseRemindersTitle,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

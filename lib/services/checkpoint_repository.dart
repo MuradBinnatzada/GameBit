@@ -22,6 +22,7 @@ import 'package:checkpoint/models/library_stats.dart';
 import 'package:checkpoint/models/log_entry.dart';
 import 'package:checkpoint/models/milestone.dart';
 import 'package:checkpoint/models/public_profile.dart';
+import 'package:checkpoint/models/push.dart';
 import 'package:checkpoint/models/results_page.dart';
 import 'package:checkpoint/models/social_user.dart';
 import 'package:checkpoint/models/trophy.dart';
@@ -36,6 +37,7 @@ part 'repository/public_member_queries.dart';
 part 'repository/review_queries.dart';
 part 'repository/discussion_queries.dart';
 part 'repository/moderation_queries.dart';
+part 'repository/push_queries.dart';
 part 'repository/list_queries.dart';
 part 'repository/row_mappers.dart';
 
@@ -142,6 +144,7 @@ class CheckpointRepository extends _RepositoryBase
         _ReviewQueries,
         _DiscussionQueries,
         _ModerationQueries,
+        _PushQueries,
         _ListQueries {
   CheckpointRepository(super._client);
 

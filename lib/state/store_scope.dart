@@ -21,6 +21,7 @@ import 'package:checkpoint/state/nav_store.dart';
 import 'package:checkpoint/state/news_store.dart';
 import 'package:checkpoint/state/onboarding_store.dart';
 import 'package:checkpoint/state/profile_store.dart';
+import 'package:checkpoint/state/push_store.dart';
 import 'package:checkpoint/state/public_achievements_store.dart';
 import 'package:checkpoint/state/public_trophies_store.dart';
 import 'package:checkpoint/state/public_library_store.dart';
@@ -126,7 +127,10 @@ class AppStoresScope extends StatelessWidget {
                                                               store: stores.publicTrophies,
                                                               child: StoreScope<WishlistPricesStore>(
                                                                 store: stores.wishlistPrices,
-                                                                child: child,
+                                                                child: StoreScope<PushStore>(
+                                                                  store: stores.push,
+                                                                  child: child,
+                                                                ),
                                                               ),
                                                             ),
                                                           ),

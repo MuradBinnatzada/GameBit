@@ -29,6 +29,8 @@ abstract final class Db {
   /// The PlayStation trophies of a member (20261106120000_playstation_trophy_lists.sql):
   /// one row per game, and one game's list. Both give nothing for another member
   /// who does not share their trophies.
+  static const rpcRegisterPushDevice = 'register_push_device';
+  static const rpcUnregisterPushDevice = 'unregister_push_device';
   static const rpcTrophySummary = 'public_trophy_summary';
   static const rpcGameTrophies = 'public_game_trophies';
 
@@ -269,4 +271,9 @@ abstract final class Db {
 
   /// `public_followers` / `public_following`: when the follow happened.
   static const followedAt = 'followed_at';
+
+  /// `notification_settings`: which push notifications the member wants.
+  static const notificationSettings = 'notification_settings';
+  static const priceDrops = 'price_drops';
+  static const threadReplies = 'thread_replies';
 }

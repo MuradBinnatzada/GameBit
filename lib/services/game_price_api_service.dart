@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:checkpoint/models/game_price.dart';
+import 'package:checkpoint/utils/region.dart';
 
 /// Wishlist prices, from the `game-prices` Supabase Edge Function (which asks
 /// IsThereAnyDeal). Only reachable by signed-in members. The function names the
@@ -18,12 +19,7 @@ class GamePriceApiService {
   final String? _country;
 
   /// The two letters of the device's region ("DE"), "US" when it has none.
-  String get country {
-    final code = _country ?? PlatformDispatcher.instance.locale.countryCode;
-    return code != null && RegExp(r'^[A-Za-z]{2}$').hasMatch(code)
-        ? code.toUpperCase()
-        : 'US';
-  }
+  String get country => deviceCountry(override: _country);
 
   /// The best price of each of [gameIds] (at most [batchSize]), null for a game
   /// with none; null when the request failed.

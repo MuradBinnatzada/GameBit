@@ -4,6 +4,7 @@ import 'package:timezone/timezone.dart' as tz;
 
 import 'package:checkpoint/l10n/l10n.dart';
 import 'package:checkpoint/models/release_reminders.dart';
+import 'package:checkpoint/services/notification_taps.dart';
 
 /// Shows the release day reminders on the device (see [ReleaseRemindersStore]).
 /// Everything stays on the device: nothing here talks to a server.
@@ -60,8 +61,9 @@ class LocalReleaseNotifier implements ReleaseNotifier {
           requestSoundPermission: false,
         ),
       ),
-      onDidReceiveNotificationResponse: (response) => _open(response.payload),
+      onDidReceiveNotificationResponse: NotificationTaps.dispatch,
     );
+    NotificationTaps.listen(this, _open);
     _ready = true;
     final launch = await _plugin.getNotificationAppLaunchDetails();
     if (launch?.didNotificationLaunchApp ?? false) _open(launch?.notificationResponse?.payload);

@@ -69,6 +69,34 @@ abstract final class AppConfig {
     defaultValue: 'MDk1MTUxNTktNzIzNy00MzcwLTliNDAtMzgwNmU2N2MwODkxOnVjUGprYTV0bnRCMktxc1A=',
   );
 
+  /// The Firebase project that sends push notifications (price drops, replies),
+  /// from its `google-services.json` (Android) and `GoogleService-Info.plist`
+  /// (iOS): project id, API key, the sender id (`project_number` / `GCM_SENDER_ID`)
+  /// and the app id of each platform (`mobilesdk_app_id` / `GOOGLE_APP_ID`).
+  /// The defaults are the Gamebit project's (client configuration, not secrets: every
+  /// app carries it); `--dart-define=FIREBASE_...` replaces them for a build (an empty
+  /// project id switches push off, and Settings says so; README, "Push notifications").
+  static const firebaseProjectId = String.fromEnvironment(
+    'FIREBASE_PROJECT_ID',
+    defaultValue: 'gamebit-9523b',
+  );
+  static const firebaseApiKey = String.fromEnvironment(
+    'FIREBASE_API_KEY',
+    defaultValue: 'AIzaSyA2otawT7t8_RgKRCM5esImGABNV8tX9vk',
+  );
+  static const firebaseSenderId = String.fromEnvironment(
+    'FIREBASE_SENDER_ID',
+    defaultValue: '46116590395',
+  );
+  static const firebaseAndroidAppId = String.fromEnvironment(
+    'FIREBASE_ANDROID_APP_ID',
+    defaultValue: '1:46116590395:android:d17b9e63fabbc58e3c9d1e',
+  );
+  static const firebaseIosAppId = String.fromEnvironment(
+    'FIREBASE_IOS_APP_ID',
+    defaultValue: '1:46116590395:ios:a9f4469fde89f8a03c9d1e',
+  );
+
   static const _psnSyncHours = int.fromEnvironment('PSN_SYNC_COOLDOWN_HOURS', defaultValue: -1);
 
   /// The least time between two PlayStation syncs of one member on one phone. A
