@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:checkpoint/models/game.dart';
+import 'package:checkpoint/models/trophy.dart';
 import 'package:checkpoint/screens/game_detail/game_detail_screen.dart';
 import 'package:checkpoint/services/local_cache.dart';
 import 'package:checkpoint/state/app_stores.dart';
@@ -256,6 +257,43 @@ void main() {
       await settle(tester);
       expect(find.text('100% complete'), findsOneWidget);
       expect(find.text('All achievements'), findsNothing);
+    });
+
+    testWidgets('a game with PlayStation trophies has no switch: the trophies say it', (tester) async {
+      await open(
+        tester,
+        hades(on: GamePlatform.ps5).copyWith(trophiesEarned: 12, trophiesTotal: 40),
+        const GameDetailScreen(gameId: 'g1'),
+      );
+      expect(find.text('Platinum trophy'), findsNothing);
+      expect(find.text('12 of 40'), findsOneWidget);
+    });
+
+    testWidgets('a game with no trophies read still has the switch: the member says so themselves', (tester) async {
+      await open(
+        tester,
+        hades(on: GamePlatform.ps5),
+        const GameDetailScreen(gameId: 'g1'),
+      );
+      expect(find.text('Platinum trophy'), findsOneWidget);
+      expect(find.text('Trophies'), findsNothing);
+    });
+
+    testWidgets('the trophy card opens the list of the game', (tester) async {
+      repo.gameTrophies[('u1', 'g1')] = const [
+        Trophy(id: 1, grade: TrophyGrade.gold, name: 'Escape', detail: 'Leave the House', earned: true),
+      ];
+      await open(
+        tester,
+        hades(on: GamePlatform.ps5).copyWith(trophiesEarned: 1, trophiesTotal: 1),
+        const GameDetailScreen(gameId: 'g1'),
+      );
+      await tester.ensureVisible(find.text('Trophies'));
+      await tester.tap(find.text('Trophies'));
+      await settle(tester);
+      expect(find.byType(Dialog), findsOneWidget);
+      expect(find.text('Escape'), findsOneWidget);
+      expect(find.text('Leave the House'), findsOneWidget);
     });
 
     testWidgets('a wishlisted game has no switch', (tester) async {

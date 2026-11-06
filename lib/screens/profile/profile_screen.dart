@@ -19,6 +19,7 @@ import 'package:checkpoint/state/library_view_store.dart';
 import 'package:checkpoint/state/milestones_store.dart';
 import 'package:checkpoint/state/profile_store.dart';
 import 'package:checkpoint/state/public_achievements_store.dart';
+import 'package:checkpoint/state/public_trophies_store.dart';
 import 'package:checkpoint/state/social_graph_store.dart';
 import 'package:checkpoint/state/store_scope.dart';
 import 'package:checkpoint/utils/navigation.dart';
@@ -40,6 +41,7 @@ class ProfileScreen extends StatelessWidget {
     final steamConnected = context.read<ProfileStore>().steamConnected;
     final achievements = context.read<PublicAchievementsStore>();
     return Future.wait([
+      context.read<PublicTrophiesStore>().loadSummary(userId, force: true),
       refreshMyData(context),
       context.read<MilestonesStore>().refresh(),
       if (steamConnected) ...[
@@ -150,6 +152,8 @@ class ProfileScreen extends StatelessWidget {
               // Your own achievements show whatever the privacy setting says; that
               // only hides them from others.
               showAchievements: profileStore.steamConnected,
+              // Your own trophies show whatever the privacy setting says.
+              showTrophies: true,
               milestones: MilestonesSection(
                 earned: milestones.earned,
                 progress: milestones.progress,

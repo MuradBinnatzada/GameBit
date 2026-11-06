@@ -7,9 +7,12 @@ import 'package:share_plus/share_plus.dart';
 
 import 'package:checkpoint/l10n/l10n.dart';
 import 'package:checkpoint/models/library_csv.dart';
+import 'package:checkpoint/screens/settings/psn_import.dart';
 import 'package:checkpoint/services/game_api_service.dart';
 import 'package:checkpoint/state/library_import.dart';
+import 'package:checkpoint/state/auth_store.dart';
 import 'package:checkpoint/state/library_store.dart';
+import 'package:checkpoint/state/public_trophies_store.dart';
 import 'package:checkpoint/state/store_scope.dart';
 import 'package:checkpoint/theme/palette.dart';
 import 'package:checkpoint/widgets/panel.dart';
@@ -130,6 +133,12 @@ class DataSection extends StatelessWidget {
               label: context.l10n.importFromCsv,
               onTap: () => importLibraryFile(context, pick: pickFile),
             ),
+            if (psnImportAvailable())
+              ProfileLink(
+                icon: Icons.sports_esports_rounded,
+                label: context.l10n.psnImportFrom,
+                onTap: () => importFromPlayStation(context),
+              ),
           ],
         ),
       ],
@@ -160,6 +169,18 @@ Future<void> importLibraryFile(
   );
 }
 
+/// Reads the member's PlayStation account (see `psn_import.dart`) and opens the
+/// import of what it holds.
+Future<void> importFromPlayStation(BuildContext context) async {
+  final file = await readPlayStationLibrary(context);
+  if (file == null || !context.mounted) return;
+  final trophies = context.read<PublicTrophiesStore>();
+  final userId = context.read<AuthStore>().user?.id;
+  await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ImportScreen(file: file)));
+  // The import may have stored new trophy lists: the profile reads them again.
+  if (userId != null) trophies.refreshAfterSync(userId);
+}
+
 /// What a picked file holds, "Import N games", then the import as it goes and
 /// what it couldn't match.
 class ImportScreen extends StatefulWidget {
@@ -188,6 +209,7 @@ class _ImportScreenState extends State<ImportScreen> {
       rows: widget.file.rows,
       api: widget.api ?? GameApiService(),
       library: context.read<LibraryStore>(),
+      onRowImported: widget.file.onRowImported,
     )..addListener(() {
         if (mounted) setState(() {});
       });
@@ -209,7 +231,8 @@ class _ImportScreenState extends State<ImportScreen> {
             if (run == null) ...[
               Text(
                 file.rows.isEmpty
-                    ? context.l10n.importNothing
+                    // A PlayStation import has no file to be empty.
+                    ? (file.source == ImportSource.playstation ? context.l10n.psnNothingFound : context.l10n.importNothing)
                     : context.l10n.importGamesToImport(file.rows.length),
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
               ),
@@ -219,6 +242,17 @@ class _ImportScreenState extends State<ImportScreen> {
                   context.l10n.importGrouveeNote,
                   style: TextStyle(color: context.palette.accent, fontWeight: FontWeight.w600),
                 ),
+                const SizedBox(height: 6),
+              ],
+              if (file.source == ImportSource.playstation) ...[
+                Text(
+                  context.l10n.importPlaystationNote,
+                  style: TextStyle(color: context.palette.accent, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 6),
+              ],
+              for (final note in file.notes) ...[
+                Text(note, style: TextStyle(color: context.palette.danger, height: 1.35)),
                 const SizedBox(height: 6),
               ],
               Text(
@@ -271,7 +305,12 @@ class _ImportScreenState extends State<ImportScreen> {
                 for (final row in run.unmatched)
                   Padding(
                     padding: const EdgeInsets.only(top: 6),
-                    child: Text(context.l10n.importLine(row.line, row.title)),
+                    child: Text(
+                      // A PlayStation game has no line of a file to point at.
+                      file.source == ImportSource.playstation
+                          ? row.title
+                          : context.l10n.importLine(row.line, row.title),
+                    ),
                   ),
               ],
             ],

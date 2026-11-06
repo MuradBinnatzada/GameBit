@@ -9,6 +9,11 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 /// ID, a gamertag, a Discord or Instagram handle) proves nothing, lets anyone
 /// claim someone else's account, and is not offered. Add a service here only
 /// together with a sign-in the provider allows third parties to use.
+///
+/// The import from PlayStation (`lib/screens/settings/psn_import.dart`) is not
+/// one of these: it reads a member's lists on their phone through Sony's
+/// unofficial interface, proves nothing the server could check, and keeps no
+/// account on their profile.
 enum ConnectedService {
   steam('Steam', FontAwesomeIcons.steam, Color(0xFF66C0F4));
 

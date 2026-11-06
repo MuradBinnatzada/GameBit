@@ -3161,5 +3161,122 @@
   "adminRemove": "Remove",
   "adminClear": "Clear",
   "adminContentRemoved": "Removed",
-  "adminProfileCleared": "Profile cleared"
+  "adminProfileCleared": "Profile cleared",
+  "psnImportFrom": "Import from PlayStation",
+  "psnDisclosureTitle": "Import from PlayStation",
+  "psnDisclosureBody": "This import is not made or approved by Sony. PlayStation has no official sign-in for apps like this, so Gamebit uses the same unofficial route as other trophy apps. Sony's terms forbid automated access to PlayStation Network, and Sony can block it or act on your account at any time. You sign in on Sony's own page and Gamebit does not read or keep your password. The sign-in Sony hands back is kept encrypted on this phone only, so the next sync needs no password; you can forget it at any time. Syncing is limited to once a day. The games, play time and trophy lists you import are saved to your Gamebit account, and other players see your trophies only while Show Trophies is on in Privacy.",
+  "psnDisclosureContinue": "I understand, sign in",
+  "psnSignInTitle": "Sign in to PlayStation",
+  "psnSignInNote": "Sony's own page. Gamebit does not read or keep what you type here.",
+  "psnReading": "Reading your games and trophies…",
+  "psnErrorNotConfigured": "This version of Gamebit has no PlayStation import.",
+  "psnErrorSignIn": "PlayStation did not accept the sign-in. Try again.",
+  "psnErrorExpired": "Your PlayStation sign-in expired. Sign in again.",
+  "psnErrorListNotShared": "PlayStation would not share your list. Check your PlayStation privacy settings and try again.",
+  "psnErrorRateLimited": "PlayStation asked to slow down. Try again in a few minutes.",
+  "psnErrorUnavailable": "Could not reach PlayStation. Check your connection and try again.",
+  "psnErrorUnexpected": "PlayStation answered in a way Gamebit does not understand. Its unofficial interface may have changed; try again later.",
+  "psnPlayTimeMissing": "PlayStation did not share your play time, so hours were not imported.",
+  "psnTrophiesMissing": "PlayStation did not share your trophy list, so trophies were not imported.",
+  "psnImportOverLimit": "{count} more games were left out: an import takes {max}, most recently played first.",
+  "@psnImportOverLimit": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "importPlaystationNote": "Read from your PlayStation account: play time and trophies come with each game. Games already in your library keep their status.",
+  "trophiesLabel": "Trophies",
+  "trophiesProgress": "{earned} of {total}",
+  "@trophiesProgress": {
+    "placeholders": {
+      "earned": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "psnNothingFound": "PlayStation returned no games or trophies for this account. A new account has none yet; if yours should, check its PlayStation privacy settings.",
+  "psnResumeTitle": "Sync with PlayStation",
+  "psnResumeBody": "You are signed in to PlayStation on this phone. Gamebit will read your games, play time and trophies again. This is unofficial and limited to once a day.",
+  "psnResumeSync": "Sync now",
+  "psnForgetSignIn": "Forget sign-in",
+  "psnSignInForgotten": "PlayStation sign-in removed from this phone.",
+  "psnSyncLimitHours": "You already synced PlayStation. You can sync again in about {hours} h.",
+  "@psnSyncLimitHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "psnSyncLimitMinutes": "You already synced PlayStation. You can sync again in {minutes} min.",
+  "@psnSyncLimitMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "psnReadingTrophies": "Reading trophies… {done} of {total}",
+  "@psnReadingTrophies": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "psnTrophyListsCut": "Not every trophy list was read this time (PlayStation asked to slow down). The next sync reads the rest.",
+  "trophyGradeBronze": "Bronze",
+  "trophyGradeSilver": "Silver",
+  "trophyGradeGold": "Gold",
+  "trophyGradePlatinum": "Platinum",
+  "trophyRarityUltraRare": "Ultra rare",
+  "trophyRarityVeryRare": "Very rare",
+  "trophyRarityRare": "Rare",
+  "trophyRarityCommon": "Common",
+  "trophyEarnedRate": "{percent} of players",
+  "@trophyEarnedRate": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "trophySecretName": "Secret trophy",
+  "trophySecretDetail": "Earn it to see what it asks for.",
+  "trophyEarnedOn": "Earned {date}",
+  "@trophyEarnedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "trophiesLoadFailed": "Could not load the trophies. Try again.",
+  "trophiesNoneOwn": "No trophy list for this game yet. Sync with PlayStation in Settings, Data: games you have earned trophies in get their list.",
+  "trophiesNoneOther": "No trophies to show for this game.",
+  "viewTrophies": "View trophies",
+  "refreshTrophies": "Refresh trophies",
+  "noTrophiesOwn": "Sync with PlayStation in Settings, Data, to see your trophies here.",
+  "showTrophies": "Show Trophies",
+  "showTrophiesSubtitle": "Allow other players to view your PlayStation trophies on your public profile.",
+  "privacyTrophiesText": "Your PlayStation trophies, unless you turn off {setting} above.",
+  "@privacyTrophiesText": {
+    "placeholders": {
+      "setting": {
+        "type": "String"
+      }
+    }
+  },
+  "privacyTrophiesOffline": "Could not reach the server, so your trophies setting was not changed."
 }

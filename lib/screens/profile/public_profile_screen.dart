@@ -306,6 +306,7 @@ class _Loaded extends StatelessWidget {
       library: library,
       onStatus: (status) => openLibrary(status: status),
       showAchievements: showAchievements,
+      showTrophies: isSelf || profile.showTrophies,
       milestones: MilestonesSection(
         earned: milestones,
         own: isSelf,

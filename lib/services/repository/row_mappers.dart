@@ -22,6 +22,7 @@ UserProfile _profileFromRow(Map<String, dynamic> row, {User? fallbackUser}) {
     avatarUrl: _firstText([row[Db.avatarUrl]]),
     steamId: _firstText([row[Db.steamId]]),
     showSteamAchievements: row[Db.showSteamAchievements] != false,
+    showTrophies: row[Db.showTrophies] != false,
     flair: _flairFromRow(row),
     joined: _date(row[Db.createdAt]) ?? DateTime.now(),
     followers: 0,
@@ -114,6 +115,7 @@ PublicProfile _publicProfileFromRow(Map<String, dynamic> row) {
     steamConnected: row[Db.steamConnected] == true,
     // Only an explicit "no" hides them, as the column's default is "yes".
     showSteamAchievements: row[Db.showSteamAchievements] != false,
+    showTrophies: row[Db.showTrophies] != false,
     bio: _firstText([row[Db.bio]]),
     steamId: _firstText([row[Db.steamId]]),
     joined: _date(row[Db.joinedAt]),
@@ -163,6 +165,20 @@ GameAchievementSummary _achievementSummaryFromRow(Map<String, dynamic> row) =>
       unlocked: _int(row['unlocked']),
       total: _int(row['total']),
     );
+
+GameTrophySummary _trophySummaryFromRow(Map<String, dynamic> row) => GameTrophySummary(
+  gameId: '${row[Db.gameId]}',
+  title: _firstText([row[Db.title]]) ?? L10n.current.untitledGame,
+  coverUrl: _firstText([row[Db.coverUrl]]),
+  earned: _int(row['earned']),
+  total: _int(row['total']),
+  counts: TrophyCounts(
+    bronze: _int(row['bronze']),
+    silver: _int(row['silver']),
+    gold: _int(row['gold']),
+    platinum: _int(row['platinum']),
+  ),
+);
 
 Game _gameFromCatalogRow(Map<String, dynamic> row) {
   final id = '${row[Db.id]}';
@@ -215,6 +231,8 @@ Game _gameFromUserGameRow(Map<String, dynamic> row) {
     review: _firstText([row[Db.review]]) ?? '',
     stillPlaying: row[Db.stillPlaying] == true,
     perfected: row[Db.perfected] == true,
+    trophiesEarned: _intOrNull(row[Db.trophiesEarned]),
+    trophiesTotal: _intOrNull(row[Db.trophiesTotal]),
     // `achievements` is intentionally not read here: fetchUserGames doesn't
     // select it. See fetchGameAchievements.
   ).withBackdrop(_firstText([row[Db.customBackdropUrl]])).withCompletedAt(_date(row[Db.completedAt])).withCompletionTime(_completionTimeFromEmbed(row[Db.completionTimes]));

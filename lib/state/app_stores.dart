@@ -11,6 +11,7 @@ import 'package:checkpoint/services/connectivity_service.dart';
 import 'package:checkpoint/services/discussion_api_service.dart';
 import 'package:checkpoint/services/game_api_service.dart';
 import 'package:checkpoint/services/news_api_service.dart';
+import 'package:checkpoint/services/playstation/psn_device.dart';
 import 'package:checkpoint/services/local_cache.dart';
 import 'package:checkpoint/services/release_notifier.dart';
 import 'package:checkpoint/services/steam_link_service.dart';
@@ -35,6 +36,7 @@ import 'package:checkpoint/state/news_store.dart';
 import 'package:checkpoint/state/onboarding_store.dart';
 import 'package:checkpoint/state/profile_store.dart';
 import 'package:checkpoint/state/public_achievements_store.dart';
+import 'package:checkpoint/state/public_trophies_store.dart';
 import 'package:checkpoint/state/public_library_store.dart';
 import 'package:checkpoint/state/public_profile_store.dart';
 import 'package:checkpoint/state/release_alerts_store.dart';
@@ -136,7 +138,9 @@ class AppStores {
     final localCache = cache ?? LocalCache();
     links = SharedLinkStore(repository: repository, initial: initialLink);
     final network = connectivity ?? ConnectivityService();
-    auth = AuthStore(authService);
+    auth = AuthStore(authService)
+      // The saved PlayStation sign-in is the member's, not the phone's.
+      ..onLogOut = (userId) => unawaited(PsnDevice().forget(userId));
     nav = NavStore();
     profile = ProfileStore(
       repository: repository,
@@ -182,6 +186,7 @@ class AppStores {
         if (auth.user?.id == userId) library.adoptAchievements(gameId, list);
       },
     );
+    publicTrophies = PublicTrophiesStore(repository: repository, auth: auth);
     library = LibraryStore(
       repository: repository,
       auth: auth,
@@ -262,6 +267,7 @@ class AppStores {
   late final FriendsFeedStore friendsFeed;
   late final CommunityTimesStore communityTimes;
   late final PublicAchievementsStore publicAchievements;
+  late final PublicTrophiesStore publicTrophies;
   late final LibraryStore library;
   late final LibraryAttributesStore libraryAttributes;
   late final LibraryViewStore libraryView;
@@ -305,6 +311,7 @@ class AppStores {
     friendsFeed.initialize();
     communityTimes.initialize();
     publicAchievements.initialize();
+    publicTrophies.initialize();
     libraryAttributes.initialize();
     lists.initialize();
     milestones.initialize();
@@ -325,6 +332,7 @@ class AppStores {
     onboarding.dispose();
     releaseAlerts.dispose();
     lists.dispose();
+    publicTrophies.dispose();
     publicAchievements.dispose();
     friendsFeed.dispose();
     communityTimes.dispose();

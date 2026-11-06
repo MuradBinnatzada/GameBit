@@ -198,7 +198,13 @@ class AuthStore extends ChangeNotifier {
 
   Future<void> signInWithApple() => _service.signInWithApple();
 
+  /// Told the id of the account a [logOut] is about to sign out, so what the phone
+  /// keeps for it alone (a saved PlayStation sign-in) goes with it.
+  void Function(String userId)? onLogOut;
+
   Future<void> logOut() async {
+    final leaving = _user?.id;
+    if (leaving != null) onLogOut?.call(leaving);
     if (_sessionPending) {
       // No live session to end: just forget the saved one.
       await _service.discardPersistedSession();

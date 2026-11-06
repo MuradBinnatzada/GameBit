@@ -12,6 +12,8 @@
 /// source; a staging key belongs in the build command or the CI secrets anyway.
 library;
 
+import 'package:flutter/foundation.dart' show kDebugMode;
+
 abstract final class AppConfig {
   static const productionSupabaseUrl = 'https://nmbarqhvcjgyuwreebda.supabase.co';
   static const _productionPublishableKey =
@@ -55,6 +57,23 @@ abstract final class AppConfig {
     'CHECKPOINT_CONTACT_EMAIL',
     defaultValue: 'muradbinnetzade14@gmail.com',
   );
+
+  /// The sign-in client of the unofficial PlayStation import, as the `Basic`
+  /// credential (`client id:secret` in base64) that PlayStation's own phone app
+  /// and the open-source PSN libraries use. Empty: the build has no PlayStation
+  /// import, and Settings does not offer it. It is not kept in the source: pass
+  /// `--dart-define=PSN_CLIENT_BASIC=<credential>` to a build that should have it
+  /// (README, "PlayStation import").
+  static const psnClientBasic = String.fromEnvironment('PSN_CLIENT_BASIC');
+
+  static const _psnSyncHours = int.fromEnvironment('PSN_SYNC_COOLDOWN_HOURS', defaultValue: -1);
+
+  /// The least time between two PlayStation syncs of one member on one phone. A
+  /// day for a release build, so Sony is asked about an account at most once a
+  /// day; none for a debug build, so it can be tried again and again. Either is
+  /// replaced by `--dart-define=PSN_SYNC_COOLDOWN_HOURS=<hours>` (0: no limit).
+  static Duration get psnSyncCooldown =>
+      _psnSyncHours >= 0 ? Duration(hours: _psnSyncHours) : (kDebugMode ? Duration.zero : const Duration(hours: 24));
 
   static Uri get privacyUri => Uri.parse('$docsUrl/privacy.html');
   static Uri get termsUri => Uri.parse('$docsUrl/terms.html');

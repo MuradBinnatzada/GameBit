@@ -12,6 +12,7 @@ import 'package:checkpoint/models/game_details.dart';
 import 'package:checkpoint/models/library_stats.dart';
 import 'package:checkpoint/models/limits.dart';
 import 'package:checkpoint/models/log_entry.dart';
+import 'package:checkpoint/models/trophy.dart';
 import 'package:checkpoint/services/checkpoint_repository.dart';
 import 'package:checkpoint/services/connection_failure.dart';
 import 'package:checkpoint/services/connectivity_service.dart';

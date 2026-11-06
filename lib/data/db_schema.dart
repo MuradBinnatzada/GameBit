@@ -26,6 +26,12 @@ abstract final class Db {
   static const rpcAchievementSummary = 'public_achievement_summary';
   static const rpcGameAchievements = 'public_game_achievements';
 
+  /// The PlayStation trophies of a member (20261106120000_playstation_trophy_lists.sql):
+  /// one row per game, and one game's list. Both give nothing for another member
+  /// who does not share their trophies.
+  static const rpcTrophySummary = 'public_trophy_summary';
+  static const rpcGameTrophies = 'public_game_trophies';
+
   /// The members the signed-in one follows who have a game, with their status
   /// and rating: the Friends panel on a game's screen.
   static const rpcFollowingGameActivity = 'following_game_activity';
@@ -132,6 +138,9 @@ abstract final class Db {
   /// Privacy). Written on your own `profiles` row, readable in `public_profiles`.
   static const showSteamAchievements = 'show_steam_achievements';
 
+  /// The same for the member's PlayStation trophies (Settings > Privacy).
+  static const showTrophies = 'show_trophies';
+
   /// What the member shows off: a frame id, the milestone whose title shows
   /// under their name, and up to three milestones. Written on your own
   /// `profiles` row (a trigger refuses what you haven't unlocked), readable in
@@ -212,6 +221,17 @@ abstract final class Db {
   /// `user_games` (and `public_user_games`): the member got everything out of
   /// the game, a Platinum trophy, every achievement or 100% (`PerfectMark`).
   static const perfected = 'perfected';
+
+  /// `user_games`: the PlayStation trophies the member has earned in the game,
+  /// out of how many it has (the import from PlayStation writes them). NULL:
+  /// never imported. Not in `public_user_games`: only the owner reads them.
+  static const trophiesEarned = 'trophies_earned';
+  static const trophiesTotal = 'trophies_total';
+
+  /// `user_games`: the whole trophy list of the game (jsonb, see `Trophy`), when
+  /// an import from PlayStation read it. Not in `public_user_games`: other members
+  /// get it only through `public_game_trophies`, and only when the owner shares.
+  static const trophies = 'trophies';
   static const reviewMaxLength = 2000;
 
   /// `games`: the day the game first came out, from IGDB; NULL when unknown.

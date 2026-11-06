@@ -49,6 +49,8 @@ mixin _LibraryQueries on _RepositoryBase {
           ${Db.review},
           ${Db.stillPlaying},
           ${Db.perfected},
+          ${Db.trophiesEarned},
+          ${Db.trophiesTotal},
           ${Db.completionTimes} (
             ${Db.category},
             ${Db.minutes}
@@ -252,6 +254,8 @@ mixin _LibraryQueries on _RepositoryBase {
     String review = '',
     bool stillPlaying = false,
     bool perfected = false,
+    int? trophiesEarned,
+    int? trophiesTotal,
   }) async {
     await _client.from(Db.userGames).upsert({
       Db.userId: userId,
@@ -269,6 +273,10 @@ mixin _LibraryQueries on _RepositoryBase {
       // The trigger clears it for any status but completed.
       Db.stillPlaying: stillPlaying && status == GameStatus.completed,
       Db.perfected: perfected,
+      // Left out while there are none, so a save never clears what an import
+      // from PlayStation wrote (an upsert only touches the columns it names).
+      Db.trophiesEarned: ?trophiesEarned,
+      Db.trophiesTotal: ?trophiesTotal,
     }, onConflict: '${Db.userId},${Db.gameId}');
   }
 

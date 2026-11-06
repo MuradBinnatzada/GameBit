@@ -24,11 +24,13 @@ import 'package:checkpoint/models/milestone.dart';
 import 'package:checkpoint/models/public_profile.dart';
 import 'package:checkpoint/models/results_page.dart';
 import 'package:checkpoint/models/social_user.dart';
+import 'package:checkpoint/models/trophy.dart';
 import 'package:checkpoint/models/user_profile.dart';
 
 part 'repository/profile_queries.dart';
 part 'repository/library_queries.dart';
 part 'repository/progress_queries.dart';
+part 'repository/trophy_queries.dart';
 part 'repository/social_queries.dart';
 part 'repository/public_member_queries.dart';
 part 'repository/review_queries.dart';
@@ -134,6 +136,7 @@ class CheckpointRepository extends _RepositoryBase
         _ProfileQueries,
         _LibraryQueries,
         _ProgressQueries,
+        _TrophyQueries,
         _SocialQueries,
         _PublicMemberQueries,
         _ReviewQueries,

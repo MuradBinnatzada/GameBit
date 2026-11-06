@@ -11,6 +11,7 @@ class UserProfile {
     this.avatarUrl,
     this.steamId,
     this.showSteamAchievements = true,
+    this.showTrophies = true,
     this.flair = ProfileFlair.none,
     required this.joined,
     this.followers = 248,
@@ -25,6 +26,7 @@ class UserProfile {
         steamId: json['steamId'] as String?,
         // A copy saved before the setting existed: the default.
         showSteamAchievements: json['showSteamAchievements'] as bool? ?? true,
+        showTrophies: json['showTrophies'] as bool? ?? true,
         flair: profileFlairFromJson(json['flair']),
         joined: DateTime.parse(json['joined'] as String).toLocal(),
         followers: (json['followers'] as num).toInt(),
@@ -45,6 +47,10 @@ class UserProfile {
   /// sees their own.
   final bool showSteamAchievements;
 
+  /// Whether other members see the Trophies card on this profile
+  /// (`profiles.show_trophies`, Settings > Privacy). The member always sees their own.
+  final bool showTrophies;
+
   /// The frame, title and showcased milestones they picked in Edit Profile
   /// (`profiles.avatar_frame`, `title_milestone`, `showcased_milestones`).
   final ProfileFlair flair;
@@ -61,6 +67,7 @@ class UserProfile {
         'avatarUrl': avatarUrl,
         'steamId': steamId,
         'showSteamAchievements': showSteamAchievements,
+        'showTrophies': showTrophies,
         'flair': profileFlairToJson(flair),
         'joined': joined.toUtc().toIso8601String(),
         'followers': followers,
@@ -76,6 +83,7 @@ class UserProfile {
     // copyWith can't tell "leave it" from "set to null", so clearing is explicit.
     bool clearSteamId = false,
     bool? showSteamAchievements,
+    bool? showTrophies,
     ProfileFlair? flair,
   }) =>
       UserProfile(
@@ -86,6 +94,7 @@ class UserProfile {
         steamId: clearSteamId ? null : (steamId ?? this.steamId),
         showSteamAchievements:
             showSteamAchievements ?? this.showSteamAchievements,
+        showTrophies: showTrophies ?? this.showTrophies,
         flair: flair ?? this.flair,
         joined: joined,
         followers: followers,

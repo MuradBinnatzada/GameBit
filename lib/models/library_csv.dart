@@ -5,6 +5,7 @@ import 'package:checkpoint/l10n/l10n.dart';
 import 'package:checkpoint/models/game.dart';
 import 'package:checkpoint/models/limits.dart';
 import 'package:checkpoint/models/log_entry.dart';
+import 'package:checkpoint/models/trophy.dart';
 import 'package:checkpoint/utils/csv.dart';
 
 /// The columns of an exported library, in order. An import reads the same
@@ -71,6 +72,12 @@ class ImportRow {
     this.hours,
     this.playedOn,
     this.review,
+    this.trophiesEarned,
+    this.trophiesTotal,
+    this.perfected = false,
+    this.fillGapsOnly = false,
+    this.trophyList,
+    this.trophySet,
   });
 
   /// The line of the file it came from (the header is line 1).
@@ -85,6 +92,28 @@ class ImportRow {
   final double? hours;
   final GamePlatform? playedOn;
   final String? review;
+
+  /// PlayStation trophies earned out of how many the game has (only the import
+  /// from PlayStation knows them).
+  final int? trophiesEarned;
+  final int? trophiesTotal;
+
+  /// The source says the member got everything out of the game (a Platinum
+  /// trophy, or every trophy): it marks the game perfected, never unmarks it.
+  final bool perfected;
+
+  /// Fills in what the library lacks and keeps what the member chose: a game
+  /// already in the library keeps its status and the platform it was played on,
+  /// and only gains hours, trophies and the perfected mark. An import of a
+  /// source the member did not write by hand sets this, so running it again
+  /// never undoes their changes.
+  final bool fillGapsOnly;
+
+  /// Every trophy of the game with what the member earned, when the import read
+  /// them (null: not this time; what is stored stays), and Sony's id of the trophy
+  /// set they are from ([trophySet], what [ImportFile.onRowImported] is told).
+  final List<Trophy>? trophyList;
+  final String? trophySet;
 
   /// The most rows one import takes.
   static const maxRows = 500;
@@ -293,21 +322,42 @@ enum ImportSource {
   /// `shelves`, `dates` and `platforms` holding JSON. Read from how the tools
   /// that parse it name the columns; the rating is taken as out of 5.
   grouvee,
+
+  /// The member's own PlayStation account, read on their phone by the import
+  /// from PlayStation (not a file).
+  playstation,
 }
 
 /// What [ImportRow.parse] read: the games, and the lines it left out.
 class ImportFile {
-  const ImportFile({required this.rows, required this.skipped, this.source = ImportSource.generic});
+  const ImportFile({
+    required this.rows,
+    required this.skipped,
+    this.source = ImportSource.generic,
+    this.notes = const [],
+    this.onRowImported,
+  });
   final List<ImportRow> rows;
   final List<String> skipped;
   final ImportSource source;
+
+  /// Called with each row once its game is in the library (PlayStation: so the
+  /// phone remembers which trophy lists are stored).
+  final void Function(ImportRow row)? onRowImported;
+
+  /// Things to tell the member before they import that are not lines left out
+  /// (PlayStation: a list Sony would not share).
+  final List<String> notes;
 }
 
 /// The search hit that is [row]'s game: the one with its IGDB id when the file
 /// has one; otherwise the one whose title is the same (ignoring case, accents and
 /// punctuation), preferring the one released on the platform the row says it was
 /// played on, then the release year the file gives. Null when none is a sure match.
-Game? matchImportRow(ImportRow row, List<Game> hits) {
+///
+/// [title] stands in for the row's own title (the import's second try, see
+/// [titleWithoutEdition]).
+Game? matchImportRow(ImportRow row, List<Game> hits, {String? title}) {
   if (row.igdbId != null) {
     for (final hit in hits) {
       if (hit.igdbId == row.igdbId) return hit;
@@ -315,8 +365,8 @@ Game? matchImportRow(ImportRow row, List<Game> hits) {
     return null;
   }
   String norm(String s) => _foldAccents(s.toLowerCase()).replaceAll(RegExp('[^a-z0-9]'), '');
-  final title = norm(row.title);
-  final sameTitle = [for (final hit in hits) if (norm(hit.title) == title) hit];
+  final wanted = norm(title ?? row.title);
+  final sameTitle = [for (final hit in hits) if (norm(hit.title) == wanted) hit];
   if (sameTitle.isEmpty) return null;
   // A game on a console (a retro one) is the entry released on it, not a remake.
   final platform = row.playedOn;
@@ -329,6 +379,22 @@ Game? matchImportRow(ImportRow row, List<Game> hits) {
     }
   }
   return same.length == 1 || year == null ? same.first : null;
+}
+
+/// [title] without a trailing edition label, or null when it has none: what the
+/// import searches for when the full title finds nothing, because a store lists
+/// "Minecraft: PlayStation 3 Edition" or "Borderlands Game of the Year Edition"
+/// while IGDB has the game itself. Only a label after a colon or spaced dash, or
+/// made of the usual edition words, is cut; "Marvel's Spider-Man 2" is left alone.
+String? titleWithoutEdition(String title) {
+  final text = title.trim();
+  final labelled = RegExp(r'^(.+?)(?::\s+|\s+[-–—]\s+)[^:]{0,40}?\b(?:Edition|Version)$', caseSensitive: false).firstMatch(text);
+  final usual = RegExp(
+    r"^(.+?)\s+(?:(?:Game of the Year|GOTY|Deluxe|Digital|Standard|Special|Definitive|Complete|Ultimate|Gold|Premium|Legendary|Limited|Collector's|Anniversary|Day One|Launch|Enhanced|Director's Cut|PlayStation ?\d?|PS ?\d|Vita)\s+)+(?:Edition|Version)$",
+    caseSensitive: false,
+  ).firstMatch(text);
+  final base = (labelled?[1] ?? usual?[1])?.trim();
+  return base == null || base.isEmpty ? null : base;
 }
 
 const _accents = {

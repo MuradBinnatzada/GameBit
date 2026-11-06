@@ -170,6 +170,17 @@ mixin _ProfileQueries on _RepositoryBase {
         .eq(Db.id, userId);
   }
 
+  /// Saves whether other members may see the signed-in user's PlayStation
+  /// trophies (`profiles.show_trophies`). The trophy functions read it on every
+  /// request, so it holds from the next one.
+  Future<void> setShowTrophies(bool show) async {
+    final userId = _requireUserId();
+    await _client
+        .from(Db.profiles)
+        .update({Db.showTrophies: show})
+        .eq(Db.id, userId);
+  }
+
   /// Saves the frame, title and showcased milestones the signed-in user shows
   /// on their profile. The server refuses (a check violation) anything they
   /// have not unlocked.

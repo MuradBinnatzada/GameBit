@@ -619,6 +619,44 @@ void main() {
       expect(repo.showSteamAchievements, isTrue);
     });
 
+    testWidgets('Show Trophies is on until turned off, and is saved', (tester) async {
+      await open(tester, section: SettingsSection.privacy);
+      SwitchListTile trophiesSwitch() => tester.widget(find.widgetWithText(SwitchListTile, 'Show Trophies'));
+
+      expect(find.text('Allow other players to view your PlayStation trophies on your public profile.'), findsOneWidget);
+      expect(trophiesSwitch().value, isTrue);
+
+      await tester.tap(find.text('Show Trophies'));
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await tester.pumpAndSettle();
+
+      expect(trophiesSwitch().value, isFalse);
+      expect(stores.profile.showTrophies, isFalse);
+      expect(repo.showTrophies, isFalse);
+      expect(repo.writes, ['show-trophies:false']);
+      // The Steam switch is a separate choice.
+      expect(repo.showSteamAchievements, isTrue);
+
+      await tester.tap(find.text('Show Trophies'));
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await tester.pumpAndSettle();
+      expect(trophiesSwitch().value, isTrue);
+      expect(repo.showTrophies, isTrue);
+    });
+
+    testWidgets('a trophies setting that could not be saved goes back and says why', (tester) async {
+      await open(tester, section: SettingsSection.privacy);
+      repo.writesDown = true;
+
+      await tester.tap(find.text('Show Trophies'));
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'Show Trophies')).value, isTrue);
+      expect(repo.showTrophies, isTrue);
+      expect(find.text('Could not reach the server, so your trophies setting was not changed.'), findsOneWidget);
+    });
+
     testWidgets('lists the blocked members, and opens the policy, the terms and a way to write to us', (
       tester,
     ) async {

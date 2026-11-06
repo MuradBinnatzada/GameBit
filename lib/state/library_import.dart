@@ -16,12 +16,17 @@ class LibraryImport extends ChangeNotifier {
     required this._api,
     required this._library,
     this.pause = const Duration(milliseconds: 300),
+    this.onRowImported,
   });
 
   final List<ImportRow> rows;
   final GameApiService _api;
   final LibraryStore _library;
   final Duration pause;
+
+  /// Told of each row once its game is in the library and, when the row carries a
+  /// trophy list, that list is stored too.
+  final void Function(ImportRow row)? onRowImported;
 
   int _done = 0;
   int _imported = 0;
@@ -60,6 +65,19 @@ class LibraryImport extends ChangeNotifier {
         final page = await _api.searchGames(row.title);
         if (page == null) _searchFailed = true;
         game = page == null ? null : matchImportRow(row, page.items);
+        // A store's "Minecraft: PlayStation 3 Edition" is IGDB's "Minecraft": one
+        // more search with the label cut, matched as strictly as the first.
+        final base = game == null && page != null && row.igdbId == null ? titleWithoutEdition(row.title) : null;
+        if (base != null) {
+          await Future<void>.delayed(pause);
+          final basePage = await _api.searchGames(base);
+          if (basePage == null) _searchFailed = true;
+          game = basePage == null ? null : matchImportRow(row, basePage.items, title: base);
+        }
+        if (game == null && kDebugMode) {
+          final seen = [for (final g in page?.items.take(6) ?? const <Game>[]) g.title];
+          debugPrint('IMPORT: no match for "${row.title}" (${row.playedOn?.name}); search gave ${page?.items.length} games: $seen');
+        }
       }
       if (game == null) {
         _unmatched.add(row);
@@ -71,7 +89,14 @@ class LibraryImport extends ChangeNotifier {
           hours: row.hours,
           playedOn: row.playedOn,
           review: row.review,
+          trophiesEarned: row.trophiesEarned,
+          trophiesTotal: row.trophiesTotal,
+          perfected: row.perfected,
+          fillGapsOnly: row.fillGapsOnly,
         );
+        final trophies = row.trophyList;
+        final stored = trophies == null || await _library.saveTrophies(game.id, trophies);
+        if (stored) onRowImported?.call(row);
         _imported++;
       }
       _done++;

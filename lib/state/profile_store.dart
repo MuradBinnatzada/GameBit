@@ -720,6 +720,47 @@ class ProfileStore extends ChangeNotifier {
     return error;
   }
 
+  /// Whether other members see the Trophies card on the signed-in user's profile
+  /// (Settings > Privacy). Their own profile always shows it.
+  bool get showTrophies => _profile.showTrophies;
+
+  bool _savingTrophies = false;
+
+  /// A [toggleTrophiesPrivacy] is on its way to the server (the switch waits).
+  bool get savingTrophiesPrivacy => _savingTrophies;
+
+  /// Shows or hides the signed-in user's PlayStation trophies from other members,
+  /// the way [toggleSteamAchievementsPrivacy] does for the Steam achievements: the
+  /// switch moves at once, goes back when the save fails, and the result is null on
+  /// success or a message that is safe to show.
+  Future<String?> toggleTrophiesPrivacy(bool value) async {
+    final current = _user;
+    if (current == null) return L10n.current.privacySignIn;
+    final previous = _profile.showTrophies;
+    if (_savingTrophies || value == previous) return null;
+
+    _savingTrophies = true;
+    _profile = _profile.copyWith(showTrophies: value);
+    notifyListeners();
+    String? error;
+    try {
+      _auth.requireSession();
+      await _repository.setShowTrophies(value);
+    } catch (e, st) {
+      debugPrint('Saving the trophies privacy setting failed: $e\n$st');
+      error = isConnectionFailure(e)
+          ? L10n.current.privacyTrophiesOffline
+          : L10n.current.privacySaveFailed;
+    }
+    _savingTrophies = false;
+    // Another account signed in meanwhile: its own profile is loaded instead.
+    if (_user?.id != current.id) return null;
+    _profile = _profile.copyWith(showTrophies: error == null ? value : previous);
+    notifyListeners();
+    if (error == null) unawaited(_writeProfileCache());
+    return error;
+  }
+
   // ---- Flair ----
 
   /// The frame, title and showcased milestones on the signed-in user's profile.

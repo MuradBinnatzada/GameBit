@@ -27,6 +27,7 @@ import 'package:checkpoint/models/release_reminders.dart';
 import 'package:checkpoint/models/results_page.dart';
 import 'package:checkpoint/models/studio_filters.dart';
 import 'package:checkpoint/models/social_user.dart';
+import 'package:checkpoint/models/trophy.dart';
 import 'package:checkpoint/models/user_profile.dart';
 import 'package:checkpoint/services/admin_api_service.dart';
 import 'package:checkpoint/services/admin_failure.dart';
@@ -278,6 +279,12 @@ class FakeRepository implements CheckpointRepository {
   /// Holds [setShowSteamAchievements] until completed.
   Completer<void>? privacyGate;
 
+  /// `profiles.show_trophies`: whether other members see the PlayStation trophies.
+  bool showTrophies = true;
+
+  /// Holds [setShowTrophies] until completed.
+  Completer<void>? trophiesPrivacyGate;
+
   /// `profiles.avatar_frame`, `title_milestone` and `showcased_milestones`.
   ProfileFlair profileFlair = ProfileFlair.none;
 
@@ -387,6 +394,7 @@ class FakeRepository implements CheckpointRepository {
       bio: profileBio,
       steamId: steamId,
       showSteamAchievements: showSteamAchievements,
+      showTrophies: showTrophies,
       flair: profileFlair,
       joined: DateTime.utc(2026, 1, 1),
       followers: 0,
@@ -413,6 +421,51 @@ class FakeRepository implements CheckpointRepository {
     return Uri.parse(
       'https://steamcommunity.com/openid/login?openid.mode=checkid_setup',
     );
+  }
+
+  @override
+  Future<void> setShowTrophies(bool show) async {
+    await trophiesPrivacyGate?.future;
+    _checkWrite();
+    showTrophies = show;
+    writes.add('show-trophies:$show');
+  }
+
+  /// The trophy progress per game of each member ([fetchTrophySummary]) and the
+  /// lists ([fetchGameTrophies]), as `public_trophy_summary` and
+  /// `public_game_trophies` would answer the signed-in member.
+  final Map<String, List<GameTrophySummary>> trophySummaries = {};
+  final Map<(String, String), List<Trophy>> gameTrophies = {};
+  bool failTrophyReads = false;
+
+  /// What [saveGameTrophies] stored, by game; [trophySaveRefused] makes it answer
+  /// that the library row is not on the server.
+  final Map<String, List<Trophy>> savedTrophies = {};
+  bool trophySaveRefused = false;
+
+  @override
+  Future<List<GameTrophySummary>> fetchTrophySummary(String userId) async {
+    memberReads.add('trophies:$userId');
+    _checkOnline();
+    if (failTrophyReads) throw Exception('trophies failed');
+    return trophySummaries[userId] ?? const [];
+  }
+
+  @override
+  Future<List<Trophy>?> fetchGameTrophies(String userId, String gameId) async {
+    memberReads.add('trophies:$userId:$gameId');
+    _checkOnline();
+    if (failTrophyReads) throw Exception('trophies failed');
+    return gameTrophies[(userId, gameId)];
+  }
+
+  @override
+  Future<bool> saveGameTrophies(String userId, String gameId, List<Trophy> trophies) async {
+    _checkWrite();
+    if (trophySaveRefused) return false;
+    savedTrophies[gameId] = trophies;
+    writes.add('trophies:$gameId:${trophies.length}');
+    return true;
   }
 
   @override
@@ -666,10 +719,13 @@ class FakeRepository implements CheckpointRepository {
     String review = '',
     bool stillPlaying = false,
     bool perfected = false,
+    int? trophiesEarned,
+    int? trophiesTotal,
   }) async {
     await userGameGate?.future;
     _checkWrite();
     writes.add('game:$gameId:$status:$rating');
+    trophiesSent[gameId] = (trophiesEarned, trophiesTotal);
     backdrops[gameId] = customBackdropUrl;
     reviews[gameId] = review;
     stillPlayingSent[gameId] = stillPlaying;
@@ -692,6 +748,10 @@ class FakeRepository implements CheckpointRepository {
 
   /// Whether each game was last saved hidden from other members.
   final Map<String, bool> hiddenSent = {};
+
+  /// The PlayStation trophies (earned, total) each game's last save sent; both
+  /// null when the save named none.
+  final Map<String, (int?, int?)> trophiesSent = {};
 
   @override
   Future<void> upsertCompletionTime({

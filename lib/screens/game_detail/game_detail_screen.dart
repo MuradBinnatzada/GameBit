@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -13,6 +15,7 @@ import 'package:checkpoint/screens/game_detail/igdb_sections.dart';
 import 'package:checkpoint/screens/game_detail/reviews_panel.dart';
 import 'package:checkpoint/screens/game_detail/sessions_screen.dart';
 import 'package:checkpoint/screens/profile/game_achievements_dialog.dart';
+import 'package:checkpoint/screens/profile/game_trophies_dialog.dart';
 import 'package:checkpoint/sheets/game_backdrop_sheet.dart';
 import 'package:checkpoint/sheets/list_sheets.dart';
 import 'package:checkpoint/sheets/log_hours_sheet.dart';
@@ -605,8 +608,10 @@ class _StatusActions extends StatelessWidget {
           subtitle: l10n.stillPlayingSubtitle,
         ),
       ],
-      // Named by where it is played: pick PS5 above and it is the Platinum.
-      if (game.canBePerfected) ...[
+      // Named by where it is played: pick PS5 above and it is the Platinum. Not
+      // offered for a game whose trophies came from PlayStation: they say it (the
+      // import marks a game with every trophy perfected itself).
+      if (game.canBePerfected && !game.hasTrophies) ...[
         const SizedBox(height: 12),
         _FlagSwitch(
           value: game.perfected,
@@ -615,6 +620,27 @@ class _StatusActions extends StatelessWidget {
           color: game.perfectMark.color,
           title: game.perfectMark.title,
           subtitle: game.perfectMark.description,
+        ),
+      ],
+      // What the import from PlayStation read; only the member sees it. Tapping it
+      // opens the trophy list.
+      if (game.hasTrophies) ...[
+        const SizedBox(height: 12),
+        _TrophyProgress(
+          earned: game.trophiesEarned!,
+          total: game.trophiesTotal!,
+          onTap: () {
+            final userId = context.read<AuthStore>().user?.id;
+            if (userId == null) return;
+            unawaited(showGameTrophiesDialog(
+              context,
+              userId: userId,
+              gameId: game.id,
+              title: game.title,
+              coverUrl: game.coverUrl,
+              own: true,
+            ));
+          },
         ),
       ],
       // Stays in the tree whatever the status, so it sees the game being marked
@@ -630,6 +656,70 @@ class _StatusActions extends StatelessWidget {
         ),
       ]
     ]);
+  }
+}
+
+/// The PlayStation trophies the member earned in the game, out of how many it
+/// has ([Game.trophiesEarned], [Game.trophiesTotal]), as a bar; tapping it opens
+/// the list. Read-only: the import from PlayStation writes them.
+class _TrophyProgress extends StatelessWidget {
+  const _TrophyProgress({required this.earned, required this.total, required this.onTap});
+  final int earned;
+  final int total;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final color = context.palette.legible(const Color(0xFFFFC857));
+    final text = l10n.trophiesProgress(earned, total);
+    return Semantics(
+      label: '${l10n.trophiesLabel}: $text. ${l10n.viewTrophies}',
+      button: true,
+      excludeSemantics: true,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Ink(
+          padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+          decoration: BoxDecoration(
+            color: context.palette.text.withValues(alpha: 0.03),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: context.palette.hairline),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.emoji_events_rounded, size: 20, color: color),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      l10n.trophiesLabel,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  Text(text, style: TextStyle(color: context.palette.muted, fontSize: 13)),
+                  const SizedBox(width: 4),
+                  Icon(Icons.chevron_right_rounded, size: 20, color: context.palette.muted),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: total == 0 ? 0 : (earned / total).clamp(0.0, 1.0),
+                  minHeight: 6,
+                  color: color,
+                  backgroundColor: color.withValues(alpha: 0.18),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

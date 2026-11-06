@@ -10,6 +10,7 @@ mixin _PublicMemberQueries on _RepositoryBase {
     Db.steamId,
     Db.joinedAt,
     Db.showSteamAchievements,
+    Db.showTrophies,
     Db.avatarFrame,
     Db.titleMilestone,
     Db.showcasedMilestones,

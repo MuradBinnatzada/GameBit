@@ -15,6 +15,7 @@ class PublicProfile {
     this.avatarUrl,
     this.steamConnected = false,
     this.showSteamAchievements = true,
+    this.showTrophies = true,
     this.bio,
     this.steamId,
     this.joined,
@@ -33,6 +34,11 @@ class PublicProfile {
   /// (`show_steam_achievements`, Settings > Privacy). When false the server hands
   /// out none of them, and the profile leaves the Achievements card out.
   final bool showSteamAchievements;
+
+  /// Whether they let other members see their PlayStation trophies
+  /// (`show_trophies`, Settings > Privacy). When false the server hands out none
+  /// of them, and the profile leaves the Trophies card out.
+  final bool showTrophies;
 
   /// Null when they wrote none.
   final String? bio;

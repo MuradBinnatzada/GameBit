@@ -27,7 +27,12 @@ class PrivacySection extends StatelessWidget {
       children: [
         Panel(
           title: l10n.yourProfile,
-          child: _ShowAchievementsSwitch(),
+          child: Column(
+            children: [
+              _ShowAchievementsSwitch(),
+              _ShowTrophiesSwitch(),
+            ],
+          ),
         ),
         SizedBox(height: 14),
         Panel(
@@ -73,6 +78,11 @@ class PrivacySection extends StatelessWidget {
                 icon: Icons.emoji_events_rounded,
                 title: l10n.achievements,
                 text: l10n.privacyAchievementsText(l10n.showSteamAchievements),
+              ),
+              _Item(
+                icon: Icons.military_tech_rounded,
+                title: l10n.trophiesLabel,
+                text: l10n.privacyTrophiesText(l10n.showTrophies),
               ),
             ],
           ),
@@ -150,6 +160,44 @@ class PrivacySection extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+/// "Show Trophies": whether other members see the Trophies card (PlayStation) on
+/// your profile. Your own view of it shows them either way.
+class _ShowTrophiesSwitch extends StatelessWidget {
+  const _ShowTrophiesSwitch();
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<ProfileStore>();
+    return Material(
+      type: MaterialType.transparency,
+      child: SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        secondary: Icon(Icons.military_tech_rounded, color: context.palette.accent),
+        title: Text(
+          context.l10n.showTrophies,
+          style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700),
+        ),
+        subtitle: Text(
+          context.l10n.showTrophiesSubtitle,
+          style: TextStyle(color: context.palette.muted, fontSize: 12.5, height: 1.35),
+        ),
+        value: store.showTrophies,
+        // Waits while the last change is being saved.
+        onChanged: store.savingTrophiesPrivacy ? null : (value) => unawaited(_toggle(context, value)),
+      ),
+    );
+  }
+
+  Future<void> _toggle(BuildContext context, bool value) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final error = await context.read<ProfileStore>().toggleTrophiesPrivacy(value);
+    if (error == null) return;
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(error)));
   }
 }
 

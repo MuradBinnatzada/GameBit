@@ -9,6 +9,7 @@ import 'package:checkpoint/models/game.dart';
 import 'package:checkpoint/models/library_stats.dart';
 import 'package:checkpoint/models/milestone.dart';
 import 'package:checkpoint/screens/profile/achievements_section.dart';
+import 'package:checkpoint/screens/profile/trophies_section.dart';
 import 'package:checkpoint/theme/palette.dart';
 import 'package:checkpoint/utils/formatters.dart';
 import 'package:checkpoint/widgets/connected_account_icons.dart';
@@ -162,6 +163,7 @@ class ProfileLayout extends StatelessWidget {
     required this.onStatus,
     required this.links,
     required this.showAchievements,
+    this.showTrophies = false,
     this.milestones,
     this.notice,
     this.bio,
@@ -203,6 +205,11 @@ class ProfileLayout extends StatelessWidget {
   /// on someone else's page only when they share them (Settings > Privacy); the
   /// callers decide.
   final bool showAchievements;
+
+  /// Whether the page has the Trophies card ([TrophiesSection], PlayStation). On
+  /// someone else's page only when they share them (Settings > Privacy); the card
+  /// leaves itself out while there is nothing to show.
+  final bool showTrophies;
 
   /// The Milestones card ([MilestonesSection]), just above the achievements.
   final Widget? milestones;
@@ -319,6 +326,7 @@ class ProfileLayout extends StatelessWidget {
           const SizedBox(height: 14),
           AchievementsSection(userId: userId),
         ],
+        if (showTrophies) TrophiesSection(userId: userId),
         const SizedBox(height: 24),
         ProfileLinkRows(links: links),
       ],

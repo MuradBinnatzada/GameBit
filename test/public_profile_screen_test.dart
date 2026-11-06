@@ -11,6 +11,7 @@ import 'package:checkpoint/models/activity_entry.dart';
 import 'package:checkpoint/models/game.dart';
 import 'package:checkpoint/models/game_reviews.dart' show MemberReportSubject, ReportReason;
 import 'package:checkpoint/models/public_profile.dart';
+import 'package:checkpoint/models/trophy.dart';
 import 'package:checkpoint/screens/game_detail/game_detail_screen.dart';
 import 'package:checkpoint/screens/profile/follows_screen.dart';
 import 'package:checkpoint/screens/profile/profile_screen.dart';
@@ -1085,6 +1086,118 @@ void main() {
 
       expect(repo.blockedMembers.keys, ['m1']);
       expect(stores.blocks.isBlocked('m1'), isTrue);
+    });
+  });
+
+  group('trophies', () {
+    Future<void> scrollToTrophies(WidgetTester tester) async {
+      await tester.scrollUntilVisible(
+        find.text('Trophies'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -200));
+      await tester.pumpAndSettle();
+    }
+
+    Iterable<String> reads() => repo.memberReads.where((r) => r.startsWith('trophies'));
+
+    setUp(() {
+      // In the order the server answers: the most complete first.
+      repo.trophySummaries['m1'] = const [
+        GameTrophySummary(
+          gameId: 'done',
+          title: 'Finished Fable',
+          earned: 2,
+          total: 2,
+          counts: TrophyCounts(silver: 1, platinum: 1),
+        ),
+        GameTrophySummary(
+          gameId: 'fav',
+          title: 'Trophy Quest',
+          earned: 3,
+          total: 4,
+          counts: TrophyCounts(bronze: 2, gold: 1),
+        ),
+      ];
+      repo.gameTrophies[('m1', 'fav')] = const [
+        Trophy(id: 1, grade: TrophyGrade.gold, name: 'Dragon Slayer', detail: 'Defeat the dragon', earned: true),
+        Trophy(id: 2, grade: TrophyGrade.bronze, name: 'Locked Away', detail: 'Not yet'),
+      ];
+    });
+
+    testWidgets('shows the cups of each grade and the games, and opens a game\'s trophies', (tester) async {
+      await openProfile(tester);
+      await scrollToTrophies(tester);
+
+      expect(find.text('Trophies'), findsOneWidget);
+      // Bronze 2, silver 1, gold 1, platinum 1 over both games.
+      expect(find.text('Platinum'), findsOneWidget);
+      expect(find.text('5 of 6 · 83% · 2 games · 1 completed'), findsOneWidget);
+      // Most complete first.
+      expect(top(tester, find.text('Finished Fable')), lessThan(top(tester, find.text('Trophy Quest'))));
+      expect(find.text('3 / 4 · 75%'), findsOneWidget);
+      expect(reads(), ['trophies:m1']);
+      // No game's trophies were fetched yet.
+      expect(find.text('Dragon Slayer'), findsNothing);
+
+      await tester.ensureVisible(find.text('3 / 4 · 75%'));
+      await tester.tap(find.text('3 / 4 · 75%'));
+      await tester.pumpAndSettle();
+      expect(find.byType(Dialog), findsOneWidget);
+      expect(find.text('Dragon Slayer'), findsOneWidget);
+      expect(find.text('Defeat the dragon'), findsOneWidget);
+      expect(reads(), contains('trophies:m1:fav'));
+    });
+
+    testWidgets('a member who keeps their trophies private has no card, and none were asked for', (tester) async {
+      repo.members['m1'] = const PublicProfile(
+        id: 'm1',
+        name: 'Member One',
+        handle: '@member_one',
+        steamConnected: true,
+        showTrophies: false,
+      );
+      await openProfile(tester);
+
+      expect(find.text('Wishlist'), findsOneWidget);
+      expect(find.text('Trophies'), findsNothing);
+      expect(reads(), isEmpty);
+    });
+
+    testWidgets('a member who has none syncs shows no empty card', (tester) async {
+      repo.trophySummaries.remove('m1');
+      await openProfile(tester);
+      await tester.scrollUntilVisible(
+        find.text('Achievements'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Trophies'), findsNothing);
+      expect(reads(), ['trophies:m1']);
+    });
+
+    testWidgets('your own profile shows them even when they are private', (tester) async {
+      repo
+        ..showTrophies = false
+        ..trophySummaries['u1'] = repo.trophySummaries['m1']!;
+      await open(tester, const Scaffold(body: ProfileScreen()));
+      await scrollToTrophies(tester);
+
+      expect(find.text('Trophies'), findsOneWidget);
+      expect(find.text('3 / 4 · 75%'), findsOneWidget);
+    });
+
+    testWidgets('a failed read is said on your own profile, and nowhere else', (tester) async {
+      repo.failTrophyReads = true;
+      await openProfile(tester);
+      await tester.scrollUntilVisible(
+        find.text('Achievements'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Trophies'), findsNothing);
+      expect(find.text('Could not load the trophies. Try again.'), findsNothing);
     });
   });
 }

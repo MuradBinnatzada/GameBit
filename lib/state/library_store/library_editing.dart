@@ -194,6 +194,12 @@ extension LibraryEditing on LibraryStore {
   /// [rating], [hours], [playedOn] and [review] the file gives (what it leaves
   /// out keeps what the library has; hours never go down). No session is logged:
   /// imported hours are the game's history, not something played now.
+  ///
+  /// [trophiesEarned] and [trophiesTotal] (PlayStation) replace the ones saved.
+  /// [perfected] marks the game perfected and never clears the mark. With
+  /// [fillGapsOnly], a game already in the library keeps its status and the
+  /// platform it was played on: the import only adds what the member could not
+  /// have chosen themselves.
   Future<void> importGame(
     Game game, {
     required GameStatus status,
@@ -201,25 +207,52 @@ extension LibraryEditing on LibraryStore {
     double? hours,
     GamePlatform? playedOn,
     String? review,
+    int? trophiesEarned,
+    int? trophiesTotal,
+    bool perfected = false,
+    bool fillGapsOnly = false,
   }) async {
     final existing = maybeGame(game.id) ?? game;
+    final keep = fillGapsOnly && existing.inLibrary;
+    final nextStatus = keep ? existing.status! : status;
     final importedHours = hours?.clamp(0, maxTotalHours).toDouble();
     var next = existing.copyWith(
-      status: status,
+      status: nextStatus,
       rating: rating?.clamp(0, 10).toDouble(),
       hoursPlayed: importedHours != null && importedHours > existing.hoursPlayed ? importedHours : null,
-      playedOn: playedOn,
+      playedOn: keep && existing.playedOn != null ? null : playedOn,
       review: review == null || review.length <= Db.reviewMaxLength ? review : review.substring(0, Db.reviewMaxLength),
       dateAdded: existing.dateAdded ?? DateTime.now(),
-      stillPlaying: status == GameStatus.completed && existing.stillPlaying,
+      stillPlaying: nextStatus == GameStatus.completed && existing.stillPlaying,
+      perfected: perfected && nextStatus != GameStatus.wishlist ? true : null,
+      trophiesEarned: trophiesEarned,
+      trophiesTotal: trophiesTotal,
     );
-    if (status != GameStatus.completed) {
+    if (nextStatus != GameStatus.completed) {
       next = next.withCompletedAt(null);
     } else if (existing.status != GameStatus.completed) {
       next = next.withCompletedAt(DateTime.now());
     }
     _replaceGame(next);
     await _saveUserGame(next);
+  }
+
+  /// Stores [trophies] as the trophy list of [gameId] (PlayStation), after the
+  /// game's own save: the list is only added to its library row. True when the
+  /// server kept it; false when it could not (offline, or the game is queued to be
+  /// saved later), in which case the next sync reads the list again.
+  Future<bool> saveTrophies(String gameId, List<Trophy> trophies) async {
+    final current = _user;
+    if (current == null) return false;
+    try {
+      _auth.requireSession();
+      await _gameSaves[gameId];
+      if (_user?.id != current.id) return false;
+      return await _repository.saveGameTrophies(current.id, gameId, trophies);
+    } catch (e, st) {
+      debugPrint('Saving the trophies of $gameId failed: $e\n$st');
+      return false;
+    }
   }
 
   /// Saves the member's review of [id] next to their rating (at most
@@ -406,6 +439,8 @@ extension LibraryEditing on LibraryStore {
       review: game.review,
       stillPlaying: game.stillPlaying,
       perfected: game.perfected,
+      trophiesEarned: game.trophiesEarned,
+      trophiesTotal: game.trophiesTotal,
     );
   }
 

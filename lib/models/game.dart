@@ -375,6 +375,8 @@ class Game {
     this.completionTime,
     this.stillPlaying = false,
     this.perfected = false,
+    this.trophiesEarned,
+    this.trophiesTotal,
   });
 
   final String id;
@@ -450,6 +452,17 @@ class Game {
   /// whatever the status, but never offered on a wishlisted game.
   final bool perfected;
 
+  /// PlayStation trophies the member has earned in the game, and how many it has
+  /// (`user_games.trophies_earned` / `trophies_total`), as the import from
+  /// PlayStation last read them; null: never imported. Private to the member:
+  /// the profile does not list them.
+  final int? trophiesEarned;
+  final int? trophiesTotal;
+
+  /// Trophy progress to show, or null when the game has none imported or no
+  /// trophies at all.
+  bool get hasTrophies => (trophiesTotal ?? 0) > 0 && trophiesEarned != null;
+
   /// Rebuilds a game from [toJson]'s output (the offline cache). The cover
   /// colours and icon are derived from the other fields, as when a game is read
   /// from the database, so they are not stored.
@@ -488,6 +501,8 @@ class Game {
       completionTime: CompletionTime.fromJson(json['completionTime']),
       stillPlaying: json['stillPlaying'] == true,
       perfected: json['perfected'] == true,
+      trophiesEarned: (json['trophiesEarned'] as num?)?.toInt(),
+      trophiesTotal: (json['trophiesTotal'] as num?)?.toInt(),
     );
   }
 
@@ -525,6 +540,8 @@ class Game {
         'completionTime': completionTime?.toJson(),
         'stillPlaying': stillPlaying,
         'perfected': perfected,
+        'trophiesEarned': trophiesEarned,
+        'trophiesTotal': trophiesTotal,
       };
 
   bool get inLibrary => status != null;
@@ -588,6 +605,8 @@ class Game {
     String? review,
     bool? stillPlaying,
     bool? perfected,
+    int? trophiesEarned,
+    int? trophiesTotal,
   }) =>
       Game(
         id: id,
@@ -622,6 +641,8 @@ class Game {
         completionTime: completionTime,
         stillPlaying: stillPlaying ?? this.stillPlaying,
         perfected: perfected ?? this.perfected,
+        trophiesEarned: trophiesEarned ?? this.trophiesEarned,
+        trophiesTotal: trophiesTotal ?? this.trophiesTotal,
       );
 
   /// This game with [completedAt] set to exactly [at] (null: not completed).
@@ -657,6 +678,8 @@ class Game {
         completionTime: completionTime,
         stillPlaying: stillPlaying,
         perfected: perfected,
+        trophiesEarned: trophiesEarned,
+        trophiesTotal: trophiesTotal,
       );
 
   /// This game with the member's own backdrop set to exactly [url] (null: the
@@ -692,6 +715,8 @@ class Game {
         completionTime: completionTime,
         stillPlaying: stillPlaying,
         perfected: perfected,
+        trophiesEarned: trophiesEarned,
+        trophiesTotal: trophiesTotal,
       );
 
   /// This game with the member's completion time set to exactly [time] (null:
@@ -727,6 +752,8 @@ class Game {
         completionTime: time,
         stillPlaying: stillPlaying,
         perfected: perfected,
+        trophiesEarned: trophiesEarned,
+        trophiesTotal: trophiesTotal,
       );
 
   /// This game as the catalog knows it, with all of the user's tracking state
