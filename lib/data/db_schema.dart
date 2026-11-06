@@ -232,6 +232,10 @@ abstract final class Db {
   /// an import from PlayStation read it. Not in `public_user_games`: other members
   /// get it only through `public_game_trophies`, and only when the owner shares.
   static const trophies = 'trophies';
+
+  /// `user_games`: the game's PlayStation trophy set and counts by grade, written
+  /// for every game of a sync (jsonb, see `TrophyMeta`). Not in `public_user_games`.
+  static const trophyMeta = 'trophy_meta';
   static const reviewMaxLength = 2000;
 
   /// `games`: the day the game first came out, from IGDB; NULL when unknown.

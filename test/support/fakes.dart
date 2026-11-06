@@ -441,7 +441,14 @@ class FakeRepository implements CheckpointRepository {
   /// What [saveGameTrophies] stored, by game; [trophySaveRefused] makes it answer
   /// that the library row is not on the server.
   final Map<String, List<Trophy>> savedTrophies = {};
+  final Map<String, TrophyMeta> savedTrophyMeta = {};
   bool trophySaveRefused = false;
+
+  @override
+  Future<TrophyMeta?> fetchTrophyMeta(String userId, String gameId) async {
+    _checkOnline();
+    return savedTrophyMeta[gameId];
+  }
 
   @override
   Future<List<GameTrophySummary>> fetchTrophySummary(String userId) async {
@@ -460,11 +467,14 @@ class FakeRepository implements CheckpointRepository {
   }
 
   @override
-  Future<bool> saveGameTrophies(String userId, String gameId, List<Trophy> trophies) async {
+  Future<bool> saveGameTrophies(String userId, String gameId, {List<Trophy>? trophies, TrophyMeta? meta}) async {
     _checkWrite();
     if (trophySaveRefused) return false;
-    savedTrophies[gameId] = trophies;
-    writes.add('trophies:$gameId:${trophies.length}');
+    if (trophies != null) {
+      savedTrophies[gameId] = trophies;
+      writes.add('trophies:$gameId:${trophies.length}');
+    }
+    if (meta != null) savedTrophyMeta[gameId] = meta;
     return true;
   }
 

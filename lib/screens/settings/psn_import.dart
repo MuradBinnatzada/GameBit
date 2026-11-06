@@ -7,10 +7,13 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:checkpoint/app/app_config.dart';
 import 'package:checkpoint/l10n/l10n.dart';
 import 'package:checkpoint/models/library_csv.dart';
+import 'package:checkpoint/models/trophy.dart';
+import 'package:checkpoint/screens/profile/game_trophies_dialog.dart';
 import 'package:checkpoint/services/playstation/psn_client.dart';
 import 'package:checkpoint/services/playstation/psn_device.dart';
 import 'package:checkpoint/services/playstation/psn_library.dart';
 import 'package:checkpoint/state/auth_store.dart';
+import 'package:checkpoint/state/library_store.dart';
 import 'package:checkpoint/state/store_scope.dart';
 import 'package:checkpoint/theme/palette.dart';
 
@@ -74,24 +77,7 @@ Future<ImportFile?> readPlayStationLibrary(
 
   final saved = await phone.savedSignIn(account);
   if (!context.mounted) return null;
-  final choice = await showDialog<_Choice>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text(saved == null ? context.l10n.psnDisclosureTitle : context.l10n.psnResumeTitle),
-      content: SingleChildScrollView(
-        child: Text(saved == null ? context.l10n.psnDisclosureBody : context.l10n.psnResumeBody),
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.cancel)),
-        if (saved != null)
-          TextButton(onPressed: () => Navigator.pop(context, _Choice.forget), child: Text(context.l10n.psnForgetSignIn)),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, _Choice.go),
-          child: Text(saved == null ? context.l10n.psnDisclosureContinue : context.l10n.psnResumeSync),
-        ),
-      ],
-    ),
-  );
+  final choice = await _askToContinue(context, signedIn: saved != null);
   if (choice == null || !context.mounted) return null;
   if (choice == _Choice.forget) {
     await phone.forget(account);
@@ -125,6 +111,111 @@ Future<ImportFile?> readPlayStationLibrary(
   }
 }
 
+/// The dialog before a sync (or before signing in to load one game's trophies):
+/// the first time what this unofficial import means, afterwards with a way to
+/// forget the saved sign-in. Null when the member backed out.
+Future<_Choice?> _askToContinue(BuildContext context, {required bool signedIn, bool forgettable = true}) {
+  return showDialog<_Choice>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(signedIn ? context.l10n.psnResumeTitle : context.l10n.psnDisclosureTitle),
+      content: SingleChildScrollView(
+        child: Text(signedIn ? context.l10n.psnResumeBody : context.l10n.psnDisclosureBody),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.cancel)),
+        if (signedIn && forgettable)
+          TextButton(onPressed: () => Navigator.pop(context, _Choice.forget), child: Text(context.l10n.psnForgetSignIn)),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _Choice.go),
+          child: Text(signedIn ? context.l10n.psnResumeSync : context.l10n.psnDisclosureContinue),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Reads the trophy list of one game from PlayStation when the member opens it and
+/// it was not read by the sync (or is out of date): two requests, with the saved
+/// sign-in when there is one, on Sony's page otherwise (after the same notice as
+/// the sync). Stores it on the game and notes it on the phone. Null when they
+/// backed out or it failed (the screen has said why). Not the day's sync: it only
+/// reads what the member tapped.
+Future<List<Trophy>?> loadTrophyListFromPlayStation(
+  BuildContext context, {
+  required String gameId,
+  required TrophyMeta meta,
+  PsnClient Function()? makeClient,
+  PsnSignInBuilder? signInBuilder,
+  PsnDevice? device,
+  String? userId,
+}) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final library = context.read<LibraryStore>();
+  final language = Localizations.localeOf(context).languageCode == 'ru' ? 'ru-RU' : 'en-US';
+  final account = userId ?? context.read<AuthStore>().user?.id ?? '';
+  final phone = device ?? PsnDevice();
+
+  final saved = await phone.savedSignIn(account);
+  if (!context.mounted) return null;
+  // With a saved sign-in the tap is the consent; without one, Sony's page opens
+  // after the notice of what this is.
+  if (saved == null) {
+    final choice = await _askToContinue(context, signedIn: false);
+    if (choice != _Choice.go || !context.mounted) return null;
+  }
+
+  final PsnClient client;
+  try {
+    client = (makeClient ?? () => PsnClient(clientBasic: AppConfig.psnClientBasic, language: language))();
+  } on PsnException catch (e) {
+    messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    return null;
+  }
+  try {
+    final result = await Navigator.of(context).push<Object?>(
+      MaterialPageRoute(
+        builder: (_) => PsnImportScreen(
+          client: client,
+          signInBuilder: signInBuilder,
+          savedSignIn: saved,
+          device: phone,
+          userId: account,
+          work: (tokens) => client.trophiesOf(
+            tokens,
+            PsnTrophyTitle(
+              name: '',
+              platform: '',
+              earned: 0,
+              total: 0,
+              platinumEarned: false,
+              lastUpdated: null,
+              npCommunicationId: meta.set,
+              npServiceName: meta.service,
+            ),
+          ),
+        ),
+      ),
+    );
+    if (result is! List<Trophy>) return null;
+    if (kDebugMode) debugPrint('PSN: opened game, ${client.traffic.describe()}');
+    // Stored for the profile and the other members; the phone remembers the progress
+    // it was read at, so a later sync does not read it again.
+    final kept = await library.saveTrophies(gameId, trophies: result);
+    if (kept && account.isNotEmpty) {
+      await phone.rememberList(account, meta.set, PsnDevice.listMark(meta.earned.total, meta.total.total));
+    }
+    return result;
+  } finally {
+    client.close();
+  }
+}
+
+/// The loader the trophy dialog of the member's own [gameId] offers, or null where
+/// the PlayStation import is not (the build has no client, or not a phone).
+TrophyListLoader? psnTrophyListLoader(String gameId) =>
+    psnImportAvailable() ? (context, meta) => loadTrophyListFromPlayStation(context, gameId: gameId, meta: meta) : null;
+
 enum _Phase { signingIn, reading, failed }
 
 /// Sony's sign-in page (or the saved sign-in, which skips it), then "reading your
@@ -137,9 +228,14 @@ class PsnImportScreen extends StatefulWidget {
     this.savedSignIn,
     this.device,
     this.userId = '',
+    this.work,
   });
   final PsnClient client;
   final PsnSignInBuilder? signInBuilder;
+
+  /// What to do once signed in, instead of the sync: its answer closes the screen.
+  /// It leaves the day's sync alone (nothing is marked as synced).
+  final Future<Object?> Function(PsnTokens tokens)? work;
 
   /// The refresh token an earlier sync left; tried before the sign-in page.
   final String? savedSignIn;
@@ -230,6 +326,12 @@ class _PsnImportScreenState extends State<PsnImportScreen> {
   Future<void> _signedIn(PsnTokens tokens) async {
     final account = widget.userId;
     if (_hasAccount) await _device.saveSignIn(account, tokens);
+    final work = widget.work;
+    if (work != null) {
+      final result = await work(tokens);
+      if (mounted) Navigator.pop(context, result);
+      return;
+    }
     var library = await readPsnLibrary(widget.client, tokens);
     // Sony has been asked: that counts as the day's sync, whatever the member does
     // with the result.
@@ -244,6 +346,7 @@ class _PsnImportScreenState extends State<PsnImportScreen> {
         if (mounted && total > 0) setState(() => _progress = (done, total));
       },
     );
+    if (kDebugMode) debugPrint('PSN: sync done, ${widget.client.traffic.describe()}');
     final file = buildPsnImport(
       library,
       onRowImported: (row) {

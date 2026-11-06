@@ -19,6 +19,10 @@ import 'package:checkpoint/widgets/trophy_tile.dart';
 /// The list is fetched as it opens (see [PublicTrophiesStore.loadGame]); [own] is
 /// the signed-in member's own game, which is read again each time (a sync may have
 /// changed it) and is told how to fill an empty list.
+///
+/// [loadFromPlayStation] (your own games only) reads a game's list from PlayStation
+/// when the sync did not, or it is out of date: the dialog offers it as a button.
+/// Null where that is not possible.
 Future<void> showGameTrophiesDialog(
   BuildContext context, {
   required String userId,
@@ -26,12 +30,24 @@ Future<void> showGameTrophiesDialog(
   required String title,
   String? coverUrl,
   bool own = false,
+  TrophyListLoader? loadFromPlayStation,
 }) {
   return showDialog<void>(
     context: context,
-    builder: (_) => GameTrophiesDialog(userId: userId, gameId: gameId, title: title, coverUrl: coverUrl, own: own),
+    builder: (_) => GameTrophiesDialog(
+      userId: userId,
+      gameId: gameId,
+      title: title,
+      coverUrl: coverUrl,
+      own: own,
+      loadFromPlayStation: own ? loadFromPlayStation : null,
+    ),
   );
 }
+
+/// Reads the trophy list of a game of the signed-in member from PlayStation (and
+/// stores it); null when they backed out or it failed.
+typedef TrophyListLoader = Future<List<Trophy>?> Function(BuildContext context, TrophyMeta meta);
 
 enum _Filter { all, earned, locked }
 
@@ -43,6 +59,7 @@ class GameTrophiesDialog extends StatefulWidget {
     required this.title,
     this.coverUrl,
     this.own = false,
+    this.loadFromPlayStation,
   });
 
   final String userId;
@@ -50,6 +67,7 @@ class GameTrophiesDialog extends StatefulWidget {
   final String title;
   final String? coverUrl;
   final bool own;
+  final TrophyListLoader? loadFromPlayStation;
 
   @override
   State<GameTrophiesDialog> createState() => _GameTrophiesDialogState();
@@ -66,17 +84,41 @@ class _GameTrophiesDialogState extends State<GameTrophiesDialog> {
     super.initState();
     // After the frame: loading notifies, which isn't allowed during build.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(_load(force: widget.own));
+      if (!mounted) return;
+      unawaited(_load(force: widget.own));
+      if (widget.loadFromPlayStation != null) {
+        unawaited(context.read<PublicTrophiesStore>().loadMeta(widget.userId, widget.gameId, force: true));
+      }
     });
   }
 
   Future<void> _load({bool force = false}) =>
       context.read<PublicTrophiesStore>().loadGame(widget.userId, widget.gameId, force: force);
 
+  bool _reading = false;
+
+  /// Reads the game's list from PlayStation, then shows what was stored.
+  Future<void> _loadFromPlayStation(TrophyMeta meta) async {
+    final load = widget.loadFromPlayStation;
+    if (load == null || _reading) return;
+    setState(() => _reading = true);
+    final list = await load(context, meta);
+    if (!mounted) return;
+    setState(() => _reading = false);
+    if (list != null) await _load(force: true);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final view = context.watch<PublicTrophiesStore>().gameOf(widget.userId, widget.gameId);
+    final store = context.watch<PublicTrophiesStore>();
+    final view = store.gameOf(widget.userId, widget.gameId);
     final list = view.status == LoadStatus.ready ? view.trophies : null;
+    // What the sync said the game has: when the stored list lacks it or is behind,
+    // your own dialog offers to read it.
+    final meta = widget.loadFromPlayStation == null ? null : store.metaOf(widget.userId, widget.gameId);
+    final missing = list == null || list.isEmpty;
+    final outOfDate = !missing && meta != null && list.where((t) => t.earned).length != meta.earned.total;
+    final canLoad = meta != null && view.status == LoadStatus.ready && (missing || outOfDate);
     final size = MediaQuery.sizeOf(context);
 
     return Dialog(
@@ -100,8 +142,9 @@ class _GameTrophiesDialogState extends State<GameTrophiesDialog> {
               refreshing: view.status == LoadStatus.loading,
               onRefresh: view.status == LoadStatus.loading ? null : () => unawaited(_load(force: true)),
             ),
+            if (canLoad) _LoadNotice(meta: meta, outOfDate: outOfDate, reading: _reading, onLoad: () => _loadFromPlayStation(meta)),
             if (list != null && list.isNotEmpty) _filters(list),
-            Flexible(child: _body(view.status, list)),
+            Flexible(child: _body(view.status, list, hasMeta: meta != null)),
           ],
         ),
       ),
@@ -129,7 +172,7 @@ class _GameTrophiesDialogState extends State<GameTrophiesDialog> {
     );
   }
 
-  Widget _body(LoadStatus status, List<Trophy>? list) {
+  Widget _body(LoadStatus status, List<Trophy>? list, {bool hasMeta = false}) {
     switch (status) {
       case LoadStatus.idle:
       case LoadStatus.loading:
@@ -152,6 +195,8 @@ class _GameTrophiesDialogState extends State<GameTrophiesDialog> {
     }
 
     if (list == null || list.isEmpty) {
+      // With a button above that reads it, nothing more to say here.
+      if (hasMeta) return const SizedBox(height: 8);
       return _Message(text: widget.own ? context.l10n.trophiesNoneOwn : context.l10n.trophiesNoneOther);
     }
     final sorted = sortTrophies(list);
@@ -313,6 +358,41 @@ class _Header extends StatelessWidget {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// "This game's list was not read yet" (or "is behind"), with the button that
+/// reads it from PlayStation.
+class _LoadNotice extends StatelessWidget {
+  const _LoadNotice({required this.meta, required this.outOfDate, required this.reading, required this.onLoad});
+  final TrophyMeta meta;
+  final bool outOfDate;
+  final bool reading;
+  final VoidCallback onLoad;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              outOfDate ? l10n.trophiesOutOfDate : l10n.trophiesNotLoaded,
+              style: TextStyle(color: context.palette.muted, fontSize: 12.5, height: 1.35),
+            ),
+          ),
+          const SizedBox(width: 12),
+          FilledButton.tonal(
+            onPressed: reading ? null : onLoad,
+            child: reading
+                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                : Text(l10n.trophiesLoadFromPlayStation),
+          ),
         ],
       ),
     );

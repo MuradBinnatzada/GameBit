@@ -127,6 +127,7 @@ class _TrophiesSectionState extends State<TrophiesSection> {
               title: game.title,
               coverUrl: game.coverUrl,
               own: _own,
+              loadFromPlayStation: psnTrophyListLoader(game.gameId),
             ),
           ),
         if (remaining > 0 || _visible > _initialGames)

@@ -99,6 +99,8 @@ class PsnTrophyTitle {
     required this.lastUpdated,
     this.npCommunicationId = '',
     this.npServiceName = 'trophy',
+    this.earnedByGrade = const TrophyCounts(),
+    this.definedByGrade = const TrophyCounts(),
   });
 
   final String name;
@@ -108,6 +110,10 @@ class PsnTrophyTitle {
   /// the list of the set's trophies is asked for with. Empty: not known.
   final String npCommunicationId;
   final String npServiceName;
+
+  /// [earned] and [total] by grade, as the overview gives them.
+  final TrophyCounts earnedByGrade;
+  final TrophyCounts definedByGrade;
 
   /// `PS5`, `PS4`, `PS3`, `PSVITA`, or several joined by commas for a set shared
   /// between consoles (`PS4,PSVITA`).
@@ -166,6 +172,9 @@ class PsnClient {
   final String? language;
 
   DateTime? _lastRequest;
+
+  /// What this client has asked of Sony and been answered with, for the debug log.
+  final PsnTraffic traffic = PsnTraffic();
 
   static const _authBase = 'https://ca.account.sony.com/api/authz/v3/oauth';
   static const _trophyApi = 'https://m.np.playstation.com/api/trophy/v1';
@@ -247,6 +256,7 @@ class PsnClient {
       _log('$what failed before an answer: ${e.runtimeType}');
       throw const PsnException(PsnFailure.unavailable);
     }
+    traffic.note(response.statusCode, response.bodyBytes.length);
     _log('$what -> HTTP ${response.statusCode}');
     if (response.statusCode >= 500) throw const PsnException(PsnFailure.unavailable);
     if (response.statusCode == 429) throw const PsnException(PsnFailure.rateLimited);
@@ -427,6 +437,7 @@ class PsnClient {
       throw const PsnException(PsnFailure.unavailable);
     }
     final status = response.statusCode;
+    traffic.note(status, response.bodyBytes.length);
     _log('GET ${_where(url)} -> HTTP $status');
     if (status != 200) {
       final body = _json(response.body);
@@ -509,7 +520,15 @@ class PsnClient {
     final platform = t['trophyTitlePlatform'];
     final set = t['npCommunicationId'];
     final service = t['npServiceName'];
+    TrophyCounts byGrade(Map<dynamic, dynamic> counts) => TrophyCounts(
+      bronze: _int(counts['bronze']) ?? 0,
+      silver: _int(counts['silver']) ?? 0,
+      gold: _int(counts['gold']) ?? 0,
+      platinum: _int(counts['platinum']) ?? 0,
+    );
     return PsnTrophyTitle(
+      earnedByGrade: byGrade(earned),
+      definedByGrade: byGrade(defined),
       name: name.trim(),
       npCommunicationId: set is String ? set : '',
       npServiceName: service is String && service.isNotEmpty ? service : 'trophy',
@@ -519,6 +538,28 @@ class PsnClient {
       platinumEarned: (_int(earned['platinum']) ?? 0) > 0,
       lastUpdated: updated is String ? DateTime.tryParse(updated) : null,
     );
+  }
+}
+
+/// How many requests a [PsnClient] made, how many bytes came back (the body as
+/// decoded, so a little less than on the wire) and with which statuses, since it
+/// was made. A request that got no answer counts for nothing.
+class PsnTraffic {
+  int requests = 0;
+  int bytesReceived = 0;
+  final Map<int, int> statuses = {};
+  final Stopwatch _clock = Stopwatch()..start();
+
+  void note(int status, int bytes) {
+    requests++;
+    bytesReceived += bytes;
+    statuses[status] = (statuses[status] ?? 0) + 1;
+  }
+
+  /// "19 requests, 412 KB received in 21 s, statuses {200: 19}".
+  String describe() {
+    final kb = (bytesReceived / 1024).round();
+    return '$requests requests, $kb KB received in ${_clock.elapsed.inSeconds} s, statuses $statuses';
   }
 }
 

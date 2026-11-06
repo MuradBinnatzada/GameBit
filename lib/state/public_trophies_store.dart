@@ -48,13 +48,36 @@ class PublicTrophiesStore extends AccountScopedStore {
   final CheckpointRepository _repository;
   final LruCache<String, TrophySummaryView> _summaries;
   final LruCache<(String, String), GameTrophiesView> _games;
+  final Map<(String, String), TrophyMeta?> _metas = {};
   final Map<Object, Future<void>> _loading = {};
 
   @override
   void resetForAccount() {
     _summaries.clear();
     _games.clear();
+    _metas.clear();
     _loading.clear();
+  }
+
+  /// The trophy set and counts the signed-in member's last sync stored for their
+  /// own game, once [loadMeta] has read them; null before that, and for a game
+  /// that never came from PlayStation.
+  TrophyMeta? metaOf(String userId, String gameId) => _metas[(userId, gameId)];
+
+  /// Reads [metaOf]'s answer for the member's own game (again when [force]).
+  Future<void> loadMeta(String userId, String gameId, {bool force = false}) async {
+    final key = (userId, gameId);
+    if (!force && _metas.containsKey(key)) return;
+    final epoch = this.epoch;
+    try {
+      final meta = await _repository.fetchTrophyMeta(userId, gameId);
+      if (isStale(epoch)) return;
+      _metas[key] = meta;
+    } catch (e, st) {
+      debugPrint('Loading the trophy set of $gameId failed: $e\n$st');
+      return;
+    }
+    notifyIfAlive();
   }
 
   TrophySummaryView summaryOf(String userId) => _summaries.peek(userId) ?? const TrophySummaryView();
@@ -65,6 +88,7 @@ class PublicTrophiesStore extends AccountScopedStore {
   /// the lists are fetched again when opened, the summary now.
   void refreshAfterSync(String userId) {
     _games.removeWhere((key) => key.$1 == userId);
+    _metas.removeWhere((key, _) => key.$1 == userId);
     if (_summaries[userId] != null) loadSummary(userId, force: true);
     notifyIfAlive();
   }

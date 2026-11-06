@@ -372,7 +372,7 @@ void main() {
     test('at most the number a sync allows', () {
       final sets = [for (var i = 0; i < 5; i++) set('G$i', id: 'ID$i', updated: DateTime.utc(2026, 1, 1 + i))];
       expect(trophySetsToRead(library(sets), const {}, max: 3).map((s) => s.name), ['G4', 'G3', 'G2']);
-      expect(psnMaxTrophyLists, 40);
+      expect(psnMaxTrophyLists, 100);
     });
 
     test('of one game on two consoles, the set the member got furthest in', () {
@@ -908,6 +908,337 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 50));
       expect(await device.savedSignIn('u1'), isNull);
       expect(await device.savedSignIn('u2'), 'r2');
+    });
+  });
+
+  gameOnDemandTests();
+}
+
+
+void gameOnDemandTests() {
+  const meta = TrophyMeta(
+    set: 'NPWR1_00',
+    service: 'trophy2',
+    earned: TrophyCounts(bronze: 1, gold: 1),
+    total: TrophyCounts(bronze: 2, gold: 1, platinum: 1),
+  );
+  const stale = [
+    Trophy(id: 0, grade: TrophyGrade.platinum, name: 'The Platinum'),
+    Trophy(id: 1, grade: TrophyGrade.gold, name: 'Escape', earned: true),
+    Trophy(id: 2, grade: TrophyGrade.bronze, name: 'Warm up'),
+    Trophy(id: 3, grade: TrophyGrade.bronze, name: 'Second'),
+  ];
+  final current = [
+    stale[0],
+    stale[1],
+    const Trophy(id: 2, grade: TrophyGrade.bronze, name: 'Warm up', earned: true),
+    stale[3],
+  ];
+
+  group('a game opened before its list was read', () {
+    late FakeRepository repo;
+    late AppStores stores;
+    var loads = 0;
+
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+      repo = FakeRepository();
+      stores = AppStores(repository: repo, authService: FakeAuthService(testUser('u1')), connectivity: FakeConnectivity(), apiService: FakeBrowseApi());
+      loads = 0;
+    });
+
+    Future<void> openDialog(WidgetTester tester, {bool own = true, TrophyListLoader? loader, String userId = 'u1'}) async {
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.runAsync(stores.initialize);
+      await tester.pumpWidget(
+        AppStoresScope(
+          stores: stores,
+          child: MaterialApp(
+            theme: buildTheme(),
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => TextButton(
+                  onPressed: () => showGameTrophiesDialog(context, userId: userId, gameId: 'g1', title: 'Hades', own: own, loadFromPlayStation: loader),
+                  child: const Text('open'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox());
+        stores.dispose();
+      });
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+    }
+
+    TrophyListLoader loader() => (context, m) async {
+      loads++;
+      repo.gameTrophies[('u1', 'g1')] = current;
+      return current;
+    };
+
+    testWidgets('offers to read the list, reads it on a tap and shows it', (tester) async {
+      repo.savedTrophyMeta['g1'] = meta;
+      await openDialog(tester, loader: loader());
+      expect(find.text("This game's trophy list has not been read from PlayStation yet."), findsOneWidget);
+      expect(find.text('Load from PlayStation'), findsOneWidget);
+      expect(find.textContaining('No trophy list for this game yet'), findsNothing);
+      expect(loads, 0);
+
+      await tester.tap(find.text('Load from PlayStation'));
+      await tester.pumpAndSettle();
+      expect(loads, 1);
+      expect(find.text('Warm up'), findsOneWidget);
+      expect(find.text('Load from PlayStation'), findsNothing);
+    });
+
+    testWidgets('a list that is behind says so and offers the same', (tester) async {
+      repo.savedTrophyMeta['g1'] = meta;
+      repo.gameTrophies[('u1', 'g1')] = stale;
+      await openDialog(tester, loader: loader());
+      expect(find.text('You earned trophies since this list was read.'), findsOneWidget);
+      expect(find.text('Escape'), findsOneWidget);
+      await tester.tap(find.text('Load from PlayStation'));
+      await tester.pumpAndSettle();
+      expect(loads, 1);
+      expect(find.text('You earned trophies since this list was read.'), findsNothing);
+    });
+
+    testWidgets('a list that is current has no button', (tester) async {
+      repo.savedTrophyMeta['g1'] = meta;
+      repo.gameTrophies[('u1', 'g1')] = current;
+      await openDialog(tester, loader: loader());
+      expect(find.text('Escape'), findsOneWidget);
+      expect(find.text('Load from PlayStation'), findsNothing);
+    });
+
+    testWidgets('backing out of the sign-in changes nothing', (tester) async {
+      repo.savedTrophyMeta['g1'] = meta;
+      await openDialog(tester, loader: (context, m) async => null);
+      await tester.tap(find.text('Load from PlayStation'));
+      await tester.pumpAndSettle();
+      expect(find.text('Load from PlayStation'), findsOneWidget);
+    });
+
+    testWidgets('no button where the import is not offered, for a game with no set, or on another member\'s list', (tester) async {
+      repo.savedTrophyMeta['g1'] = meta;
+      await openDialog(tester);
+      expect(find.text('Load from PlayStation'), findsNothing);
+      expect(find.textContaining('No trophy list for this game yet'), findsOneWidget);
+    });
+
+    testWidgets('a game the sync gave no set for keeps the old message', (tester) async {
+      await openDialog(tester, loader: loader());
+      expect(find.text('Load from PlayStation'), findsNothing);
+      expect(find.textContaining('No trophy list for this game yet'), findsOneWidget);
+    });
+
+    testWidgets('another member\'s dialog never offers it', (tester) async {
+      repo.savedTrophyMeta['g1'] = meta;
+      await openDialog(tester, own: false, userId: 'm1', loader: loader());
+      expect(find.text('Load from PlayStation'), findsNothing);
+    });
+  });
+
+  group('the load itself', () {
+    late FakeRepository repo;
+    late AppStores stores;
+    late PsnDevice device;
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      FlutterSecureStorage.setMockInitialValues({});
+      repo = FakeRepository();
+      stores = AppStores(repository: repo, authService: FakeAuthService(testUser('u1')), connectivity: FakeConnectivity(), apiService: FakeBrowseApi());
+      device = PsnDevice();
+    });
+
+    http.Response sony(http.Request r, {int refresh = 200}) {
+      if (r.url.host == 'ca.account.sony.com') {
+        return refresh == 200 ? json({'access_token': 'tok', 'refresh_token': 'next', 'refresh_token_expires_in': 5184000}) : json({'error': 'invalid_grant'}, refresh);
+      }
+      expect(r.url.queryParameters['npServiceName'], 'trophy2');
+      return r.url.path.contains('/users/me/')
+          ? json({'trophies': [mine(0, earned: true)]})
+          : json({'trophies': [titleTrophy(0, 'bronze', 'First')]});
+    }
+
+    Future<List<Trophy>?> run(WidgetTester tester, PsnClient client, {bool signedIn = true, bool tapContinue = false}) async {
+      List<Trophy>? result;
+      var returned = false;
+      await tester.runAsync(stores.initialize);
+      addTearDown(stores.dispose);
+      if (signedIn) await tester.runAsync(() => device.saveSignIn('u1', const PsnTokens(accessToken: 'a', refreshToken: 'saved')));
+      await tester.pumpWidget(
+        AppStoresScope(
+          stores: stores,
+          child: MaterialApp(
+            theme: buildTheme(),
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => TextButton(
+                  onPressed: () async {
+                    result = await loadTrophyListFromPlayStation(
+                      context,
+                      gameId: 'g1',
+                      meta: const TrophyMeta(set: 'NPWR1_00', service: 'trophy2', earned: TrophyCounts(bronze: 1), total: TrophyCounts(bronze: 1)),
+                      device: device,
+                      userId: 'u1',
+                      makeClient: () => client,
+                      signInBuilder: (context, uri, onRedirect, onFailed) => const Text('Sony page'),
+                    );
+                    returned = true;
+                  },
+                  child: const Text('load'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('load'));
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+      await tester.pumpAndSettle();
+      if (tapContinue) {
+        await tester.tap(find.text('I understand, sign in'));
+        await tester.pumpAndSettle();
+      }
+      if (!returned && !tapContinue && signedIn) await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+      await tester.pumpAndSettle();
+      return result;
+    }
+
+    testWidgets('with a saved sign-in it reads, stores and notes the list, with no question and no sync counted', (tester) async {
+      final client = clientWith(sony);
+      final list = await run(tester, client);
+      expect(list!.single.name, 'First');
+      expect(repo.savedTrophies['g1']!.single.name, 'First');
+      expect(await tester.runAsync(() => device.storedLists('u1')), {'NPWR1_00': '1/1'});
+      expect(await tester.runAsync(() => device.lastSync('u1')), isNull);
+      expect(await tester.runAsync(() => device.savedSignIn('u1')), 'next');
+      // Two requests for the game, one for the sign-in.
+      expect(client.traffic.requests, 3);
+      expect(client.traffic.statuses, {200: 3});
+    });
+
+    testWidgets('with no saved sign-in it says what this is first, then opens Sony\'s page', (tester) async {
+      final client = clientWith(sony);
+      final list = await run(tester, client, signedIn: false, tapContinue: true);
+      expect(list, isNull); // still on Sony's page: nobody signed in
+      expect(find.text('Sony page'), findsOneWidget);
+      expect(client.traffic.requests, 0);
+    });
+
+    testWidgets('a sign-in Sony turns down is forgotten and the page opens', (tester) async {
+      final client = clientWith((r) => sony(r, refresh: 400));
+      await run(tester, client);
+      expect(find.text('Sony page'), findsOneWidget);
+      expect(await tester.runAsync(() => device.savedSignIn('u1')), isNull);
+      expect(repo.savedTrophies, isEmpty);
+    });
+
+    testWidgets('a list the server did not keep is not noted, so it is read again', (tester) async {
+      repo.trophySaveRefused = true;
+      final list = await run(tester, clientWith(sony));
+      expect(list, isNotNull);
+      expect(await tester.runAsync(() => device.storedLists('u1')), isEmpty);
+    });
+  });
+
+  group('the counts of every game', () {
+    test('the overview gives the set and the counts by grade', () async {
+      final client = clientWith((_) => json({
+        'trophyTitles': [
+          {
+            'trophyTitleName': 'Hades',
+            'npCommunicationId': 'NPWR9_00',
+            'npServiceName': 'trophy2',
+            'trophyTitlePlatform': 'PS5',
+            'definedTrophies': {'bronze': 10, 'silver': 4, 'gold': 2, 'platinum': 1},
+            'earnedTrophies': {'bronze': 7, 'silver': 1, 'gold': 0, 'platinum': 0},
+            'lastUpdatedDateTime': '2026-10-01T10:00:00Z',
+          },
+        ],
+      }));
+      final title = (await client.trophyTitles(const PsnTokens(accessToken: 't'))).single;
+      expect((title.npCommunicationId, title.npServiceName), ('NPWR9_00', 'trophy2'));
+      expect(title.earnedByGrade, const TrophyCounts(bronze: 7, silver: 1));
+      expect(title.definedByGrade, const TrophyCounts(bronze: 10, silver: 4, gold: 2, platinum: 1));
+      expect((title.earned, title.total), (8, 17));
+    });
+
+    test('every game with a set gets its counts on its row, whether or not its list was read', () {
+      final withSet = PsnTrophyTitle(
+        name: 'Hades',
+        platform: 'PS5',
+        earned: 3,
+        total: 5,
+        platinumEarned: false,
+        lastUpdated: DateTime.utc(2026, 10, 1),
+        npCommunicationId: 'NPWR9_00',
+        npServiceName: 'trophy2',
+        earnedByGrade: const TrophyCounts(bronze: 3),
+        definedByGrade: const TrophyCounts(bronze: 4, platinum: 1),
+      );
+      final row = buildPsnImport(PsnLibrary(trophies: [withSet, set('No grades', id: 'X'), set('No id', id: '')])).rows.firstWhere((r) => r.title == 'Hades');
+      expect(row.trophyList, isNull);
+      expect(row.trophyMeta!.set, 'NPWR9_00');
+      expect(row.trophyMeta!.service, 'trophy2');
+      expect(row.trophyMeta!.earned, const TrophyCounts(bronze: 3));
+      expect(row.trophyMeta!.total.total, 5);
+      final others = buildPsnImport(PsnLibrary(trophies: [set('No grades', id: 'X'), set('No id', id: '')])).rows;
+      expect(others.map((r) => r.trophyMeta), [null, null]);
+    });
+
+    test('the meta is stored as short lists, read back, and refused when it is not that shape', () {
+      const meta = TrophyMeta(set: 'NPWR9_00', service: 'trophy2', earned: TrophyCounts(bronze: 7, silver: 1), total: TrophyCounts(bronze: 10, silver: 4, gold: 2, platinum: 1));
+      expect(meta.toJson(), {'s': 'NPWR9_00', 'v': 'trophy2', 'e': [7, 1, 0, 0], 't': [10, 4, 2, 1]});
+      final back = TrophyMeta.fromJson(jsonDecode(jsonEncode(meta.toJson())));
+      expect((back!.set, back.earned, back.total), ('NPWR9_00', meta.earned, meta.total));
+      for (final bad in [null, 'x', {'s': 'a', 'v': 't', 'e': [1, 2, 3], 't': [1, 2, 3, 4]}, {'s': '', 'v': 't', 'e': [0, 0, 0, 0], 't': [0, 0, 0, 0]}, {'s': 'a', 'v': 't', 'e': [-1, 0, 0, 0], 't': [0, 0, 0, 0]}, {'s': 'a', 'v': 't', 'e': [1.5, 0, 0, 0], 't': [0, 0, 0, 0]}]) {
+        expect(TrophyMeta.fromJson(bad), isNull, reason: '$bad');
+      }
+    });
+
+    test('the import stores the counts of a game with no list, and the store reads them back', () async {
+      SharedPreferences.setMockInitialValues({});
+      final repo = FakeRepository();
+      final stores = AppStores(repository: repo, authService: FakeAuthService(testUser('u1')), connectivity: FakeConnectivity(), apiService: FakeBrowseApi());
+      await stores.initialize();
+      addTearDown(stores.dispose);
+      const meta = TrophyMeta(set: 'NPWR1_00', service: 'trophy', earned: TrophyCounts(bronze: 1), total: TrophyCounts(bronze: 2));
+      final told = <String?>[];
+      final run = LibraryImport(
+        rows: const [ImportRow(line: 1, title: 'Celeste', trophiesEarned: 1, trophiesTotal: 2, trophyMeta: meta)],
+        api: _Api({'celeste': [testGame(gameIdForIgdb(20), title: 'Celeste', status: null, igdbId: 20, cover: false)]}),
+        library: stores.library,
+        pause: Duration.zero,
+        onRowImported: (r) => told.add(r.title),
+      );
+      await run.run();
+      expect(repo.savedTrophyMeta[gameIdForIgdb(20)], meta);
+      expect(repo.savedTrophies, isEmpty);
+      expect(told, ['Celeste']);
+      await stores.publicTrophies.loadMeta('u1', gameIdForIgdb(20));
+      expect(stores.publicTrophies.metaOf('u1', gameIdForIgdb(20))!.set, 'NPWR1_00');
+      expect(stores.publicTrophies.metaOf('u1', 'other'), isNull);
+    });
+  });
+
+  group('what the client counted', () {
+    test('requests, bytes and statuses, for the debug log', () async {
+      final client = clientWith((r) => r.url.path.contains('trophyTitles') ? json({'trophyTitles': <Object>[]}) : json({}, 429));
+      await client.trophyTitles(const PsnTokens(accessToken: 't'));
+      await expectLater(client.playedGames(const PsnTokens(accessToken: 't')), throwsA(isA<PsnException>()));
+      expect(client.traffic.requests, 2);
+      expect(client.traffic.statuses, {200: 1, 429: 1});
+      expect(client.traffic.bytesReceived, greaterThan(0));
+      expect(client.traffic.describe(), startsWith('2 requests, '));
     });
   });
 }

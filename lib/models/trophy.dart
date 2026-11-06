@@ -149,6 +149,57 @@ class TrophyCounts {
     gold: gold + other.gold,
     platinum: platinum + other.platinum,
   );
+
+  /// As stored: bronze, silver, gold, platinum.
+  List<int> toList() => [bronze, silver, gold, platinum];
+
+  /// Counts from [toList]'s output; null when [list] is not four whole numbers
+  /// of a sensible size.
+  static TrophyCounts? fromList(Object? list) {
+    if (list is! List || list.length != 4) return null;
+    final n = <int>[];
+    for (final v in list) {
+      if (v is! num || v != v.toInt() || v < 0 || v > 99999) return null;
+      n.add(v.toInt());
+    }
+    return TrophyCounts(bronze: n[0], silver: n[1], gold: n[2], platinum: n[3]);
+  }
+
+  @override
+  bool operator ==(Object other) => other is TrophyCounts && other.bronze == bronze && other.silver == silver && other.gold == gold && other.platinum == platinum;
+
+  @override
+  int get hashCode => Object.hash(bronze, silver, gold, platinum);
+}
+
+/// What the overview of the member's PlayStation games says about one game, kept
+/// on its library row (`user_games.trophy_meta`) for every game of every sync,
+/// whether or not its trophy list was read: Sony's id of the game's trophy set
+/// and which of Sony's two trophy services holds it (what its list is asked for
+/// with), and how many trophies of each grade the member has earned out of how
+/// many there are. The profile adds games up from these counts, so it is complete
+/// after the first sync; a game's list is read when it is opened.
+@immutable
+class TrophyMeta {
+  const TrophyMeta({required this.set, required this.service, required this.earned, required this.total});
+
+  final String set;
+  final String service;
+  final TrophyCounts earned;
+  final TrophyCounts total;
+
+  Map<String, Object?> toJson() => {'s': set, 'v': service, 'e': earned.toList(), 't': total.toList()};
+
+  /// From [toJson]'s output; null when [json] is not one.
+  static TrophyMeta? fromJson(Object? json) {
+    if (json is! Map) return null;
+    final set = json['s'];
+    final service = json['v'];
+    final earned = TrophyCounts.fromList(json['e']);
+    final total = TrophyCounts.fromList(json['t']);
+    if (set is! String || set.isEmpty || set.length > 40 || service is! String || earned == null || total == null) return null;
+    return TrophyMeta(set: set, service: service, earned: earned, total: total);
+  }
 }
 
 /// One game's trophy progress for a member: what `public_trophy_summary` returns.

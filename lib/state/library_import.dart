@@ -95,7 +95,8 @@ class LibraryImport extends ChangeNotifier {
           fillGapsOnly: row.fillGapsOnly,
         );
         final trophies = row.trophyList;
-        final stored = trophies == null || await _library.saveTrophies(game.id, trophies);
+        final meta = row.trophyMeta;
+        final stored = (trophies == null && meta == null) || await _library.saveTrophies(game.id, trophies: trophies, meta: meta);
         if (stored) onRowImported?.call(row);
         _imported++;
       }

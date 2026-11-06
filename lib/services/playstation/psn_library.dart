@@ -39,10 +39,12 @@ class PsnLibrary {
   );
 }
 
-/// The most trophy lists one sync reads: two requests each (so at most 83 with the
-/// three before them, about a minute and a half), and a big library fills in over a
-/// few days instead of in one long burst.
-const psnMaxTrophyLists = 40;
+/// The most trophy lists one sync reads: two requests each (so at most 203 with the
+/// three before them, about three and a half minutes), and a bigger library fills
+/// in over the next syncs. A game's list is also read when it is opened, so none
+/// stays empty. The profile does not wait for the lists: its counts come from the
+/// overview ([TrophyMeta]).
+const psnMaxTrophyLists = 100;
 
 /// Reads both lists with [tokens]. Fails (with the trophy list's error) only
 /// when neither could be read.
@@ -252,6 +254,9 @@ class _Entry {
       fillGapsOnly: true,
       trophyList: list,
       trophySet: list == null ? null : set!.npCommunicationId,
+      trophyMeta: set == null || set.npCommunicationId.isEmpty || set.definedByGrade.total == 0
+          ? null
+          : TrophyMeta(set: set.npCommunicationId, service: set.npServiceName, earned: set.earnedByGrade, total: set.definedByGrade),
     );
   }
 }

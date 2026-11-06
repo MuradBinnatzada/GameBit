@@ -1531,5 +1531,8 @@
   "showTrophies": "Показывать трофеи",
   "showTrophiesSubtitle": "Разрешить другим игрокам видеть ваши трофеи PlayStation в публичном профиле.",
   "privacyTrophiesText": "Ваши трофеи PlayStation, если вы не отключили «{setting}» выше.",
-  "privacyTrophiesOffline": "Не удалось связаться с сервером, поэтому настройка трофеев не изменилась."
+  "privacyTrophiesOffline": "Не удалось связаться с сервером, поэтому настройка трофеев не изменилась.",
+  "trophiesNotLoaded": "Список трофеев этой игры ещё не прочитан из PlayStation.",
+  "trophiesOutOfDate": "С тех пор, как этот список был прочитан, вы получили новые трофеи.",
+  "trophiesLoadFromPlayStation": "Загрузить из PlayStation"
 }

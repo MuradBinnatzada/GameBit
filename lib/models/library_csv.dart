@@ -78,6 +78,7 @@ class ImportRow {
     this.fillGapsOnly = false,
     this.trophyList,
     this.trophySet,
+    this.trophyMeta,
   });
 
   /// The line of the file it came from (the header is line 1).
@@ -114,6 +115,10 @@ class ImportRow {
   /// set they are from ([trophySet], what [ImportFile.onRowImported] is told).
   final List<Trophy>? trophyList;
   final String? trophySet;
+
+  /// The game's trophy set and its counts by grade, for every game the import
+  /// from PlayStation reads (see [TrophyMeta]).
+  final TrophyMeta? trophyMeta;
 
   /// The most rows one import takes.
   static const maxRows = 500;

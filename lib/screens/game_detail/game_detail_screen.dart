@@ -16,6 +16,7 @@ import 'package:checkpoint/screens/game_detail/reviews_panel.dart';
 import 'package:checkpoint/screens/game_detail/sessions_screen.dart';
 import 'package:checkpoint/screens/profile/game_achievements_dialog.dart';
 import 'package:checkpoint/screens/profile/game_trophies_dialog.dart';
+import 'package:checkpoint/screens/settings/psn_import.dart';
 import 'package:checkpoint/sheets/game_backdrop_sheet.dart';
 import 'package:checkpoint/sheets/list_sheets.dart';
 import 'package:checkpoint/sheets/log_hours_sheet.dart';
@@ -639,6 +640,7 @@ class _StatusActions extends StatelessWidget {
               title: game.title,
               coverUrl: game.coverUrl,
               own: true,
+              loadFromPlayStation: psnTrophyListLoader(game.id),
             ));
           },
         ),

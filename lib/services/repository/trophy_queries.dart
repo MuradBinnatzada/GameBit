@@ -3,14 +3,19 @@ part of '../checkpoint_repository.dart';
 /// PlayStation trophies: the list of a game the import stored, and a member's
 /// (or another member's, when they share them).
 mixin _TrophyQueries on _RepositoryBase {
-  /// Stores [trophies] as the list of [gameId] on [userId]'s library row. False
-  /// when the member has no such row on the server (the game is queued to be
-  /// saved later), so the list was not kept. The row is only updated, never
-  /// created: the game goes in through the library's own save first.
-  Future<bool> saveGameTrophies(String userId, String gameId, List<Trophy> trophies) async {
+  /// Stores [trophies] (the list of [gameId]) and/or [meta] (its set and counts by
+  /// grade) on [userId]'s library row. False when the member has no such row on the
+  /// server (the game is queued to be saved later), so nothing was kept. The row is
+  /// only updated, never created: the game goes in through the library's own save
+  /// first.
+  Future<bool> saveGameTrophies(String userId, String gameId, {List<Trophy>? trophies, TrophyMeta? meta}) async {
+    if (trophies == null && meta == null) return true;
     final rows = await _client
         .from(Db.userGames)
-        .update({Db.trophies: Trophy.listToJson(trophies)})
+        .update({
+          if (trophies != null) Db.trophies: Trophy.listToJson(trophies),
+          if (meta != null) Db.trophyMeta: meta.toJson(),
+        })
         .eq(Db.userId, userId)
         .eq(Db.gameId, gameId)
         .select(Db.gameId);
@@ -27,6 +32,18 @@ mixin _TrophyQueries on _RepositoryBase {
       for (final row in data)
         if (row is Map) _trophySummaryFromRow(Map<String, dynamic>.from(row)),
     ];
+  }
+
+  /// The trophy set and counts the member's last PlayStation sync stored for their
+  /// own [gameId]; null when none (the game never came from PlayStation).
+  Future<TrophyMeta?> fetchTrophyMeta(String userId, String gameId) async {
+    final row = await _client
+        .from(Db.userGames)
+        .select(Db.trophyMeta)
+        .eq(Db.userId, userId)
+        .eq(Db.gameId, gameId)
+        .maybeSingle();
+    return TrophyMeta.fromJson(row?[Db.trophyMeta]);
   }
 
   /// [userId]'s trophies for [gameId] (their own always; another member's when

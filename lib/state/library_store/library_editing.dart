@@ -237,18 +237,19 @@ extension LibraryEditing on LibraryStore {
     await _saveUserGame(next);
   }
 
-  /// Stores [trophies] as the trophy list of [gameId] (PlayStation), after the
-  /// game's own save: the list is only added to its library row. True when the
-  /// server kept it; false when it could not (offline, or the game is queued to be
-  /// saved later), in which case the next sync reads the list again.
-  Future<bool> saveTrophies(String gameId, List<Trophy> trophies) async {
+  /// Stores [trophies] as the trophy list of [gameId] and/or [meta] as its set and
+  /// counts (PlayStation), after the game's own save: they are only added to its
+  /// library row. True when the server kept them; false when it could not (offline,
+  /// or the game is queued to be saved later), in which case the next sync reads
+  /// the list again.
+  Future<bool> saveTrophies(String gameId, {List<Trophy>? trophies, TrophyMeta? meta}) async {
     final current = _user;
     if (current == null) return false;
     try {
       _auth.requireSession();
       await _gameSaves[gameId];
       if (_user?.id != current.id) return false;
-      return await _repository.saveGameTrophies(current.id, gameId, trophies);
+      return await _repository.saveGameTrophies(current.id, gameId, trophies: trophies, meta: meta);
     } catch (e, st) {
       debugPrint('Saving the trophies of $gameId failed: $e\n$st');
       return false;
