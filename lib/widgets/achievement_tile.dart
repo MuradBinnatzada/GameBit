@@ -68,7 +68,7 @@ class AchievementTile extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 12,
                       color: a.globalPercent! < 10
                           ? context.palette.star.withValues(alpha: context.palette.isDark ? 0.85 : 1)
                           : context.palette.muted,
@@ -91,7 +91,7 @@ class AchievementTile extends StatelessWidget {
                 if (a.unlockedAt != null)
                   Text(
                     timeAgo(a.unlockedAt!),
-                    style: TextStyle(fontSize: 11, color: context.palette.muted),
+                    style: TextStyle(fontSize: 12, color: context.palette.muted),
                   ),
               ],
             )

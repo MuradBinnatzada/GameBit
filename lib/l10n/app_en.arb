@@ -3375,6 +3375,6 @@
   "aboutCreditPrices": "Current and lowest prices of the games on your wishlist.",
   "aboutCreditNews": "Headlines from gaming outlets, each credited to its outlet and opened on its own site.",
   "aboutTrademarks": "Steam is a trademark of Valve Corporation, and PlayStation of Sony Interactive Entertainment. Gamebit is an independent app, not affiliated with or endorsed by them, IGDB or IsThereAnyDeal.",
-  "openSourceLicenses": "Open-source licenses",
-  "openSourceLicensesSubtitle": "The libraries Gamebit is built with."
+  "thirdPartyLicenses": "Third-party licenses",
+  "thirdPartyLicensesSubtitle": "The libraries Gamebit is built with."
 }

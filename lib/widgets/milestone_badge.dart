@@ -209,7 +209,7 @@ class _FramedAvatarState extends State<FramedAvatar>
                     context.l10n.levelShort(level),
                     style: TextStyle(
                       color: palette.onAccent,
-                      fontSize: 10.5,
+                      fontSize: 12,
                       fontWeight: FontWeight.w800,
                     ),
                   ),

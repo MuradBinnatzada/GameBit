@@ -794,7 +794,7 @@ class _FriendActivityCard extends StatelessWidget {
                   friendActivityCaption(item),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 11, color: context.palette.muted),
+                  style: TextStyle(fontSize: 12, color: context.palette.muted),
                 ),
               ),
             ],

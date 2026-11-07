@@ -190,7 +190,7 @@ class _Totals extends StatelessWidget {
                       TrophyCup(grade: grade, size: grade == TrophyGrade.platinum ? 28 : 24),
                       const SizedBox(height: 2),
                       Text('${totals.counts.of(grade)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-                      Text(trophyGradeName(context, grade), style: TextStyle(fontSize: 11, color: context.palette.muted)),
+                      Text(trophyGradeName(context, grade), style: TextStyle(fontSize: 12, color: context.palette.muted)),
                     ],
                   ),
               ],

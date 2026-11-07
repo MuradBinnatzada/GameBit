@@ -343,7 +343,7 @@ class _PosterTile extends StatelessWidget {
                       fmtHours(game.rating),
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 11,
+                        fontSize: 12,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -369,7 +369,7 @@ class _PosterTile extends StatelessWidget {
                 context.l10n.hoursCompact(fmtHours(game.hoursPlayed)),
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 11,
+                  fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),
               ),

@@ -168,7 +168,7 @@ class _AxisLabel extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(text, style: TextStyle(color: context.palette.muted, fontSize: 11)),
+        Text(text, style: TextStyle(color: context.palette.muted, fontSize: 12)),
         const SizedBox(width: 1),
         Icon(Icons.star_rounded, size: 11, color: context.palette.muted),
       ],
@@ -198,7 +198,7 @@ class _Bubble extends StatelessWidget {
           children: [
             Text(
               '$rating',
-              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
             ),
             const SizedBox(width: 1),
             Icon(Icons.star_rounded, size: 12, color: context.palette.star),
@@ -206,7 +206,7 @@ class _Bubble extends StatelessWidget {
             Text(
               context.l10n.gamesCount(count),
               style: const TextStyle(
-                fontSize: 11.5,
+                fontSize: 12,
                 fontWeight: FontWeight.w700,
               ),
             ),

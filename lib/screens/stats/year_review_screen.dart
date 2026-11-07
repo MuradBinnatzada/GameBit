@@ -265,7 +265,7 @@ class _MonthsPanelState extends State<_MonthsPanel> {
               Row(children: [
                 for (var m = 0; m < 12; m++)
                   Expanded(
-                    child: Text(fmtMonthLetter(m), textAlign: TextAlign.center, style: TextStyle(color: context.palette.muted, fontSize: 11)),
+                    child: Text(fmtMonthLetter(m), textAlign: TextAlign.center, style: TextStyle(color: context.palette.muted, fontSize: 12)),
                   ),
               ]),
             ]),
@@ -299,7 +299,7 @@ class _MonthBar extends StatelessWidget {
               : FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.bottomCenter,
-                  child: Text(label!, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                  child: Text(label!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                 ),
         ),
         Expanded(

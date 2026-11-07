@@ -207,7 +207,7 @@ class _MonthBars extends StatelessWidget {
       Row(children: [
         for (var m = 0; m < 12; m++)
           Expanded(
-            child: Text(fmtMonthLetter(m), textAlign: TextAlign.center, style: TextStyle(color: _ink.muted, fontSize: 11)),
+            child: Text(fmtMonthLetter(m), textAlign: TextAlign.center, style: TextStyle(color: _ink.muted, fontSize: 12)),
           ),
       ]),
     ]);

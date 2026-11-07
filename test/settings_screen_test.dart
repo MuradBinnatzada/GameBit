@@ -855,7 +855,7 @@ void main() {
 
       expect(find.text('Gamebit'), findsOneWidget);
       expect(find.textContaining('Version'), findsNothing);
-      expect(find.text('Open-source licenses'), findsOneWidget);
+      expect(find.text('Third-party licenses'), findsOneWidget);
     });
 
     testWidgets('names the app, its version, where the data comes from and the legal pages', (tester) async {
@@ -874,7 +874,7 @@ void main() {
         expect(find.text(credit), findsOneWidget, reason: credit);
       }
       expect(find.textContaining('Steam is a trademark of Valve Corporation'), findsOneWidget);
-      for (final row in ['Terms of Use', 'Privacy Policy', 'Open-source licenses', 'Contact us']) {
+      for (final row in ['Terms of Use', 'Privacy Policy', 'Third-party licenses', 'Contact us']) {
         expect(find.text(row), findsOneWidget, reason: row);
       }
     });
@@ -907,7 +907,7 @@ void main() {
       );
       await openAbout(tester);
 
-      await tester.tap(find.text('Open-source licenses'));
+      await tester.tap(find.text('Third-party licenses'));
       await tester.pumpAndSettle();
 
       expect(find.byType(LicensePage), findsOneWidget);

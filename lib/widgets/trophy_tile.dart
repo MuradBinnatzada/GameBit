@@ -109,7 +109,7 @@ class TrophyTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 12,
                         color: rare ? color.withValues(alpha: context.palette.isDark ? 0.9 : 1) : context.palette.muted,
                         fontWeight: rare ? FontWeight.w600 : FontWeight.w400,
                       ),
@@ -127,7 +127,7 @@ class TrophyTile extends StatelessWidget {
                 if (t.earned && t.earnedAt != null)
                   Text(
                     MaterialLocalizations.of(context).formatShortDate(t.earnedAt!),
-                    style: TextStyle(fontSize: 11, color: context.palette.muted),
+                    style: TextStyle(fontSize: 12, color: context.palette.muted),
                   ),
               ],
             ),

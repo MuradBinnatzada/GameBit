@@ -38,7 +38,7 @@ class GamePosterCard extends StatelessWidget {
             const SizedBox(height: 4),
             game.rating > 0
                 ? StarRating(rating: game.rating, size: 14)
-                : Text(context.l10n.notRated, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, color: context.palette.muted)),
+                : Text(context.l10n.notRated, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: context.palette.muted)),
           ],
           if (subtitle != null) ...[
             const SizedBox(height: 4),
@@ -48,13 +48,13 @@ class GamePosterCard extends StatelessWidget {
                 const SizedBox(width: 4),
               ],
               Expanded(
-                child: Text(subtitle!, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, color: context.palette.muted)),
+                child: Text(subtitle!, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: context.palette.muted)),
               ),
             ]),
           ],
           if (caption != null) ...[
             const SizedBox(height: 2),
-            Text(caption!, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, color: context.palette.muted)),
+            Text(caption!, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: context.palette.muted)),
           ],
         ]),
       ),

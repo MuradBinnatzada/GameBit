@@ -108,7 +108,7 @@ class RecentActivityPanel extends StatelessWidget {
                                   textAlign: TextAlign.end,
                                   style: TextStyle(
                                     color: context.palette.muted,
-                                    fontSize: 11,
+                                    fontSize: 12,
                                   ),
                                 ),
                               ],

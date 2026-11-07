@@ -1586,6 +1586,6 @@
   "aboutCreditPrices": "Текущие и самые низкие цены игр из вашего списка желаний.",
   "aboutCreditNews": "Заголовки игровых изданий: у каждой новости указано издание, и она открывается на его сайте.",
   "aboutTrademarks": "Steam — товарный знак Valve Corporation, PlayStation — Sony Interactive Entertainment. Gamebit — независимое приложение: оно не связано с этими компаниями, IGDB и IsThereAnyDeal и не одобрено ими.",
-  "openSourceLicenses": "Лицензии открытого ПО",
-  "openSourceLicensesSubtitle": "Библиотеки, на которых построен Gamebit."
+  "thirdPartyLicenses": "Лицензии сторонних библиотек",
+  "thirdPartyLicensesSubtitle": "Библиотеки, на которых построен Gamebit."
 }

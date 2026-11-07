@@ -12,10 +12,11 @@ import 'package:checkpoint/widgets/link_row.dart';
 import 'package:checkpoint/widgets/panel.dart';
 
 /// Where the data of the app comes from, who it belongs to, the terms, the
-/// libraries it is built with and the version: what the stores ask an app to
-/// show, and what a member writing to us is asked for first. The credits mirror
-/// the sources the Edge Functions read (igdb-handler, sync-steam, game-prices,
-/// game-news); a new source belongs here too.
+/// licenses of the libraries it is built with (their notices, not a license of
+/// the app's own, which is proprietary: see LICENSE) and the version: what the
+/// stores ask an app to show, and what a member writing to us is asked for first.
+/// The credits mirror the sources the Edge Functions read (igdb-handler,
+/// sync-steam, game-prices, game-news); a new source belongs here too.
 class AboutSection extends StatefulWidget {
   const AboutSection({super.key});
 
@@ -168,8 +169,8 @@ class _AboutSectionState extends State<AboutSection> {
               ),
               LinkRow(
                 icon: Icons.code_rounded,
-                title: l10n.openSourceLicenses,
-                subtitle: l10n.openSourceLicensesSubtitle,
+                title: l10n.thirdPartyLicenses,
+                subtitle: l10n.thirdPartyLicensesSubtitle,
                 onTap: _showLicenses,
               ),
               LinkRow(

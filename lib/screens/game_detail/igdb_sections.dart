@@ -273,7 +273,7 @@ class _TimeToBeatPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     const figureStyle = TextStyle(fontSize: 22, fontWeight: FontWeight.w800);
     const sourceStyle = TextStyle(
-      fontSize: 11.5,
+      fontSize: 12,
       fontWeight: FontWeight.w600,
       height: 1.3,
     );

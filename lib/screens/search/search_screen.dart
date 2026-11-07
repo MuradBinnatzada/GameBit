@@ -718,7 +718,7 @@ class _SearchTile extends StatelessWidget {
               Wrap(spacing: 6, runSpacing: 4, children: [
                 for (final p in game.platforms.take(4)) Icon(p.icon, size: 16, color: context.palette.legible(p.color)),
                 if (game.platforms.length > 4)
-                  Text('+${game.platforms.length - 4}', style: TextStyle(fontSize: 11, color: context.palette.muted)),
+                  Text('+${game.platforms.length - 4}', style: TextStyle(fontSize: 12, color: context.palette.muted)),
               ]),
             ]),
           ),
