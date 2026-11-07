@@ -62,13 +62,15 @@ create policy thread_notification_modes_delete_own
 comment on table public.thread_notification_modes is
   'A member muting or following one discussion for push notifications (no row: the default). Own rows only.';
 
--- The same helper as in 20261107140000, with the mute added.
+-- The helper of 20261107140000 with the mute added, and a role instead of a yes/no `direct`:
+-- `direct` (a reply to their own post), `owner` (a reply in the thread they started) or
+-- `follower` (a reply in a thread they follow), which the notification's wording follows.
 create or replace function private.queue_reply_notification(
   recipient uuid,
   p_thread uuid,
   p_title text,
   replier uuid,
-  direct boolean
+  role text
 )
 returns void
 language plpgsql
@@ -76,7 +78,7 @@ security definer
 set search_path = ''
 as $$
 declare
-  key text := (case when direct then 'direct:' else 'reply:' end) || p_thread;
+  key text := (case when role = 'direct' then 'direct:' else 'reply:' end) || p_thread;
 begin
   -- Nobody is told of their own reply.
   if recipient is null or recipient = replier then
@@ -122,7 +124,8 @@ begin
       'thread_id', p_thread,
       'thread_title', left(p_title, 120),
       'from_id', replier,
-      'direct', direct
+      'direct', role = 'direct',
+      'follower', role = 'follower'
     ),
     key
   )
@@ -130,7 +133,7 @@ begin
 end;
 $$;
 
-revoke all on function private.queue_reply_notification(uuid, uuid, text, uuid, boolean) from public, anon, authenticated;
+revoke all on function private.queue_reply_notification(uuid, uuid, text, uuid, text) from public, anon, authenticated;
 
 create or replace function public.discussion_posts_notify()
 returns trigger
@@ -157,10 +160,10 @@ begin
     end if;
 
     -- The member answered hears of it as a reply to them ...
-    perform private.queue_reply_notification(parent_author, new.thread_id, owner_title, new.author_id, true);
+    perform private.queue_reply_notification(parent_author, new.thread_id, owner_title, new.author_id, 'direct');
     -- ... the thread's starter of a reply in their thread, unless that is the same member ...
     if owner_id is distinct from parent_author then
-      perform private.queue_reply_notification(owner_id, new.thread_id, owner_title, new.author_id, false);
+      perform private.queue_reply_notification(owner_id, new.thread_id, owner_title, new.author_id, 'owner');
     end if;
     -- ... and whoever follows the thread of every reply, if they are not told above.
     for follower in
@@ -173,7 +176,7 @@ begin
          and m.user_id is distinct from owner_id
        limit 200
     loop
-      perform private.queue_reply_notification(follower, new.thread_id, owner_title, new.author_id, false);
+      perform private.queue_reply_notification(follower, new.thread_id, owner_title, new.author_id, 'follower');
     end loop;
   exception when others then
     raise warning 'discussion_posts_notify: %', sqlerrm;
@@ -183,3 +186,7 @@ end;
 $$;
 
 revoke all on function public.discussion_posts_notify() from public, anon, authenticated;
+
+-- The helper of 20261107140000 took a boolean (direct or not); this one takes a role, so a
+-- follower can be told apart from the thread's starter. Nothing calls the old one any more.
+drop function if exists private.queue_reply_notification(uuid, uuid, text, uuid, boolean);

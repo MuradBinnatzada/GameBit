@@ -52,7 +52,9 @@ class _ThreadScreenState extends State<ThreadScreen> {
     // After the frame: loading notifies, which isn't allowed during build.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        unawaited(context.read<DiscussionsStore>().loadThread(widget.threadId));
+        final store = context.read<DiscussionsStore>();
+        unawaited(store.loadThread(widget.threadId));
+        if (context.read<AuthStore>().isLoggedIn) unawaited(store.loadNotifications(widget.threadId));
       }
     });
   }
@@ -221,7 +223,13 @@ class _ThreadScreenState extends State<ThreadScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(board?.title ?? l10n.discussion)),
+      appBar: AppBar(
+        title: Text(board?.title ?? l10n.discussion),
+        actions: [
+          if (thread != null && me != null)
+            _NotificationsMenu(threadId: thread.id, isOwner: thread.author.id == me),
+        ],
+      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -480,6 +488,71 @@ class _ComposerState extends State<_Composer> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The bell in the top bar: what the member is told of this discussion by push
+/// notification. The default (a reply to their post, and every reply in a thread they
+/// started), every new reply (for a thread somebody else started), or nothing.
+class _NotificationsMenu extends StatelessWidget {
+  const _NotificationsMenu({required this.threadId, required this.isOwner});
+
+  final String threadId;
+
+  /// The member started the thread: they are told of every reply already, so there is
+  /// nothing to follow.
+  final bool isOwner;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final store = context.watch<DiscussionsStore>();
+    final mode = store.notificationsOf(threadId);
+    Future<void> choose(ThreadNotifications next) async {
+      final messenger = ScaffoldMessenger.of(context);
+      final failed = l10n.threadNotifyFailed;
+      if (!await store.setNotifications(threadId, next)) {
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(failed)));
+      }
+    }
+
+    PopupMenuItem<ThreadNotifications> item(ThreadNotifications value, IconData icon, String label) => PopupMenuItem(
+      value: value,
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: value == mode ? context.palette.accent : context.palette.muted),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(fontWeight: value == mode ? FontWeight.w800 : FontWeight.w500),
+            ),
+          ),
+          if (value == mode) Icon(Icons.check_rounded, size: 20, color: context.palette.accent),
+        ],
+      ),
+    );
+
+    return PopupMenuButton<ThreadNotifications>(
+      tooltip: l10n.threadNotificationsTooltip,
+      icon: Icon(switch (mode) {
+        ThreadNotifications.standard => Icons.notifications_none_rounded,
+        ThreadNotifications.following => Icons.notifications_active_rounded,
+        ThreadNotifications.muted => Icons.notifications_off_outlined,
+      }),
+      onSelected: (next) => unawaited(choose(next)),
+      itemBuilder: (_) => [
+        item(
+          ThreadNotifications.standard,
+          Icons.notifications_none_rounded,
+          isOwner ? l10n.threadNotifyStandardOwner : l10n.threadNotifyStandard,
+        ),
+        if (!isOwner) item(ThreadNotifications.following, Icons.notifications_active_rounded, l10n.threadNotifyFollowing),
+        item(ThreadNotifications.muted, Icons.notifications_off_outlined, l10n.threadNotifyMuted),
+      ],
     );
   }
 }

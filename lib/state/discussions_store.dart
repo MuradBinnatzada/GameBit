@@ -629,8 +629,52 @@ class DiscussionsStore extends AccountScopedStore {
     await prefs.setBool(_rulesKey, true);
   }
 
+  // ---- What the member is told of a discussion ----
+
+  final Map<String, ThreadNotifications> _modes = {};
+
+  /// What the signed-in member is told of the discussion [threadId] by push
+  /// notification (the default until it is read).
+  ThreadNotifications notificationsOf(String threadId) => _modes[threadId] ?? ThreadNotifications.standard;
+
+  /// Reads it from the server; a failure leaves what is held.
+  Future<void> loadNotifications(String threadId) async {
+    if (accountId == null) return;
+    final epoch = this.epoch;
+    try {
+      final mode = await _repository.fetchThreadNotifications(threadId);
+      if (isStale(epoch)) return;
+      _modes[threadId] = mode;
+      notifyIfAlive();
+    } catch (e) {
+      debugPrint('Reading the notifications of a discussion failed: $e');
+    }
+  }
+
+  /// Sets it, the screen showing it at once; false when the server refused and it
+  /// went back.
+  Future<bool> setNotifications(String threadId, ThreadNotifications mode) async {
+    if (accountId == null) return false;
+    final epoch = this.epoch;
+    final before = notificationsOf(threadId);
+    _modes[threadId] = mode;
+    notifyIfAlive();
+    try {
+      await _repository.setThreadNotifications(threadId, mode);
+      return true;
+    } catch (e) {
+      debugPrint('Setting the notifications of a discussion failed: $e');
+      if (!isStale(epoch)) {
+        _modes[threadId] = before;
+        notifyIfAlive();
+      }
+      return false;
+    }
+  }
+
   @override
   void resetForAccount() {
+    _modes.clear();
     _boardsStatus = LoadStatus.idle;
     _boards = const [];
     _boardsAt = null;

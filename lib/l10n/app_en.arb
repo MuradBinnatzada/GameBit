@@ -2798,6 +2798,12 @@
     }
   },
   "cancelReply": "Cancel reply",
+  "threadNotificationsTooltip": "Notifications for this discussion",
+  "threadNotifyStandard": "Replies to my posts",
+  "threadNotifyStandardOwner": "Every reply to my thread",
+  "threadNotifyFollowing": "Every new reply",
+  "threadNotifyMuted": "Mute this discussion",
+  "threadNotifyFailed": "Couldn't change notifications for this discussion. Try again.",
   "pinned": "Pinned",
   "threadLocked": "Locked",
   "threadLockedNotice": "This discussion is locked.",

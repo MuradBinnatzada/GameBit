@@ -311,6 +311,20 @@ Deno.test('a reply to the member\'s own post says it was to them, in the thread 
   assertEquals(readThreadReply({ thread_id: 't1', thread_title: 'T' })!.direct, false)
 })
 
+Deno.test('a reply in a thread the member follows does not say it is their thread', () => {
+  const d = readThreadReply({ thread_id: 't1', thread_title: 'Best RPG of 2026?', from_id: 'm1', follower: true })!
+  assertEquals(d.follower, true)
+  assertEquals(renderThreadReply(d, 'Alex', 'en'), {
+    title: 'New reply in “Best RPG of 2026?”',
+    body: 'Alex replied',
+    data: { kind: 'thread_reply', thread_id: 't1' },
+    channelId: CHANNELS.thread_reply,
+  })
+  assertEquals(renderThreadReply(d, 'Alex', 'ru').body, 'Ответ от Alex')
+  assertEquals(renderThreadReply(d, null, 'en').body, 'There is a new reply')
+  assertEquals(readThreadReply({ thread_id: 't1', thread_title: 'T' })!.follower, false)
+})
+
 Deno.test('a reply that is not whole is not one', () => {
   assertEquals(readThreadReply(null), null)
   assertEquals(readThreadReply({ thread_id: 't1' }), null)

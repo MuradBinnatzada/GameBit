@@ -64,6 +64,8 @@ export type ThreadReplyData = {
   fromId: string | null
   /** A reply to the member's own post, not only to a thread they started. */
   direct: boolean
+  /** The member follows the thread (did not start it): not "your thread". */
+  follower: boolean
 }
 
 /** The `data` of a `thread_reply` row, or null when it is not one. */
@@ -75,6 +77,7 @@ export function readThreadReply(data: unknown): ThreadReplyData | null {
     threadTitle: d.thread_title,
     fromId: typeof d.from_id === 'string' ? d.from_id : null,
     direct: d.direct === true,
+    follower: d.follower === true,
   }
 }
 
@@ -114,7 +117,9 @@ export function renderThreadReply(d: ThreadReplyData, fromName: string | null, l
   }
   return {
     title: ru ? `Новый ответ в «${thread}»` : `New reply in “${thread}”`,
-    body: name
+    body: d.follower
+      ? (name ? (ru ? `Ответ от ${name}` : `${name} replied`) : (ru ? 'Появился новый ответ' : 'There is a new reply'))
+      : name
       ? (ru ? `Ответ от ${name}` : `${name} replied to your thread`)
       : (ru ? 'Вам ответили в вашей теме' : 'Someone replied to your thread'),
     data,

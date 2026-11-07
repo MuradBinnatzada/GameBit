@@ -178,3 +178,24 @@ abstract final class DiscussionLimits {
   static const threadTextMax = 3000;
   static const replyMax = 2000;
 }
+
+/// What the member is told of one discussion by push notification
+/// (`thread_notification_modes`, 20261107160000_thread_notification_modes.sql).
+enum ThreadNotifications {
+  /// The default: a reply to their post, and every reply in a thread they started.
+  standard(null),
+
+  /// Every new reply in the thread, whoever it answers.
+  following('following'),
+
+  /// Nothing from it.
+  muted('muted');
+
+  const ThreadNotifications(this.wire);
+
+  /// The `mode` of the row; none for [standard].
+  final String? wire;
+
+  static ThreadNotifications fromWire(Object? wire) =>
+      values.firstWhere((m) => m.wire != null && m.wire == wire, orElse: () => standard);
+}

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:checkpoint/app/app_shell.dart';
 import 'package:checkpoint/app/nav_tab.dart';
 import 'package:checkpoint/models/discussion.dart';
+import 'package:checkpoint/screens/discussions/thread_screen.dart';
 import 'package:checkpoint/models/game_reviews.dart';
 import 'package:checkpoint/screens/game_detail/game_detail_screen.dart';
 import 'package:checkpoint/services/discussion_failure.dart';
@@ -439,6 +440,96 @@ void main() {
 
       expect(find.text('This discussion is locked.'), findsOneWidget);
       expect(find.text('Write a reply'), findsNothing);
+    });
+  });
+
+  group('notifications of a discussion', () {
+    Finder bell() => find.byTooltip('Notifications for this discussion');
+
+    testWidgets('the bell offers the default, every new reply and a mute for somebody else\'s thread', (tester) async {
+      await openThread(tester, 'Best soulslike?');
+
+      expect(find.byIcon(Icons.notifications_none_rounded), findsOneWidget);
+      await tester.tap(bell());
+      await settle(tester);
+
+      expect(find.text('Replies to my posts'), findsOneWidget);
+      expect(find.text('Every new reply'), findsOneWidget);
+      expect(find.text('Mute this discussion'), findsOneWidget);
+      expect(find.text('Every reply to my thread'), findsNothing);
+    });
+
+    testWidgets('on your own thread there is nothing to follow, as every reply is told already', (tester) async {
+      repo.discussionThreads.add(testThread('mine', title: 'My own topic', author: 'u1', authorName: 'Me', at: ago(1)));
+      await openThread(tester, 'My own topic');
+
+      await tester.tap(bell());
+      await settle(tester);
+
+      expect(find.text('Every reply to my thread'), findsOneWidget);
+      expect(find.text('Mute this discussion'), findsOneWidget);
+      expect(find.text('Every new reply'), findsNothing);
+      expect(find.text('Replies to my posts'), findsNothing);
+    });
+
+    testWidgets('muting is saved, and the bell shows it', (tester) async {
+      await openThread(tester, 'Best soulslike?');
+
+      await tester.tap(bell());
+      await settle(tester);
+      await tester.tap(find.text('Mute this discussion'));
+      await settle(tester);
+
+      expect(repo.threadModes['t1'], ThreadNotifications.muted);
+      expect(find.byIcon(Icons.notifications_off_outlined), findsOneWidget);
+    });
+
+    testWidgets('following is saved, and going back to the default takes it away', (tester) async {
+      await openThread(tester, 'Best soulslike?');
+
+      await tester.tap(bell());
+      await settle(tester);
+      await tester.tap(find.text('Every new reply'));
+      await settle(tester);
+      expect(repo.threadModes['t1'], ThreadNotifications.following);
+      expect(find.byIcon(Icons.notifications_active_rounded), findsOneWidget);
+
+      await tester.tap(bell());
+      await settle(tester);
+      await tester.tap(find.text('Replies to my posts'));
+      await settle(tester);
+      expect(repo.threadModes, isEmpty);
+      expect(find.byIcon(Icons.notifications_none_rounded), findsOneWidget);
+    });
+
+    testWidgets('a discussion that was muted before shows so as it opens', (tester) async {
+      repo.threadModes['t1'] = ThreadNotifications.muted;
+
+      await openThread(tester, 'Best soulslike?');
+
+      expect(find.byIcon(Icons.notifications_off_outlined), findsOneWidget);
+    });
+
+    testWidgets('a server that is down puts the bell back and says so', (tester) async {
+      await openThread(tester, 'Best soulslike?');
+      repo.threadModesDown = true;
+
+      await tester.tap(bell());
+      await settle(tester);
+      await tester.tap(find.text('Mute this discussion'));
+      await settle(tester);
+
+      expect(find.byIcon(Icons.notifications_none_rounded), findsOneWidget);
+      expect(find.textContaining("Couldn't change notifications"), findsOneWidget);
+    });
+
+    testWidgets('signed out there is no bell', (tester) async {
+      stores = makeStores(signedIn: false);
+      await start(tester, home: const ThreadScreen(threadId: 't1'));
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+      await tester.pump(); // not settled: a signed-out member's thread never loads
+
+      expect(bell(), findsNothing);
     });
   });
 

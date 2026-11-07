@@ -1197,6 +1197,26 @@ class FakeRepository implements CheckpointRepository {
     discussionReports.add((threadId: threadId, postId: postId, reason: reason));
   }
 
+  /// What the member is told of each discussion (thread id -> mode); the server can be made unreachable.
+  final Map<String, ThreadNotifications> threadModes = {};
+  bool threadModesDown = false;
+
+  @override
+  Future<ThreadNotifications> fetchThreadNotifications(String threadId) async {
+    if (threadModesDown) throw Exception('modes are down');
+    return threadModes[threadId] ?? ThreadNotifications.standard;
+  }
+
+  @override
+  Future<void> setThreadNotifications(String threadId, ThreadNotifications mode) async {
+    if (threadModesDown) throw Exception('modes are down');
+    if (mode == ThreadNotifications.standard) {
+      threadModes.remove(threadId);
+    } else {
+      threadModes[threadId] = mode;
+    }
+  }
+
   /// Push notifications: the phones registered on the server (by token), what the
   /// member wants, and a switch to make the server unreachable.
   final Map<String, ({String platform, String language, String country})> pushDevices = {};

@@ -272,6 +272,10 @@ abstract final class Db {
   /// `public_followers` / `public_following`: when the follow happened.
   static const followedAt = 'followed_at';
 
+  /// `thread_notification_modes`: a discussion the member muted or follows.
+  static const threadNotificationModes = 'thread_notification_modes';
+  static const mode = 'mode';
+
   /// `notification_settings`: which push notifications the member wants.
   static const notificationSettings = 'notification_settings';
   static const priceDrops = 'price_drops';

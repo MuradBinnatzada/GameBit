@@ -127,4 +127,35 @@ mixin _DiscussionQueries on _RepositoryBase {
       excerpt: _text(row['reply_to_excerpt']) ?? '',
     );
   }
+
+  /// What the signed-in member is told of the discussion [threadId].
+  Future<ThreadNotifications> fetchThreadNotifications(String threadId) async {
+    final row = await _client
+        .from(Db.threadNotificationModes)
+        .select(Db.mode)
+        .eq(Db.userId, _requireUserId())
+        .eq(Db.threadId, threadId)
+        .maybeSingle();
+    return ThreadNotifications.fromWire(row?[Db.mode]);
+  }
+
+  /// Sets what the member is told of [threadId]: the default takes their row away.
+  Future<void> setThreadNotifications(String threadId, ThreadNotifications mode) async {
+    final userId = _requireUserId();
+    final wire = mode.wire;
+    if (wire == null) {
+      await _client
+          .from(Db.threadNotificationModes)
+          .delete()
+          .eq(Db.userId, userId)
+          .eq(Db.threadId, threadId);
+      return;
+    }
+    await _client.from(Db.threadNotificationModes).upsert({
+      Db.userId: userId,
+      Db.threadId: threadId,
+      Db.mode: wire,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    }, onConflict: '${Db.userId},${Db.threadId}');
+  }
 }
