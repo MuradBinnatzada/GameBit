@@ -3,10 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'
     show AuthApiException, AuthException, User;
+import 'package:url_launcher_platform_interface/link.dart' show LinkDelegate;
+import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
+import 'package:checkpoint/app/app_config.dart';
 import 'package:checkpoint/app/new_password_screen.dart';
 import 'package:checkpoint/models/achievement_summary.dart';
 import 'package:checkpoint/models/connected_service.dart';
@@ -145,7 +149,7 @@ void main() {
     testWidgets('are chips across the head of a phone screen', (tester) async {
       await open(tester);
 
-      for (final label in ['Account', 'Security', 'Privacy']) {
+      for (final label in ['Account', 'Security', 'Privacy', 'About']) {
         expect(
           find.widgetWithText(ChoiceChip, label),
           findsOneWidget,
@@ -172,7 +176,7 @@ void main() {
       await open(tester, size: const Size(1100, 800));
 
       expect(find.byType(ChoiceChip), findsNothing);
-      for (final label in ['Account', 'Security', 'Privacy']) {
+      for (final label in ['Account', 'Security', 'Privacy', 'About']) {
         expect(
           find.widgetWithText(ListTile, label),
           findsOneWidget,
@@ -826,4 +830,101 @@ void main() {
       expect(find.textContaining('was not changed'), findsOneWidget);
     });
   });
+
+  group('About', () {
+    late _FakeLauncher launcher;
+
+    setUp(() {
+      final before = UrlLauncherPlatform.instance;
+      launcher = _FakeLauncher();
+      UrlLauncherPlatform.instance = launcher;
+      addTearDown(() => UrlLauncherPlatform.instance = before);
+    });
+
+    Future<void> openAbout(WidgetTester tester) async {
+      await open(tester, size: const Size(400, 2200), section: SettingsSection.about);
+      // The version is read from the platform, outside the test's fake clock.
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await tester.pumpAndSettle();
+    }
+
+    // First on purpose: the platform answers nothing until a test gives it a
+    // version (PackageInfo keeps the first answer it has for the whole run).
+    testWidgets('is still shown when the platform cannot tell the version', (tester) async {
+      await openAbout(tester);
+
+      expect(find.text('Gamebit'), findsOneWidget);
+      expect(find.textContaining('Version'), findsNothing);
+      expect(find.text('Open-source licenses'), findsOneWidget);
+    });
+
+    testWidgets('names the app, its version, where the data comes from and the legal pages', (tester) async {
+      PackageInfo.setMockInitialValues(
+        appName: 'Gamebit',
+        packageName: 'app.gamebit',
+        version: '1.2.3',
+        buildNumber: '45',
+        buildSignature: '',
+      );
+      await openAbout(tester);
+
+      expect(find.text('Gamebit'), findsOneWidget);
+      expect(find.text('Version 1.2.3 (45)'), findsOneWidget);
+      for (final credit in ['IGDB', 'Steam', 'IsThereAnyDeal', 'Game news']) {
+        expect(find.text(credit), findsOneWidget, reason: credit);
+      }
+      expect(find.textContaining('Steam is a trademark of Valve Corporation'), findsOneWidget);
+      for (final row in ['Terms of Use', 'Privacy Policy', 'Open-source licenses', 'Contact us']) {
+        expect(find.text(row), findsOneWidget, reason: row);
+      }
+    });
+
+    testWidgets('opens the sites it credits, the terms, the policy and a mail to us', (tester) async {
+      await openAbout(tester);
+
+      for (final row in ['IGDB', 'Steam', 'IsThereAnyDeal', 'Terms of Use', 'Privacy Policy', 'Contact us']) {
+        await tester.tap(find.text(row));
+        await tester.pump();
+      }
+
+      expect(launcher.urls, [
+        'https://www.igdb.com',
+        'https://store.steampowered.com',
+        'https://isthereanydeal.com',
+        AppConfig.termsUri.toString(),
+        AppConfig.privacyUri.toString(),
+        AppConfig.contactUri.toString(),
+      ]);
+    });
+
+    testWidgets('lists the licenses of the libraries under the name and version of the app', (tester) async {
+      PackageInfo.setMockInitialValues(
+        appName: 'Gamebit',
+        packageName: 'app.gamebit',
+        version: '1.2.3',
+        buildNumber: '45',
+        buildSignature: '',
+      );
+      await openAbout(tester);
+
+      await tester.tap(find.text('Open-source licenses'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(LicensePage), findsOneWidget);
+      expect(find.text('1.2.3 (45)'), findsOneWidget);
+    });
+  });
+}
+
+class _FakeLauncher extends UrlLauncherPlatform {
+  final urls = <String>[];
+
+  @override
+  LinkDelegate? get linkDelegate => null;
+
+  @override
+  Future<bool> launchUrl(String url, LaunchOptions options) async {
+    urls.add(url);
+    return true;
+  }
 }

@@ -15,6 +15,9 @@ library;
 import 'package:flutter/foundation.dart' show kDebugMode;
 
 abstract final class AppConfig {
+  /// What the app is called to members (the package is still `checkpoint`).
+  static const appName = 'Gamebit';
+
   static const productionSupabaseUrl = 'https://nmbarqhvcjgyuwreebda.supabase.co';
   static const _productionPublishableKey =
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tYmFycWh2Y2pneXV3cmVlYmRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzODE5OTcsImV4cCI6MjEwNjk1Nzk5N30.tXIvaeJPK1ZEI75U6f-SkD-4iRZBVVE3Cy5OxBCscGQ';

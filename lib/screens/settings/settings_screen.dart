@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:checkpoint/l10n/l10n.dart';
+import 'package:checkpoint/screens/settings/about_section.dart';
 import 'package:checkpoint/screens/settings/admin_section.dart';
 import 'package:checkpoint/screens/settings/account_section.dart';
 import 'package:checkpoint/screens/settings/appearance_section.dart';
@@ -22,6 +23,7 @@ enum SettingsSection {
   notifications(Icons.notifications_rounded),
   appearance(Icons.palette_rounded),
   data(Icons.import_export_rounded),
+  about(Icons.info_outline_rounded),
   admin(Icons.admin_panel_settings_rounded);
 
   const SettingsSection(this.icon);
@@ -34,6 +36,7 @@ enum SettingsSection {
     notifications => L10n.current.settingsNotifications,
     appearance => L10n.current.settingsAppearance,
     data => L10n.current.settingsData,
+    about => L10n.current.settingsAbout,
     admin => L10n.current.settingsAdmin,
   };
 }
@@ -77,6 +80,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       SettingsSection.notifications => const NotificationsSection(),
       SettingsSection.appearance => const AppearanceSection(),
       SettingsSection.data => const DataSection(),
+      SettingsSection.about => const AboutSection(),
       SettingsSection.admin => const AdminSection(),
     };
     // A section starts at its top, whatever the one before was scrolled to.

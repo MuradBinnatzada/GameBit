@@ -3358,5 +3358,23 @@
       }
     }
   },
-  "disconnectPlayStationBody": "This phone forgets your PlayStation sign-in. The games and trophies you already synced stay in your library; sign in again to sync more."
+  "disconnectPlayStationBody": "This phone forgets your PlayStation sign-in. The games and trophies you already synced stay in your library; sign in again to sync more.",
+  "settingsAbout": "About",
+  "aboutTagline": "A game library and playtime tracker.",
+  "aboutVersion": "Version {version}",
+  "@aboutVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutCreditsTitle": "Data and credits",
+  "aboutCreditIgdb": "Game information, covers and release dates.",
+  "aboutCreditSteam": "Your Steam library, playtime and achievements, and news of your games.",
+  "aboutCreditPrices": "Current and lowest prices of the games on your wishlist.",
+  "aboutCreditNews": "Headlines from gaming outlets, each credited to its outlet and opened on its own site.",
+  "aboutTrademarks": "Steam is a trademark of Valve Corporation, and PlayStation of Sony Interactive Entertainment. Gamebit is an independent app, not affiliated with or endorsed by them, IGDB or IsThereAnyDeal.",
+  "openSourceLicenses": "Open-source licenses",
+  "openSourceLicensesSubtitle": "The libraries Gamebit is built with."
 }

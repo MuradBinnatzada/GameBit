@@ -10,6 +10,7 @@ import 'package:checkpoint/state/profile_store.dart';
 import 'package:checkpoint/state/store_scope.dart';
 import 'package:checkpoint/theme/palette.dart';
 import 'package:checkpoint/widgets/legal_links.dart';
+import 'package:checkpoint/widgets/link_row.dart';
 import 'package:checkpoint/widgets/panel.dart';
 
 /// What other members can see of the account, and what never leaves it, under
@@ -37,7 +38,7 @@ class PrivacySection extends StatelessWidget {
         SizedBox(height: 14),
         Panel(
           title: l10n.blockedMembers,
-          child: _LinkRow(
+          child: LinkRow(
             icon: Icons.person_off_outlined,
             title: l10n.blockedMembers,
             subtitle: l10n.blockedMembersSubtitle,
@@ -132,17 +133,17 @@ class PrivacySection extends StatelessWidget {
           title: l10n.legalTitle,
           child: Column(
             children: [
-              _LinkRow(
+              LinkRow(
                 icon: Icons.description_outlined,
                 title: l10n.termsOfUse,
                 onTap: () => openLegalLink(AppConfig.termsUri),
               ),
-              _LinkRow(
+              LinkRow(
                 icon: Icons.privacy_tip_outlined,
                 title: l10n.privacyPolicy,
                 onTap: () => openLegalLink(AppConfig.privacyUri),
               ),
-              _LinkRow(
+              LinkRow(
                 icon: Icons.mail_outline_rounded,
                 title: l10n.contactUs,
                 subtitle: l10n.contactUsSubtitle,
@@ -284,7 +285,7 @@ class _TestCrashRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _LinkRow(
+    return LinkRow(
       icon: Icons.warning_amber_rounded,
       title: 'Send a test crash',
       subtitle: 'Staging builds only. Look for it in Sentry under Issues.',
@@ -294,36 +295,6 @@ class _TestCrashRow extends StatelessWidget {
 }
 
 /// A row that opens something: a screen, a page of the site, a mail.
-class _LinkRow extends StatelessWidget {
-  const _LinkRow({required this.icon, required this.title, this.subtitle, required this.onTap});
-
-  final IconData icon;
-  final String title;
-  final String? subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-    return Material(
-      type: MaterialType.transparency,
-      child: ListTile(
-        contentPadding: EdgeInsets.zero,
-        leading: Icon(icon, color: palette.accent),
-        title: Text(
-          title,
-          style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700),
-        ),
-        subtitle: subtitle == null
-            ? null
-            : Text(subtitle!, style: TextStyle(color: palette.muted, fontSize: 12.5, height: 1.35)),
-        trailing: Icon(Icons.chevron_right_rounded, color: palette.muted),
-        onTap: onTap,
-      ),
-    );
-  }
-}
-
 class _Item extends StatelessWidget {
   const _Item({required this.icon, required this.title, required this.text});
 

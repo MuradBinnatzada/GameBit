@@ -1569,5 +1569,23 @@
   "playStation": "PlayStation",
   "playStationSynced": "Синхронизировано с PlayStation",
   "psnConnectedSynced": "Подключено · синхронизировано {when}",
-  "disconnectPlayStationBody": "Этот телефон забудет ваш вход в PlayStation. Уже синхронизированные игры и трофеи останутся в библиотеке; чтобы синхронизировать ещё, войдите снова."
+  "disconnectPlayStationBody": "Этот телефон забудет ваш вход в PlayStation. Уже синхронизированные игры и трофеи останутся в библиотеке; чтобы синхронизировать ещё, войдите снова.",
+  "settingsAbout": "О приложении",
+  "aboutTagline": "Библиотека игр и учёт времени в играх.",
+  "aboutVersion": "Версия {version}",
+  "@aboutVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutCreditsTitle": "Данные и источники",
+  "aboutCreditIgdb": "Сведения об играх, обложки и даты выхода.",
+  "aboutCreditSteam": "Ваша библиотека Steam, время в играх и достижения, а также новости ваших игр.",
+  "aboutCreditPrices": "Текущие и самые низкие цены игр из вашего списка желаний.",
+  "aboutCreditNews": "Заголовки игровых изданий: у каждой новости указано издание, и она открывается на его сайте.",
+  "aboutTrademarks": "Steam — товарный знак Valve Corporation, PlayStation — Sony Interactive Entertainment. Gamebit — независимое приложение: оно не связано с этими компаниями, IGDB и IsThereAnyDeal и не одобрено ими.",
+  "openSourceLicenses": "Лицензии открытого ПО",
+  "openSourceLicensesSubtitle": "Библиотеки, на которых построен Gamebit."
 }
