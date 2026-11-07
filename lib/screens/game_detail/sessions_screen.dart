@@ -82,11 +82,16 @@ class SessionTile extends StatelessWidget {
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(context.l10n.sessionHoursOn(fmtHours(l.hours), l.platform.label), style: const TextStyle(fontWeight: FontWeight.w600)),
-              if (l.fromSteam)
+              if (l.isSynced)
                 Row(children: [
-                  FaIcon(FontAwesomeIcons.steam, size: 11, color: context.palette.muted),
+                  FaIcon(l.fromSteam ? FontAwesomeIcons.steam : FontAwesomeIcons.playstation, size: 11, color: context.palette.muted),
                   SizedBox(width: 5),
-                  Flexible(child: Text(context.l10n.fromSteamPlaytime, style: TextStyle(fontSize: 12, color: context.palette.muted))),
+                  Flexible(
+                    child: Text(
+                      '${l.fromSteam ? context.l10n.fromSteamPlaytime : context.l10n.fromPlayStationPlaytime} · ${fmtDateTime(l.timestamp)}',
+                      style: TextStyle(fontSize: 12, color: context.palette.muted),
+                    ),
+                  ),
                 ]),
               if (l.note.isNotEmpty)
                 Text(l.note, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: context.palette.muted)),

@@ -53,7 +53,11 @@ extension LibraryPendingEdits on LibraryStore {
       for (final l in logs)
         if (!_pending.removed.contains(l.gameId) &&
             !_pending.logDeletes.contains(l.id))
-          _pending.logEdits[l.id]?.toEntry(fromSteam: l.fromSteam) ?? l,
+          _pending.logEdits[l.id]?.toEntry(
+                fromSteam: l.fromSteam,
+                fromPlayStation: l.fromPlayStation,
+              ) ??
+              l,
     ]);
   }
 

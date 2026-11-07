@@ -616,7 +616,7 @@ class _RecentActivityRow extends StatelessWidget {
     }
     const w = 124.0;
     return SizedBox(
-      height: posterCardHeight(context, w, subtitle: true),
+      height: posterCardHeight(context, w, subtitle: true, caption: true),
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -629,6 +629,8 @@ class _RecentActivityRow extends StatelessWidget {
             width: w,
             subtitle: '+${context.l10n.hoursCompact(fmtHours(e.hours))} · ${timeAgo(e.timestamp)}',
             subtitleIcon: e.platform.icon,
+            // The exact time: a sync adds sessions that were played earlier.
+            caption: fmtDateTime(e.timestamp),
           );
         },
       ),

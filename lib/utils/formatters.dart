@@ -81,8 +81,8 @@ const maxTextScale = 2.0;
 double textScale(BuildContext context) =>
     MediaQuery.textScalerOf(context).scale(1).clamp(1.0, maxTextScale).toDouble();
 
-double posterCardHeight(BuildContext context, double width, {required bool subtitle}) =>
-    width * 1.5 + 14 + (18 + 6 + 16 + (subtitle ? 18 : 0)) * textScale(context);
+double posterCardHeight(BuildContext context, double width, {required bool subtitle, bool caption = false}) =>
+    width * 1.5 + 14 + (18 + 6 + 16 + (subtitle ? 18 : 0) + (caption ? 16 : 0)) * textScale(context);
 
 InputDecoration fieldDecoration(
   BuildContext context,
@@ -129,3 +129,7 @@ String fmtDay(DateTime d, {DateTime? now}) {
   if (daysAgo == 1) return L10n.current.yesterday;
   return d.year == today.year ? DateFormat.MMMd().format(d) : DateFormat.yMMMd().format(d);
 }
+
+/// "19:30 01.01.2026": the time and the date of [d] as the device sees it, the way
+/// a synced play session is stamped. Always 24-hour, day first.
+String fmtDateTime(DateTime d) => DateFormat('HH:mm dd.MM.yyyy').format(d);

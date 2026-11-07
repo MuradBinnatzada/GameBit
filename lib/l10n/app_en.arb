@@ -1260,6 +1260,7 @@
     }
   },
   "fromSteamPlaytime": "From your Steam playtime",
+  "fromPlayStationPlaytime": "From your PlayStation playtime",
   "searching": "Searching…",
   "suggestedPeople": "Suggested people",
   "noUsersFound": "No users found",

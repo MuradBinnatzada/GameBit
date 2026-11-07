@@ -41,9 +41,9 @@ class PendingLog {
   final String note;
   final DateTime timestamp;
 
-  /// The session as shown. [fromSteam] is the server's, for an edit of a
-  /// session the Steam sync logged.
-  LogEntry toEntry({bool fromSteam = false}) => LogEntry(
+  /// The session as shown. [fromSteam] and [fromPlayStation] are the server's,
+  /// for an edit of a session a sync logged.
+  LogEntry toEntry({bool fromSteam = false, bool fromPlayStation = false}) => LogEntry(
     id: localId,
     gameId: gameId,
     timestamp: timestamp,
@@ -51,6 +51,7 @@ class PendingLog {
     platform: platform,
     note: note,
     fromSteam: fromSteam,
+    fromPlayStation: fromPlayStation,
   );
 
   Map<String, dynamic> toJson() => {

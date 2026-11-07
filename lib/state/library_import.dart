@@ -17,6 +17,7 @@ class LibraryImport extends ChangeNotifier {
     required this._library,
     this.pause = const Duration(milliseconds: 300),
     this.onRowImported,
+    this.onPlaytimeLogged,
   });
 
   final List<ImportRow> rows;
@@ -28,7 +29,13 @@ class LibraryImport extends ChangeNotifier {
   /// trophy list, that list is stored too.
   final void Function(ImportRow row)? onRowImported;
 
+  /// Told of each row whose play time is accounted for: its session is logged, or
+  /// none was due. A session the server did not keep is not told, so the next
+  /// import finds the same rise again.
+  final void Function(ImportRow row)? onPlaytimeLogged;
+
   int _done = 0;
+  int _sessionsLogged = 0;
   int _imported = 0;
   bool _running = false;
   bool _cancelled = false;
@@ -98,11 +105,23 @@ class LibraryImport extends ChangeNotifier {
         final meta = row.trophyMeta;
         final stored = (trophies == null && meta == null) || await _library.saveTrophies(game.id, trophies: trophies, meta: meta);
         if (stored) onRowImported?.call(row);
+        final session = row.session;
+        final logged = session == null ||
+            await _library.logSyncedSession(
+              gameId: game.id,
+              hours: session.hours,
+              at: session.at,
+              platform: row.playedOn,
+            );
+        if (session != null && logged) _sessionsLogged++;
+        if (logged) onPlaytimeLogged?.call(row);
         _imported++;
       }
       _done++;
       notifyListeners();
     }
+    // The sessions logged above have local ids until the server's are read.
+    if (_sessionsLogged > 0) await _library.reloadSessions();
     _running = false;
     notifyListeners();
   }

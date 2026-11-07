@@ -84,6 +84,68 @@ extension LibraryPlaySessions on LibraryStore {
     if (inserted) await _refreshLogs(current.id);
   }
 
+  /// Logs a play session the PlayStation sync read: [hours] (more than 0, at most
+  /// [maxTotalHours]) played on [platform] around [at] (a time in the future is
+  /// taken as now), tagged as the sync's. Unlike [logSession] it leaves the game's
+  /// hours alone: the import already raised them to what PlayStation reports, and
+  /// this session is part of that.
+  ///
+  /// Returns whether the server kept it. When it did not (offline, refused) nothing
+  /// is queued and nothing is shown: the play time it was measured against is not
+  /// moved on, so the next sync finds the same rise and logs it then. Call
+  /// [reloadSessions] once after a batch so the new sessions carry their real ids.
+  Future<bool> logSyncedSession({
+    required String gameId,
+    required double hours,
+    required DateTime at,
+    GamePlatform? platform,
+  }) async {
+    final current = _user;
+    final game = maybeGame(gameId);
+    if (current == null || game == null || !game.inLibrary) return false;
+    if (hours <= 0 || hours > maxTotalHours) return false;
+    final p = platform ?? game.playedOn ?? (game.platforms.isNotEmpty ? game.platforms.first : GamePlatform.pc);
+    final now = DateTime.now();
+    final when = (at.isAfter(now) ? now : at).toLocal();
+    try {
+      _auth.requireSession();
+      await _repository.insertLogEntry(
+        userId: current.id,
+        gameId: gameId,
+        hours: hours,
+        platform: p,
+        note: '',
+        loggedAt: when,
+        fromPlayStation: true,
+      );
+    } catch (e, st) {
+      debugPrint('Logging a PlayStation session failed: $e\n$st');
+      return false;
+    }
+    if (_user?.id == current.id) {
+      _logs = _newestFirst([
+        LogEntry(
+          id: 'local-${now.microsecondsSinceEpoch}',
+          gameId: gameId,
+          timestamp: when,
+          hours: hours,
+          platform: p,
+          fromPlayStation: true,
+        ),
+        ..._logs,
+      ]);
+      _notify();
+    }
+    return true;
+  }
+
+  /// Reads the play sessions again from the server: after [logSyncedSession], so
+  /// the new ones have their real ids and can be edited.
+  Future<void> reloadSessions() async {
+    final current = _user;
+    if (current != null) await _refreshLogs(current.id);
+  }
+
   Future<void> updateTime({
     required String gameId,
     required double totalHours,
@@ -157,6 +219,7 @@ extension LibraryPlaySessions on LibraryStore {
       platform: platform,
       note: _cleanNote(note),
       fromSteam: old.fromSteam,
+      fromPlayStation: old.fromPlayStation,
     );
     _logs = _newestFirst([for (final l in _logs) l.id == id ? edited : l]);
     final gameBefore = maybeGame(old.gameId);

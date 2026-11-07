@@ -385,13 +385,22 @@ class _PsnImportScreenState extends State<PsnImportScreen> {
       },
     );
     if (kDebugMode) debugPrint('PSN: sync done, ${widget.client.traffic.describe()}');
+    // Without an account to keep them for there is nothing to measure a rise
+    // against, so no sessions: every game's play time is only its history.
+    final playtime = _hasAccount ? await _device.storedPlaytime(account) : <String, int>{};
     final file = buildPsnImport(
       library,
+      playtimeBefore: playtime,
       onRowImported: (row) {
         final set = row.trophySet;
         if (_hasAccount && set != null) {
           unawaited(_device.rememberList(account, set, PsnDevice.listMark(row.trophiesEarned ?? 0, row.trophiesTotal ?? 0)));
         }
+      },
+      onPlaytimeLogged: (row) {
+        final key = row.playtimeKey;
+        final minutes = row.playtimeMinutes;
+        if (_hasAccount && key != null && minutes != null) unawaited(_device.rememberPlaytime(account, key, minutes));
       },
     );
     if (mounted) Navigator.pop(context, file);

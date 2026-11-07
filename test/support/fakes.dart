@@ -382,6 +382,7 @@ class FakeRepository implements CheckpointRepository {
   @override
   Future<List<LogEntry>> fetchLogEntries(String userId) async {
     _checkOnline();
+    logFetches++;
     return logs;
   }
 
@@ -620,11 +621,33 @@ class FakeRepository implements CheckpointRepository {
     required GamePlatform platform,
     required String note,
     DateTime? loggedAt,
+    bool fromPlayStation = false,
   }) async {
     _checkWrite();
     writes.add('log:$gameId:$hours');
     logTimes.add(loggedAt);
+    if (fromPlayStation) {
+      playStationLogs.add(gameId);
+      // What the next read of the sessions gives back, as the server would.
+      logs = [
+        LogEntry(
+          id: 'server-${logs.length}',
+          gameId: gameId,
+          timestamp: loggedAt ?? DateTime.now(),
+          hours: hours,
+          platform: platform,
+          fromPlayStation: true,
+        ),
+        ...logs,
+      ];
+    }
   }
+
+  /// The games a PlayStation session was inserted for, in order.
+  final List<String> playStationLogs = [];
+
+  /// How many times the sessions were read.
+  int logFetches = 0;
 
   /// The `logged_at` each inserted session was sent with, in order (null: the
   /// server's own time).

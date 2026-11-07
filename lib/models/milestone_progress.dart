@@ -37,7 +37,7 @@ class MilestoneProgress {
     final at = now ?? DateTime.now();
     final logged = [
       for (final s in sessions)
-        if (!s.fromSteam) s,
+        if (!s.isSynced) s,
     ];
     final played = [
       for (final g in library)

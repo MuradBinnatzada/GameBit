@@ -13,6 +13,7 @@ class LogEntry {
     required this.platform,
     this.note = '',
     this.fromSteam = false,
+    this.fromPlayStation = false,
   });
 
   factory LogEntry.fromJson(Map<String, dynamic> json) => LogEntry(
@@ -23,6 +24,7 @@ class LogEntry {
         platform: gamePlatformFromDb(json['platform']) ?? GamePlatform.pc,
         note: json['note'] as String? ?? '',
         fromSteam: json['source'] == 'steam',
+        fromPlayStation: json['source'] == 'playstation',
       );
 
   final String id;
@@ -36,6 +38,13 @@ class LogEntry {
   /// the member (`log_entries.source`).
   final bool fromSteam;
 
+  /// Logged by the PlayStation sync, from a rise in the game's PlayStation play
+  /// time (`log_entries.source`).
+  final bool fromPlayStation;
+
+  /// Logged by a sync (Steam's or PlayStation's), not by the member.
+  bool get isSynced => fromSteam || fromPlayStation;
+
   /// What the offline cache keeps of this session; read back by [LogEntry.fromJson].
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -45,5 +54,6 @@ class LogEntry {
         'platform': gamePlatformToDb(platform),
         'note': note,
         if (fromSteam) 'source': 'steam',
+        if (fromPlayStation) 'source': 'playstation',
       };
 }

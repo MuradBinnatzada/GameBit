@@ -86,16 +86,32 @@ class RecentActivityPanel extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           // Narrow enough that large text wraps it instead of
-                          // squeezing the title out.
+                          // squeezing the title out, but growing with the text so
+                          // the date still fits on a line of its own.
                           ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 110),
-                            child: Text(
-                              timeAgo(e.at),
-                              textAlign: TextAlign.end,
-                              style: TextStyle(
-                                color: context.palette.muted,
-                                fontSize: 12,
-                              ),
+                            constraints: BoxConstraints(maxWidth: 110 * textScale(context).clamp(1.0, 1.4)),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  timeAgo(e.at),
+                                  textAlign: TextAlign.end,
+                                  style: TextStyle(
+                                    color: context.palette.muted,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                // The exact time: a sync adds sessions that were
+                                // played earlier.
+                                Text(
+                                  fmtDateTime(e.at),
+                                  textAlign: TextAlign.end,
+                                  style: TextStyle(
+                                    color: context.palette.muted,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],

@@ -556,6 +556,24 @@ void main() {
       expect(LogEntry.fromJson(logs.last.toJson()).fromSteam, isFalse);
     });
 
+    test('a session the PlayStation sync logged says so, and is sent with that tag', () async {
+      api.reply([
+        {'id': 'l1', 'game_id': 'g1', 'logged_at': '2026-02-01T08:00:00+00:00', 'hours': 1.5, 'platform': 'ps5', 'note': '', 'source': 'playstation'},
+        {'id': 'l2', 'game_id': 'g1', 'logged_at': '2026-01-01T08:00:00+00:00', 'hours': 1, 'platform': 'pc', 'note': '', 'source': 'steam'},
+      ]);
+
+      final logs = await repo.fetchLogEntries('u1');
+
+      expect(logs.map((l) => l.fromPlayStation), [true, false]);
+      expect(logs.map((l) => l.fromSteam), [false, true]);
+      expect(LogEntry.fromJson(logs.first.toJson()).fromPlayStation, isTrue);
+
+      await repo.insertLogEntry(userId: 'u1', gameId: 'g1', hours: 2, platform: GamePlatform.ps5, note: '', fromPlayStation: true);
+      expect((api.bodyOf(api.last) as Map)['source'], 'playstation');
+      await repo.insertLogEntry(userId: 'u1', gameId: 'g1', hours: 2, platform: GamePlatform.ps5, note: '');
+      expect((api.bodyOf(api.last) as Map).containsKey('source'), isFalse);
+    });
+
     test('an edited session is saved with its new hours, platform, note and time', () async {
       await repo.updateLogEntry(
         id: 'l1',

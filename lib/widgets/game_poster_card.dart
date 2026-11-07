@@ -10,11 +10,14 @@ import 'package:checkpoint/widgets/star_rating.dart';
 /// Poster + title + stars (+ optional caption). Used in horizontal carousels and
 /// the browse grids.
 class GamePosterCard extends StatelessWidget {
-  const GamePosterCard({super.key, required this.game, required this.width, this.subtitle, this.subtitleIcon, this.showUnrated = true});
+  const GamePosterCard({super.key, required this.game, required this.width, this.subtitle, this.subtitleIcon, this.caption, this.showUnrated = true});
   final Game game;
   final double width;
   final String? subtitle;
   final IconData? subtitleIcon;
+
+  /// A second muted line under [subtitle] (Recent Activity: the exact time).
+  final String? caption;
 
   /// Whether a game the user hasn't rated says "Not rated". Catalog lists turn it
   /// off: there it would sit under nearly every poster.
@@ -48,6 +51,10 @@ class GamePosterCard extends StatelessWidget {
                 child: Text(subtitle!, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, color: context.palette.muted)),
               ),
             ]),
+          ],
+          if (caption != null) ...[
+            const SizedBox(height: 2),
+            Text(caption!, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, color: context.palette.muted)),
           ],
         ]),
       ),

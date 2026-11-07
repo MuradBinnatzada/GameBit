@@ -308,7 +308,8 @@ mixin _LibraryQueries on _RepositoryBase {
 
   /// Inserts a play session. [loggedAt] is when it was logged, for a session
   /// that was kept on the device while the server was out of reach; without it
-  /// the server stamps the time it arrives.
+  /// the server stamps the time it arrives. [fromPlayStation] tags a session the
+  /// PlayStation sync logged (the only source a member's insert can set).
   Future<void> insertLogEntry({
     required String userId,
     required String gameId,
@@ -316,6 +317,7 @@ mixin _LibraryQueries on _RepositoryBase {
     required GamePlatform platform,
     required String note,
     DateTime? loggedAt,
+    bool fromPlayStation = false,
   }) async {
     await _client.from(Db.logEntries).insert({
       Db.userId: userId,
@@ -324,6 +326,7 @@ mixin _LibraryQueries on _RepositoryBase {
       Db.platform: gamePlatformToDb(platform),
       Db.note: note.trim(),
       if (loggedAt != null) Db.loggedAt: loggedAt.toUtc().toIso8601String(),
+      if (fromPlayStation) Db.source: Db.sourcePlayStation,
     });
   }
 

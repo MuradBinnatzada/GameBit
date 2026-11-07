@@ -272,6 +272,7 @@ LogEntry _logFromRow(Map<String, dynamic> row) => LogEntry(
   platform: gamePlatformFromDb(row[Db.platform]) ?? GamePlatform.pc,
   note: _firstText([row[Db.note]]) ?? '',
   fromSteam: row[Db.source] == 'steam',
+  fromPlayStation: row[Db.source] == Db.sourcePlayStation,
 );
 
 List<String> _strings(Object? value) {

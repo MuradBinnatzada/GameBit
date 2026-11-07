@@ -54,7 +54,11 @@ String sessionsCsv(List<LogEntry> sessions, Game? Function(String gameId) gameOf
       s.hours,
       gamePlatformToDb(s.platform),
       s.note,
-      s.fromSteam ? 'steam' : '',
+      s.fromSteam
+          ? 'steam'
+          : s.fromPlayStation
+          ? Db.sourcePlayStation
+          : '',
     ],
 ]);
 
@@ -79,6 +83,9 @@ class ImportRow {
     this.trophyList,
     this.trophySet,
     this.trophyMeta,
+    this.session,
+    this.playtimeKey,
+    this.playtimeMinutes,
   });
 
   /// The line of the file it came from (the header is line 1).
@@ -119,6 +126,17 @@ class ImportRow {
   /// The game's trophy set and its counts by grade, for every game the import
   /// from PlayStation reads (see [TrophyMeta]).
   final TrophyMeta? trophyMeta;
+
+  /// A play session to log for the game: its play time rose since the last
+  /// import (PlayStation). The hours are already part of [hours]; the session only
+  /// puts them on the game's Recent Activity.
+  final ImportSession? session;
+
+  /// The play time the phone remembers for the game once the row is imported, in
+  /// minutes, under [playtimeKey] (what [ImportFile.onPlaytimeLogged] is told).
+  /// Null: nothing new to remember.
+  final String? playtimeKey;
+  final int? playtimeMinutes;
 
   /// The most rows one import takes.
   static const maxRows = 500;
@@ -453,6 +471,13 @@ enum ImportSource {
   playstation,
 }
 
+/// One play session an import logs: [hours] played around [at].
+class ImportSession {
+  const ImportSession({required this.hours, required this.at});
+  final double hours;
+  final DateTime at;
+}
+
 /// What [ImportRow.parse] read: the games, and the lines it left out.
 class ImportFile {
   const ImportFile({
@@ -461,6 +486,7 @@ class ImportFile {
     this.source = ImportSource.generic,
     this.notes = const [],
     this.onRowImported,
+    this.onPlaytimeLogged,
   });
   final List<ImportRow> rows;
   final List<String> skipped;
@@ -469,6 +495,12 @@ class ImportFile {
   /// Called with each row once its game is in the library (PlayStation: so the
   /// phone remembers which trophy lists are stored).
   final void Function(ImportRow row)? onRowImported;
+
+  /// Called with each row whose play time is accounted for: its session is logged,
+  /// or none was due (PlayStation: so the phone remembers the play time the next
+  /// sync measures against). Not called for a row whose session the server did not
+  /// keep, so the next sync finds the same rise again.
+  final void Function(ImportRow row)? onPlaytimeLogged;
 
   /// Things to tell the member before they import that are not lines left out
   /// (PlayStation: a list Sony would not share).

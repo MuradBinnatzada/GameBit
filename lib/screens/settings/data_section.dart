@@ -204,6 +204,7 @@ class _ImportScreenState extends State<ImportScreen> {
       api: widget.api ?? GameApiService(),
       library: context.read<LibraryStore>(),
       onRowImported: widget.file.onRowImported,
+      onPlaytimeLogged: widget.file.onPlaytimeLogged,
     )..addListener(() {
         if (mounted) setState(() {});
       });

@@ -4,6 +4,7 @@ import 'package:checkpoint/models/library_csv.dart';
 import 'package:checkpoint/models/trophy.dart';
 import 'package:checkpoint/services/playstation/psn_client.dart';
 import 'package:checkpoint/services/playstation/psn_device.dart';
+import 'package:checkpoint/services/playstation/psn_sessions.dart';
 
 /// What the import read from PlayStation: the play history and the trophy list.
 /// A list Sony would not share is null, and why is in [playedError] or
@@ -82,7 +83,19 @@ Future<PsnLibrary> readPsnLibrary(PsnClient client, PsnTokens tokens) async {
 ///    one with play time or trophies comes in Playing; a title only synced, never
 ///    played, comes in To play. Games already in the library keep their status
 ///    and platform ([ImportRow.fillGapsOnly]).
-ImportFile buildPsnImport(PsnLibrary library, {void Function(ImportRow row)? onRowImported}) {
+///  * A game whose play time rose since the last sync also carries that rise as a
+///    play session ([ImportRow.session]), which shows in Recent Activity the way a
+///    Steam sync's does. [playtimeBefore] is what the phone remembered of each
+///    game's play time, in minutes ([PsnDevice.storedPlaytime]); see
+///    [psnPlaytimeUpdate] for the rules. [now] is for tests.
+ImportFile buildPsnImport(
+  PsnLibrary library, {
+  void Function(ImportRow row)? onRowImported,
+  void Function(ImportRow row)? onPlaytimeLogged,
+  Map<String, int> playtimeBefore = const {},
+  DateTime? now,
+}) {
+  final at = now ?? DateTime.now();
   final sorted = _entries(library);
   final skipped = <String>[];
   final taken = sorted.take(ImportRow.maxRows).toList();
@@ -90,10 +103,11 @@ ImportFile buildPsnImport(PsnLibrary library, {void Function(ImportRow row)? onR
     skipped.add(L10n.current.psnImportOverLimit(sorted.length - taken.length, ImportRow.maxRows));
   }
   return ImportFile(
-    rows: [for (var i = 0; i < taken.length; i++) taken[i].toRow(i + 1, library.trophyLists)],
+    rows: [for (var i = 0; i < taken.length; i++) taken[i].toRow(i + 1, library.trophyLists, playtimeBefore, at)],
     skipped: skipped,
     source: ImportSource.playstation,
     onRowImported: onRowImported,
+    onPlaytimeLogged: onPlaytimeLogged,
     notes: [
       if (library.playedError != null) L10n.current.psnPlayTimeMissing,
       if (library.trophyError != null) L10n.current.psnTrophiesMissing,
@@ -161,12 +175,14 @@ List<_Entry> _entries(PsnLibrary library) {
   _Entry entry(String rawName) {
     final name = psnGameName(rawName);
     final key = psnTitleKey(name);
-    return entries.putIfAbsent(key.isEmpty ? name : key, () => _Entry(name));
+    final id = key.isEmpty ? name : key;
+    return entries.putIfAbsent(id, () => _Entry(name, id));
   }
 
   for (final game in library.played ?? const <PsnPlayedGame>[]) {
     final e = entry(game.name);
     e.seconds += game.playTime.inSeconds;
+    e.notePlayed(game.lastPlayed);
     e.noteSeen(game.lastPlayed);
     e.notePlatform(_platformOfCategory(game.category));
   }
@@ -206,15 +222,27 @@ String psnGameName(String name) {
 final _epoch = DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
 
 class _Entry {
-  _Entry(this.name);
+  _Entry(this.name, this.key);
 
   /// The game's name as [psnGameName] writes it.
   final String name;
 
+  /// What the phone remembers the game's play time under: [psnTitleKey] of
+  /// [name], so both lists and both consoles of a game share it.
+  final String key;
+
   int seconds = 0;
   DateTime? lastSeen;
+
+  /// When the play history says the game was last played (the trophy list's date
+  /// is when a trophy was earned, which is not play time).
+  DateTime? lastPlayed;
   GamePlatform? platform;
   PsnTrophyTitle? trophies;
+
+  void notePlayed(DateTime? at) {
+    if (at != null && (lastPlayed == null || at.isAfter(lastPlayed!))) lastPlayed = at;
+  }
 
   void noteSeen(DateTime? at) {
     if (at != null && (lastSeen == null || at.isAfter(lastSeen!))) lastSeen = at;
@@ -232,12 +260,17 @@ class _Entry {
     if (current == null || title.earned > current.earned) trophies = title;
   }
 
-  ImportRow toRow(int position, Map<String, List<Trophy>> lists) {
+  ImportRow toRow(int position, Map<String, List<Trophy>> lists, Map<String, int> playtimeBefore, DateTime now) {
     final set = trophies;
     final list = set == null ? null : lists[set.npCommunicationId];
     final hours = seconds <= 0 ? null : (seconds / 360).round() / 10;
     final everything = set != null && set.total > 0 && (set.platinumEarned || set.earned >= set.total);
     final started = (hours ?? 0) > 0 || (set?.earned ?? 0) > 0;
+    final before = playtimeBefore[key];
+    final playtime = seconds <= 0
+        ? null
+        : psnPlaytimeUpdate(minutes: (seconds / 60).round(), before: before, lastPlayed: lastPlayed, now: now);
+    final session = playtime?.session;
     return ImportRow(
       line: position,
       title: name,
@@ -257,6 +290,10 @@ class _Entry {
       trophyMeta: set == null || set.npCommunicationId.isEmpty || set.definedByGrade.total == 0
           ? null
           : TrophyMeta(set: set.npCommunicationId, service: set.npServiceName, earned: set.earnedByGrade, total: set.definedByGrade),
+      session: session == null ? null : ImportSession(hours: session.hours, at: session.at),
+      // Only a play time that moved is worth remembering.
+      playtimeKey: playtime != null && playtime.baseline != before ? key : null,
+      playtimeMinutes: playtime != null && playtime.baseline != before ? playtime.baseline : null,
     );
   }
 }

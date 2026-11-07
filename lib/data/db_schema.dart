@@ -198,8 +198,10 @@ abstract final class Db {
   static const note = 'note';
 
   /// `log_entries`: NULL for a session the member logged, `steam` for one the
-  /// Steam sync logged from a rise in playtime.
+  /// Steam sync logged from a rise in playtime, `playstation` for one the app
+  /// logged from a rise in PlayStation play time.
   static const source = 'source';
+  static const sourcePlayStation = 'playstation';
   static const isFavorite = 'is_favorite';
 
   /// `user_games`: the member hid the game from every other member

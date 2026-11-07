@@ -701,6 +701,7 @@
   "hoursLogged": "записано {hours} ч",
   "sessionHoursOn": "+{hours} ч на {platform}",
   "fromSteamPlaytime": "Из вашего времени в Steam",
+  "fromPlayStationPlaytime": "Из вашего времени в PlayStation",
   "searching": "Поиск…",
   "suggestedPeople": "Рекомендуемые люди",
   "noUsersFound": "Пользователи не найдены",
