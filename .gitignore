@@ -20,8 +20,6 @@ lib/l10n/generated/
 /android/app/build/
 /android/local.properties
 /linux/flutter/ephemeral/
-/macos/Flutter/ephemeral/
-/windows/flutter/ephemeral/
 /ios/Pods/
 /ios/.symlinks/
 /ios/Runner.xcworkspace/xcuserdata/

@@ -19,7 +19,7 @@ Your game library and playtime tracker. Build a library, log your hours, rate ga
 
 ## Tech stack
 
-- **App:** Flutter / Dart (Android, iOS, web, desktop targets)
+- **App:** Flutter / Dart (Android, iOS and web; the Linux desktop build is for debugging)
 - **Backend:** [Supabase](https://supabase.com) (auth, Postgres, Edge Functions)
 - **Edge Functions** (`supabase/functions`): `igdb-handler`, `game-news`, `game-prices`, `send-notifications`, `check-prices`, `discussions`, `sync-steam`, `sync-achievements`, `steam-link`, `delete-account`, `mfa-recovery`, `admin-moderation`. Third-party API credentials (Twitch/IGDB, Steam) live server-side only.
 
@@ -69,26 +69,6 @@ GitHub Actions (`.github/workflows`):
 `supabase/migrations` builds the whole database from nothing, in file-name order: `20261011000000_base_schema.sql` creates the tables the project started with (they were first made in the dashboard), and every later file builds on it. `supabase db reset` (locally) or `supabase db push` (a new project) applies them all.
 
 A migration's name starts with its UTC timestamp, and `supabase db push` refuses a new file that sorts before one the database already has. Name new ones with `supabase migration new <what_it_does>`; CI (`ci.yml`, *Check migration names*) fails on a file dated in the future or two files with the same timestamp.
-
-**One-time step for the live database.** Nine migrations used to be dated ahead (up to 2026-10-26) and were renamed to the dates they were written, and the base schema was added in front of them. The live database already has all of it, so its migration history is corrected without running anything:
-
-```bash
-supabase migration repair --status reverted 20261019120000 20261020120000 20261021120000 20261022120000 20261023120000 20261024110000 20261024120000 20261025120000 20261026120000
-supabase migration repair --status applied 20261011000000 20261018140000 20261018150000 20261018160000 20261018170000 20261018180000 20261018190000 20261018200000 20261018210000 20261018220000
-supabase db push --dry-run
-```
-
-The dry run should then list only the migrations from `20261019013500` on. Until the repair is done, the deploy workflow stops at its dry run without changing anything.
-
-Four more (discussions, the advisor clean-up, the trigger function grants and the invoker views) were dated 2026-10-23 and renamed to 2026-10-22 after they were applied, so the same kind of repair is needed once:
-
-```bash
-supabase migration repair --status reverted 20261023120000 20261023130000 20261023140000 20261023150000
-supabase migration repair --status applied 20261022165000 20261022190000 20261022195000 20261022200000
-supabase db push --dry-run
-```
-
-The dry run should report that the remote database is up to date.
 
 **The live database differs from the files in one place:** its `public_user_games` view had a `custom_cover_url` column the migrations never made. `20261019015200_completion_dates_reviews_release_dates.sql` drops and recreates the view, so it no longer has that column.
 
@@ -219,7 +199,7 @@ The app is in English and Russian, and follows the device's language until the m
 **Adding a language** is a translation:
 
 1. Copy `lib/l10n/app_en.arb` to `app_<code>.arb` (`de`, `fr`...), set `@@locale`, and translate every value; `languageName` is the language's own name ("Deutsch"), which the picker shows. Keep the `{placeholders}`, and give the plurals the forms the language has (`one`, `few`, `many`, `other`...).
-2. Add the code to `CFBundleLocalizations` in `ios/Runner/Info.plist` and `macos/Runner/Info.plist`.
+2. Add the code to `CFBundleLocalizations` in `ios/Runner/Info.plist`.
 
 `test/l10n_test.dart` fails while a language misses a message or a placeholder; a message left out still shows in English. A new message goes into `app_en.arb` and every other `.arb`.
 
