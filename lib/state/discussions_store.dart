@@ -411,8 +411,8 @@ class DiscussionsStore extends AccountScopedStore {
   /// Replies to the thread [threadId], then reads on to the end of the thread so
   /// the reply is there. Throws a [DiscussionFailure] when it was refused or could
   /// not be sent.
-  Future<void> reply(String threadId, String text) async {
-    await _api.reply(threadId, text);
+  Future<void> reply(String threadId, String text, {String? replyTo}) async {
+    await _api.reply(threadId, text, replyTo: replyTo);
     final epoch = this.epoch;
     try {
       // The thread again (its count, whether it was locked meanwhile).

@@ -242,7 +242,7 @@ void main() {
       await tester.tap(find.text('I agree'));
       await settle(tester);
 
-      expect(api.replyCalls.single, (thread: 't1', text: 'Sekiro is better.'));
+      expect(api.replyCalls.single, (thread: 't1', text: 'Sekiro is better.', replyTo: null));
       expect(find.text('Sekiro is better.'), findsOneWidget);
       expect(find.text('3 replies'), findsOneWidget);
 
@@ -252,6 +252,98 @@ void main() {
       await settle(tester);
       expect(find.text('Chat rules'), findsNothing);
       expect(api.replyCalls, hasLength(2));
+    });
+
+    group('to a post', () {
+      setUp(() {
+        SharedPreferences.setMockInitialValues({'chat_rules_accepted_u1': true});
+        repo.discussionPosts['t1']!.add(
+          testPost(
+            'p3',
+            't1',
+            author: 'a',
+            authorName: 'Ann',
+            text: 'Sekiro has better combat.',
+            at: ago(20),
+            replyTo: const DiscussionQuote(postId: 'p1', authorName: 'Bob', excerpt: 'Elden Ring, no contest.'),
+          ),
+        );
+      });
+
+      Finder replyButtons() => find.widgetWithText(TextButton, 'Reply');
+
+      testWidgets('every post has a Reply button, the opening one too', (tester) async {
+        await openThread(tester, 'Best soulslike?');
+
+        // The opening post and the three replies.
+        expect(replyButtons(), findsNWidgets(4));
+      });
+
+      testWidgets('a reply says whom it answers, with how that post starts', (tester) async {
+        await openThread(tester, 'Best soulslike?');
+
+        expect(find.text('Replying to Bob'), findsOneWidget);
+        // The quote and the post itself both hold the words; the quote is the shorter of the two.
+        expect(find.text('Elden Ring, no contest.'), findsNWidgets(2));
+        expect(find.text('Sekiro has better combat.'), findsOneWidget);
+      });
+
+      testWidgets('Reply names the member in the box, and the reply goes out answering that post', (tester) async {
+        await openThread(tester, 'Best soulslike?');
+        expect(find.text('Replying to Bob'), findsOneWidget); // the quote only
+
+        await tester.ensureVisible(replyButtons().at(1));
+        await tester.tap(replyButtons().at(1)); // Bob's post
+        await settle(tester);
+        expect(find.text('Replying to Bob'), findsNWidgets(2)); // the quote and the box
+
+        await type(tester, 'Agreed.');
+        await tester.tap(find.byTooltip('Send reply'));
+        await settle(tester);
+
+        expect(api.replyCalls.single, (thread: 't1', text: 'Agreed.', replyTo: 'p1'));
+        // The new reply shows whom it answered; the box is back to the thread.
+        expect(find.text('Replying to Bob'), findsNWidgets(2)); // p3's quote and the new reply's
+        expect(find.byTooltip('Cancel reply'), findsNothing);
+      });
+
+      testWidgets('cancelling takes the name away, and the next reply answers the thread', (tester) async {
+        await openThread(tester, 'Best soulslike?');
+        await tester.ensureVisible(replyButtons().at(1));
+        await tester.tap(replyButtons().at(1));
+        await settle(tester);
+        expect(find.byTooltip('Cancel reply'), findsOneWidget);
+
+        await tester.tap(find.byTooltip('Cancel reply'));
+        await settle(tester);
+        expect(find.byTooltip('Cancel reply'), findsNothing);
+
+        await type(tester, 'Just saying.');
+        await tester.tap(find.byTooltip('Send reply'));
+        await settle(tester);
+        expect(api.replyCalls.single.replyTo, isNull);
+      });
+
+      testWidgets('Reply on the opening post answers the thread itself', (tester) async {
+        await openThread(tester, 'Best soulslike?');
+        await tester.ensureVisible(replyButtons().at(1));
+        await tester.tap(replyButtons().at(1)); // a post first
+        await settle(tester);
+        expect(find.byTooltip('Cancel reply'), findsOneWidget);
+
+        await tester.ensureVisible(replyButtons().first);
+        await tester.tap(replyButtons().first); // the opening post
+        await settle(tester);
+
+        expect(find.byTooltip('Cancel reply'), findsNothing);
+      });
+
+      testWidgets('a locked thread has no Reply buttons', (tester) async {
+        repo.discussionPosts['t4'] = [testPost('q1', 't4', author: 'c', authorName: 'Cy')];
+        await openThread(tester, 'Closed topic');
+
+        expect(replyButtons(), findsNothing);
+      });
     });
 
     testWidgets('closing the rules without agreeing posts nothing', (

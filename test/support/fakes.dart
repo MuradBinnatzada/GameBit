@@ -167,12 +167,14 @@ DiscussionPost testPost(
   String? authorName,
   String text = 'A reply.',
   DateTime? at,
+  DiscussionQuote? replyTo,
 }) => DiscussionPost(
   id: id,
   threadId: threadId,
   author: testMember(author, name: authorName),
   text: text,
   createdAt: at ?? DateTime.utc(2026, 10, 21),
+  replyTo: replyTo,
 );
 
 /// A review of a game by member [id], as `game_reviews` answers it.
@@ -1894,7 +1896,7 @@ class FakeDiscussionApi extends DiscussionApiService {
   Completer<void>? gate;
 
   final List<({String board, String title, String text, String? gameId})> threadCalls = [];
-  final List<({String thread, String text})> replyCalls = [];
+  final List<({String thread, String text, String? replyTo})> replyCalls = [];
   int _made = 0;
 
   @override
@@ -1925,14 +1927,24 @@ class FakeDiscussionApi extends DiscussionApiService {
   }
 
   @override
-  Future<void> reply(String threadId, String text) async {
-    replyCalls.add((thread: threadId, text: text));
+  Future<void> reply(String threadId, String text, {String? replyTo}) async {
+    replyCalls.add((thread: threadId, text: text, replyTo: replyTo));
     await gate?.future;
     final failure = failWith;
     if (failure != null) throw failure;
     final now = DateTime.now().toUtc();
     final posts = repo.discussionPosts.putIfAbsent(threadId, () => []);
-    posts.add(DiscussionPost(id: 'new-post-${++_made}', threadId: threadId, author: me, text: text, createdAt: now));
+    final answered = replyTo == null ? null : [for (final p in posts) if (p.id == replyTo) p].firstOrNull;
+    posts.add(
+      DiscussionPost(
+        id: 'new-post-${++_made}',
+        threadId: threadId,
+        author: me,
+        text: text,
+        createdAt: now,
+        replyTo: answered == null ? null : DiscussionQuote(postId: answered.id, authorName: answered.author.name, excerpt: answered.text),
+      ),
+    );
     final i = repo.discussionThreads.indexWhere((t) => t.id == threadId);
     if (i >= 0) {
       final t = repo.discussionThreads[i];

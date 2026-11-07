@@ -181,7 +181,7 @@ Deno.test('a thread request that is not right is refused with what is wrong', ()
 
 Deno.test('a reply has a thread and a text', () => {
   const thread = '8d9cbd3e-3a0a-4d6e-8bb5-5a1c9b7b2f11'
-  assertEquals(parseDiscussionRequest({ mode: 'reply', thread, body: ' Thanks! ' }), { mode: 'reply', thread, body: 'Thanks!' })
+  assertEquals(parseDiscussionRequest({ mode: 'reply', thread, body: ' Thanks! ' }), { mode: 'reply', thread, body: 'Thanks!', replyTo: null })
   for (
     const bad of [
       { mode: 'reply', thread: 'x', body: 'hi' },
@@ -193,6 +193,27 @@ Deno.test('a reply has a thread and a text', () => {
     ]
   ) {
     assertEquals(isRefusal(parseDiscussionRequest(bad)), true, JSON.stringify(bad))
+  }
+})
+
+Deno.test('a reply may name the post it answers', () => {
+  const thread = '8d9cbd3e-3a0a-4d6e-8bb5-5a1c9b7b2f11'
+  const post = '0A1B2C3D-3a0a-4d6e-8bb5-5a1c9b7b2f22'
+  assertEquals(parseDiscussionRequest({ mode: 'reply', thread, body: 'Agreed', reply_to: post }), {
+    mode: 'reply',
+    thread,
+    body: 'Agreed',
+    replyTo: post.toLowerCase(),
+  })
+  assertEquals(parseDiscussionRequest({ mode: 'reply', thread, body: 'Agreed', reply_to: null }), {
+    mode: 'reply',
+    thread,
+    body: 'Agreed',
+    replyTo: null,
+  })
+  for (const bad of ['x', 5, '', {}, [post]]) {
+    const parsed = parseDiscussionRequest({ mode: 'reply', thread, body: 'Agreed', reply_to: bad })
+    assertEquals(isRefusal(parsed) && parsed.code === 'BAD_REQUEST', true, JSON.stringify(bad))
   }
 })
 

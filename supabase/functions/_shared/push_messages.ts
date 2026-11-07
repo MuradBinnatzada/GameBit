@@ -58,13 +58,24 @@ export function readPriceDrop(data: unknown): PriceDropData | null {
   }
 }
 
-export type ThreadReplyData = { threadId: string; threadTitle: string; fromId: string | null }
+export type ThreadReplyData = {
+  threadId: string
+  threadTitle: string
+  fromId: string | null
+  /** A reply to the member's own post, not only to a thread they started. */
+  direct: boolean
+}
 
 /** The `data` of a `thread_reply` row, or null when it is not one. */
 export function readThreadReply(data: unknown): ThreadReplyData | null {
   const d = data as Record<string, unknown> | null
   if (typeof d?.thread_id !== 'string' || typeof d.thread_title !== 'string') return null
-  return { threadId: d.thread_id, threadTitle: d.thread_title, fromId: typeof d.from_id === 'string' ? d.from_id : null }
+  return {
+    threadId: d.thread_id,
+    threadTitle: d.thread_title,
+    fromId: typeof d.from_id === 'string' ? d.from_id : null,
+    direct: d.direct === true,
+  }
 }
 
 /** A notification as it goes to a phone. */
@@ -90,12 +101,23 @@ export function renderThreadReply(d: ThreadReplyData, fromName: string | null, l
   const thread = clip(d.threadTitle, 70)
   const name = fromName ? clip(fromName, 40) : null
   const ru = lang === 'ru'
+  const data = { kind: 'thread_reply', thread_id: d.threadId }
+  if (d.direct) {
+    return {
+      title: ru ? 'Вам ответили' : 'New reply to you',
+      body: name
+        ? (ru ? `Ответ от ${name} в «${thread}»` : `${name} replied to you in “${thread}”`)
+        : (ru ? `Вам ответили в «${thread}»` : `Someone replied to you in “${thread}”`),
+      data,
+      channelId: CHANNELS.thread_reply,
+    }
+  }
   return {
     title: ru ? `Новый ответ в «${thread}»` : `New reply in “${thread}”`,
     body: name
       ? (ru ? `Ответ от ${name}` : `${name} replied to your thread`)
       : (ru ? 'Вам ответили в вашей теме' : 'Someone replied to your thread'),
-    data: { kind: 'thread_reply', thread_id: d.threadId },
+    data,
     channelId: CHANNELS.thread_reply,
   }
 }

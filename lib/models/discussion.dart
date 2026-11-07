@@ -123,6 +123,7 @@ class DiscussionPost {
     required this.author,
     required this.text,
     required this.createdAt,
+    this.replyTo,
   });
 
   final String id;
@@ -130,6 +131,20 @@ class DiscussionPost {
   final SocialUser author;
   final String text;
   final DateTime createdAt;
+
+  /// The post this one answers, when it names one (and the viewer may see it).
+  final DiscussionQuote? replyTo;
+}
+
+/// The post a reply answers: who wrote it and how it starts, shown above the reply
+/// as "Replying to" and the name.
+@immutable
+class DiscussionQuote {
+  const DiscussionQuote({required this.postId, required this.authorName, this.excerpt = ''});
+
+  final String postId;
+  final String authorName;
+  final String excerpt;
 }
 
 /// What a list of threads is of: a board, the threads about a game, or both; with

@@ -11,7 +11,10 @@
 // Request  (POST, JSON): { "mode": "thread", "board": "general", "title": "Best
 //                          soulslike?", "body": "...", "game_id": "<catalog id>" }
 //                          `game_id` (optional) is the `games.id` the thread is about.
-//                          or { "mode": "reply", "thread": "<thread id>", "body": "..." }
+//                          or { "mode": "reply", "thread": "<thread id>", "body": "...",
+//                          "reply_to": "<post id>" }
+//                          `reply_to` (optional) is the post of that thread being answered:
+//                          the screen shows "Replying to <name>" and that member is told.
 //          Header:       Authorization: Bearer <user access token>
 // Response (JSON):       { "thread": { "id" } } or { "post": { "id", "created_at" } }
 //                        or { "error": "...", "code": "...", "retry_after"?: seconds }
@@ -27,7 +30,7 @@
 //                          CONTENT_NOT_ALLOWED (422)  a word the chat rules refuse
 //                                                     (_shared/discussion_filter.ts)
 //                          TOO_MANY_LINKS      (422)  more than 3 web addresses
-//                          NOT_FOUND           (404)  no such board, thread or game
+//                          NOT_FOUND           (404)  no such board, thread, game or post answered
 //                          LOCKED              (409)  the thread takes no more replies
 //                          DUPLICATE           (409)  the member posted this just now
 //                          NOT_CONFIGURED      (500)  missing secrets
@@ -180,13 +183,21 @@ async function newThread(
 async function newReply(
   admin: SupabaseClient,
   userId: string,
-  request: { thread: string; body: string },
+  request: { thread: string; body: string; replyTo: string | null },
 ): Promise<Response> {
   const { data: thread, error: threadError } = await admin
     .from('discussion_threads').select('id, locked').eq('id', request.thread).maybeSingle()
   if (threadError) failed('reading the thread', threadError)
   if (!thread) throw new HttpError(404, 'NOT_FOUND', 'No such thread')
   if (thread.locked) throw new HttpError(409, 'LOCKED', 'This thread takes no more replies')
+
+  // The post answered has to be in this thread (and still there).
+  if (request.replyTo !== null) {
+    const { data: parent, error: parentError } = await admin
+      .from('discussion_posts').select('id').eq('id', request.replyTo).eq('thread_id', request.thread).maybeSingle()
+    if (parentError) failed('reading the post answered', parentError)
+    if (!parent) throw new HttpError(404, 'NOT_FOUND', 'No such post to reply to')
+  }
 
   const since = new Date(Date.now() - DUPLICATE_REPLY_MS).toISOString()
   const { data: same, error: sameError } = await admin
@@ -198,7 +209,7 @@ async function newReply(
 
   const { data, error } = await admin
     .from('discussion_posts')
-    .insert({ thread_id: request.thread, author_id: userId, body: request.body })
+    .insert({ thread_id: request.thread, author_id: userId, body: request.body, reply_to: request.replyTo })
     .select('id, created_at')
     .single()
   if (error || !data) failed('inserting the reply', error)

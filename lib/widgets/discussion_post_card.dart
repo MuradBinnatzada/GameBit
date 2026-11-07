@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:checkpoint/l10n/l10n.dart';
+import 'package:checkpoint/models/discussion.dart';
 import 'package:checkpoint/models/social_user.dart';
 import 'package:checkpoint/theme/palette.dart';
 import 'package:checkpoint/utils/formatters.dart';
@@ -23,6 +24,8 @@ class DiscussionPostCard extends StatelessWidget {
     required this.isOwn,
     required this.onAction,
     this.byThreadAuthor = false,
+    this.quote,
+    this.onReply,
   });
 
   final SocialUser author;
@@ -31,6 +34,13 @@ class DiscussionPostCard extends StatelessWidget {
   final bool isOwn;
   final bool byThreadAuthor;
   final ValueChanged<DiscussionPostAction> onAction;
+
+  /// The post this one answers, shown above its text ("Replying to" and the name).
+  final DiscussionQuote? quote;
+
+  /// Starts a reply to this post. Null where a reply can't be made (signed out, a
+  /// locked thread): no button.
+  final VoidCallback? onReply;
 
   static const double _photo = 44;
 
@@ -110,10 +120,28 @@ class DiscussionPostCard extends StatelessWidget {
                       style: TextStyle(color: palette.muted, fontSize: 12.5),
                     ),
                     const SizedBox(height: 8),
+                    if (quote != null) _QuoteBlock(quote: quote!),
                     Text(
                       text,
                       style: TextStyle(color: palette.textSoft, height: 1.45),
                     ),
+                    if (onReply != null)
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: TextButton.icon(
+                          onPressed: onReply,
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            minimumSize: const Size(48, 48),
+                            foregroundColor: palette.muted,
+                          ),
+                          icon: const Icon(Icons.reply_rounded, size: 18),
+                          label: Text(
+                            l10n.replyToPost,
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -200,6 +228,44 @@ class _Badge extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// "Replying to Boris", and how the post answered starts, above a reply.
+class _QuoteBlock extends StatelessWidget {
+  const _QuoteBlock({required this.quote});
+
+  final DiscussionQuote quote;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsetsDirectional.only(start: 10, top: 2, bottom: 2),
+      decoration: BoxDecoration(
+        border: BorderDirectional(start: BorderSide(color: palette.outline, width: 3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.l10n.replyingTo(quote.authorName),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: palette.muted, fontSize: 12.5, fontWeight: FontWeight.w700),
+          ),
+          if (quote.excerpt.isNotEmpty)
+            Text(
+              quote.excerpt,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: palette.muted, fontSize: 12.5, height: 1.35),
+            ),
+        ],
       ),
     );
   }

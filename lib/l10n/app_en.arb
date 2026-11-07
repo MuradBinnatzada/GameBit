@@ -2001,7 +2001,7 @@
   "pushPriceDrops": "Price drops",
   "pushPriceDropsBody": "When a game on your wishlist goes on sale.",
   "pushReplies": "Replies",
-  "pushRepliesBody": "When someone replies to a thread you started.",
+  "pushRepliesBody": "When someone replies to your thread or to one of your posts.",
   "pushUnsupported": "Push notifications need the Android or iOS app, built with a Firebase project.",
   "pushSignedOut": "Log in to get notifications about your wishlist and threads.",
   "pushDenied": "Notifications are turned off for Gamebit in your device settings. Turn them on there to get them.",
@@ -2788,6 +2788,16 @@
   "noRepliesYet": "No replies yet",
   "writeReply": "Write a reply",
   "sendReply": "Send reply",
+  "replyToPost": "Reply",
+  "replyingTo": "Replying to {name}",
+  "@replyingTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelReply": "Cancel reply",
   "pinned": "Pinned",
   "threadLocked": "Locked",
   "threadLockedNotice": "This discussion is locked.",
@@ -2924,7 +2934,7 @@
   },
   "postDuplicate": "You posted this just now.",
   "postThreadLocked": "This discussion is locked.",
-  "postNotFound": "That discussion or game isn’t there any more.",
+  "postNotFound": "That discussion, game or post isn’t there any more.",
   "postFailed": "Couldn’t post. Try again.",
   "chatRules": "Chat rules",
   "chatRulesSubtitle": "Short, so you’ll read them.",

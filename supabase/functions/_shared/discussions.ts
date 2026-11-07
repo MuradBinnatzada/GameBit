@@ -19,7 +19,7 @@ const BOARD_ID = /^[a-z0-9-]{2,30}$/
 
 export type DiscussionRequest =
   | { mode: 'thread'; board: string; title: string; body: string; gameId: string | null }
-  | { mode: 'reply'; thread: string; body: string }
+  | { mode: 'reply'; thread: string; body: string; replyTo: string | null }
 
 /** Why a post is refused. `code` is what the app is sent; the app words the message itself. */
 export type Refusal = { code: 'BAD_REQUEST' | 'CONTENT_NOT_ALLOWED' | 'TOO_MANY_LINKS'; message: string }
@@ -66,7 +66,8 @@ export function countLinks(text: string): number {
  * The request body as a [DiscussionRequest], or the [Refusal] saying what is
  * wrong with it. A thread needs a board, a title of TITLE_MIN to TITLE_MAX
  * characters and a text of up to THREAD_BODY_MAX; it may name a game by its
- * catalog id. A reply needs a thread and a text of up to POST_MAX.
+ * catalog id. A reply needs a thread and a text of up to POST_MAX, and may name the
+ * post of that thread it answers (`reply_to`).
  */
 export function parseDiscussionRequest(payload: unknown): DiscussionRequest | Refusal {
   const bad = (message: string): Refusal => ({ code: 'BAD_REQUEST', message })
@@ -93,7 +94,12 @@ export function parseDiscussionRequest(payload: unknown): DiscussionRequest | Re
     if (typeof thread !== 'string' || !UUID.test(thread)) return bad('`thread` must be a thread id')
     const text = tidyBody(body.body)
     if (text.length < 1 || text.length > POST_MAX) return bad(`\`body\` must be 1 to ${POST_MAX} characters`)
-    return { mode: 'reply', thread: thread.toLowerCase(), body: text }
+    // The post of the thread this answers; none is a reply to the thread itself.
+    const replyTo = body.reply_to ?? null
+    if (replyTo !== null && (typeof replyTo !== 'string' || !UUID.test(replyTo))) {
+      return bad('`reply_to` must be a post id')
+    }
+    return { mode: 'reply', thread: thread.toLowerCase(), body: text, replyTo: replyTo === null ? null : replyTo.toLowerCase() }
   }
 
   return bad('`mode` must be one of: thread, reply')

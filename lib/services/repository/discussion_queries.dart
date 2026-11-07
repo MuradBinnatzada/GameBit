@@ -91,6 +91,7 @@ mixin _DiscussionQueries on _RepositoryBase {
           author: _authorFromRow(row),
           text: text,
           createdAt: at,
+          replyTo: _quoteFromRow(row),
         ),
       );
     }
@@ -112,5 +113,18 @@ mixin _DiscussionQueries on _RepositoryBase {
   Future<bool> deleteDiscussionPost(String id) async {
     final data = await _client.rpc(Db.rpcDeleteDiscussionPost, params: {'post': id});
     return data == true;
+  }
+
+  /// The post a reply answers, from `reply_to_*` of a row of `discussion_posts_page`;
+  /// null when it answers none, or the server left the quote out (its author is
+  /// blocked, the post was reported or deleted).
+  DiscussionQuote? _quoteFromRow(Map<String, dynamic> row) {
+    final id = _text(row['reply_to_id']);
+    if (id == null) return null;
+    return DiscussionQuote(
+      postId: id,
+      authorName: _text(row['reply_to_author_name']) ?? '',
+      excerpt: _text(row['reply_to_excerpt']) ?? '',
+    );
   }
 }

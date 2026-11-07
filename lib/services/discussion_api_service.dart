@@ -49,12 +49,14 @@ class DiscussionApiService {
     return id;
   }
 
-  /// Replies to the thread [threadId].
-  Future<void> reply(String threadId, String text) async {
+  /// Replies to the thread [threadId], to the post [replyTo] of it when one is named
+  /// (that member is told).
+  Future<void> reply(String threadId, String text, {String? replyTo}) async {
     final answer = await _invoke({
       'mode': 'reply',
       'thread': threadId,
       'body': text,
+      'reply_to': ?replyTo,
     });
     if (answer['post'] is! Map) {
       throw const DiscussionFailure(DiscussionFailureCode.other);

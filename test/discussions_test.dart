@@ -494,7 +494,7 @@ void main() {
 
           await store.reply('t1', 'Sekiro too.');
 
-          expect(api.replyCalls.single, (thread: 't1', text: 'Sekiro too.'));
+          expect(api.replyCalls.single, (thread: 't1', text: 'Sekiro too.', replyTo: null));
           final view = store.viewOf('t1');
           expect(
             [for (final p in view.posts) p.text],

@@ -41,6 +41,10 @@ class ThreadScreen extends StatefulWidget {
 
 class _ThreadScreenState extends State<ThreadScreen> {
   final _scroll = ScrollController();
+  final _composerFocus = FocusNode();
+
+  /// The post the reply being written answers; null: the thread itself.
+  DiscussionPost? _replyTo;
 
   @override
   void initState() {
@@ -56,7 +60,15 @@ class _ThreadScreenState extends State<ThreadScreen> {
   @override
   void dispose() {
     _scroll.dispose();
+    _composerFocus.dispose();
     super.dispose();
+  }
+
+  /// Starts a reply to [post] (the thread itself when null): the box says to whom,
+  /// and takes the keyboard.
+  void _startReply(DiscussionPost? post) {
+    setState(() => _replyTo = post);
+    _composerFocus.requestFocus();
   }
 
   Future<void> _onAction(
@@ -114,6 +126,10 @@ class _ThreadScreenState extends State<ThreadScreen> {
     final thread = view.thread;
     final me = context.watch<AuthStore>().user?.id;
     final board = thread == null ? null : store.boardById(thread.boardId);
+    // A reply can be made by a signed-in member, in a thread that is not locked.
+    final canReply = me != null && thread != null && !thread.locked;
+    // The post being answered may have left the list (deleted) since it was chosen.
+    final answering = _replyTo != null && view.posts.any((p) => p.id == _replyTo!.id) ? _replyTo : null;
 
     Widget body;
     if (view.status == LoadStatus.failed) {
@@ -151,6 +167,7 @@ class _ThreadScreenState extends State<ThreadScreen> {
                     text: thread.text,
                     isOwn: thread.author.id == me,
                     onAction: (a) => unawaited(_onAction(a, thread)),
+                    onReply: canReply ? () => _startReply(null) : null,
                   ),
                   Divider(height: 1, color: palette.hairline),
                   Padding(
@@ -174,6 +191,8 @@ class _ThreadScreenState extends State<ThreadScreen> {
                       text: post.text,
                       isOwn: post.author.id == me,
                       byThreadAuthor: post.author.id == thread.author.id,
+                      quote: post.replyTo,
+                      onReply: canReply ? () => _startReply(post) : null,
                       onAction: (a) =>
                           unawaited(_onAction(a, thread, post: post)),
                     ),
@@ -190,7 +209,13 @@ class _ThreadScreenState extends State<ThreadScreen> {
               ),
             ),
           ),
-          _Composer(thread: thread, onPosted: _scrollToEnd),
+          _Composer(
+            thread: thread,
+            onPosted: _scrollToEnd,
+            focus: _composerFocus,
+            replyTo: answering,
+            onClearReply: () => setState(() => _replyTo = null),
+          ),
         ],
       );
     }
@@ -286,10 +311,21 @@ class _Header extends StatelessWidget {
 /// agreed to before the first post; a post the server refuses (a word the chat
 /// rules refuse, posting too fast...) stays in the box, with what to do said.
 class _Composer extends StatefulWidget {
-  const _Composer({required this.thread, required this.onPosted});
+  const _Composer({
+    required this.thread,
+    required this.onPosted,
+    required this.focus,
+    required this.onClearReply,
+    this.replyTo,
+  });
 
   final DiscussionThread thread;
   final VoidCallback onPosted;
+  final FocusNode focus;
+
+  /// The post the reply answers, said above the box; null: the thread itself.
+  final DiscussionPost? replyTo;
+  final VoidCallback onClearReply;
 
   @override
   State<_Composer> createState() => _ComposerState();
@@ -316,10 +352,11 @@ class _ComposerState extends State<_Composer> {
       _error = null;
     });
     try {
-      await store.reply(widget.thread.id, text);
+      await store.reply(widget.thread.id, text, replyTo: widget.replyTo?.id);
       if (!mounted) return;
       _text.clear();
       HapticFeedback.selectionClick();
+      widget.onClearReply();
       widget.onPosted();
     } on DiscussionFailure catch (e) {
       if (mounted) setState(() => _error = e.message);
@@ -372,12 +409,37 @@ class _ComposerState extends State<_Composer> {
                 style: TextStyle(color: palette.danger, fontSize: 13),
               ),
             ),
+          if (widget.replyTo != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                children: [
+                  Icon(Icons.reply_rounded, size: 18, color: palette.muted),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      l10n.replyingTo(widget.replyTo!.author.name),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: palette.muted, fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: l10n.cancelReply,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: _sending ? null : widget.onClearReply,
+                    icon: Icon(Icons.close_rounded, size: 18, color: palette.muted),
+                  ),
+                ],
+              ),
+            ),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Expanded(
                 child: TextField(
                   controller: _text,
+                  focusNode: widget.focus,
                   enabled: !_sending,
                   minLines: 1,
                   maxLines: 5,
